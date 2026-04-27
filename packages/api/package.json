@@ -1,0 +1,13 @@
+{
+  "name": "@judging/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'P01 implementará isto'",
+    "build": "echo 'P01 implementará isto'",
+    "lint": "echo 'P01 implementará isto'",
+    "type-check": "echo 'P01 implementará isto'",
+    "test": "echo 'P01 implementará isto'",
+    "test:ci": "echo 'P01 implementará isto'"
+  }
+}
