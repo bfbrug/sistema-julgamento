@@ -1,0 +1,141 @@
+erDiagram
+    USER ||--o{ JUDGING_EVENT : "gerencia"
+    USER ||--o{ JUDGE : "é"
+
+    JUDGING_EVENT ||--|{ CATEGORY : "tem"
+    JUDGING_EVENT ||--|{ PARTICIPANT : "tem"
+    JUDGING_EVENT ||--|{ JUDGE : "tem"
+    JUDGING_EVENT ||--o| EVENT_CONFIG : "configurado-por"
+    JUDGING_EVENT ||--o| CERTIFICATE_CONFIG : "tem"
+    JUDGING_EVENT ||--o| TIEBREAKER_CONFIG : "tem"
+    JUDGING_EVENT ||--o{ AUDIT_LOG : "gera"
+
+    JUDGE }|--|{ CATEGORY : "avalia (matriz)"
+    JUDGE_CATEGORY }|--|| JUDGE : ""
+    JUDGE_CATEGORY }|--|| CATEGORY : ""
+
+    PARTICIPANT ||--o{ SCORE : "recebe"
+    JUDGE ||--o{ SCORE : "atribui"
+    CATEGORY ||--o{ SCORE : "tem"
+
+    PARTICIPANT ||--o{ PARTICIPANT_STATE : "histórico"
+
+    CERTIFICATE_CONFIG ||--o{ SIGNATURE : "tem (até 3)"
+
+    TIEBREAKER_CONFIG }o--|| CATEGORY : "1ª-categoria"
+    TIEBREAKER_CONFIG }o--|| CATEGORY : "2ª-categoria"
+
+    USER {
+        uuid id PK
+        string name
+        string email UK
+        string passwordHash
+        enum role "GESTOR ou JURADO"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    JUDGING_EVENT {
+        uuid id PK
+        string name
+        date eventDate
+        string location
+        string organizer
+        uuid managerId FK
+        enum calculationRule "R1 ou R2"
+        decimal scoreMin
+        decimal scoreMax
+        int topN "ex 10"
+        enum status "DRAFT REGISTERING IN_PROGRESS FINISHED"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    CATEGORY {
+        uuid id PK
+        uuid eventId FK
+        string name "ex Técnica"
+        int displayOrder
+    }
+
+    JUDGE {
+        uuid id PK
+        uuid userId FK
+        uuid eventId FK
+        string displayName
+    }
+
+    JUDGE_CATEGORY {
+        uuid id PK
+        uuid judgeId FK
+        uuid categoryId FK
+    }
+
+    PARTICIPANT {
+        uuid id PK
+        uuid eventId FK
+        string name
+        string photoPath
+        int presentationOrder
+        boolean isAbsent
+        enum currentState "WAITING PREVIEW SCORING REVIEW FINISHED"
+        datetime createdAt
+    }
+
+    SCORE {
+        uuid id PK
+        uuid participantId FK
+        uuid judgeId FK
+        uuid categoryId FK
+        decimal value "uma casa decimal"
+        boolean isFinalized "imutável após true"
+        datetime createdAt
+        datetime finalizedAt
+    }
+
+    PARTICIPANT_STATE {
+        uuid id PK
+        uuid participantId FK
+        enum state
+        datetime enteredAt
+        uuid changedByUserId FK
+    }
+
+    EVENT_CONFIG {
+        uuid id PK
+        uuid eventId FK
+        string certificateText "com placeholders"
+    }
+
+    TIEBREAKER_CONFIG {
+        uuid id PK
+        uuid eventId FK
+        uuid firstCategoryId FK
+        uuid secondCategoryId FK
+    }
+
+    CERTIFICATE_CONFIG {
+        uuid id PK
+        uuid eventId FK
+        string backgroundPath
+    }
+
+    SIGNATURE {
+        uuid id PK
+        uuid certificateConfigId FK
+        string personName
+        string personRole
+        string imagePath
+        int displayOrder "1 2 ou 3"
+    }
+
+    AUDIT_LOG {
+        uuid id PK
+        uuid actorId FK
+        string actorType "USER ou SYSTEM"
+        string action "ex SCORE_REGISTERED"
+        string entityType
+        uuid entityId
+        json payload
+        datetime createdAt
+    }

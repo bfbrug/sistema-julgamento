@@ -1,0 +1,51 @@
+stateDiagram-v2
+    direction LR
+
+    [*] --> WAITING : participante cadastrado
+
+    WAITING --> PREVIEW : gestor ativa<br/>participante
+    note right of WAITING
+        Tela do jurado mostra
+        "aguardando próximo participante"
+    end note
+
+    PREVIEW --> SCORING : jurado clica<br/>"Avaliar participante"
+    note right of PREVIEW
+        Tela do jurado mostra
+        nome + foto + botão
+    end note
+
+    SCORING --> REVIEW : jurado clica<br/>"Confirmar notas"
+    note right of SCORING
+        Formulário aberto
+        somente categorias
+        do jurado
+        Notas vazias
+        Avisos de min e max
+    end note
+
+    REVIEW --> SCORING : jurado clica<br/>"Alterar"
+    REVIEW --> JUDGE_FINISHED : jurado clica<br/>"Confirmar e Finalizar"
+    note right of REVIEW
+        Resumo das notas
+        antes da finalizacao
+    end note
+
+    JUDGE_FINISHED --> FINISHED : todos os jurados<br/>finalizaram
+    note right of JUDGE_FINISHED
+        Notas imutaveis
+        Tela mostra
+        "aguardando proximo"
+    end note
+
+    WAITING --> ABSENT : gestor marca<br/>como ausente
+    PREVIEW --> ABSENT : gestor marca<br/>como ausente
+
+    FINISHED --> [*] : participante<br/>encerrado
+    ABSENT --> [*] : desclassificado
+
+    note left of ABSENT
+        Sai do ranking
+        Aparece em secao
+        separada do relatorio
+    end note
