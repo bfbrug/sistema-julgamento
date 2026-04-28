@@ -17,16 +17,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.ts'],
       exclude: [
         '**/__tests__/**',
         '**/*.spec.ts',
-        'prisma/**',
-        'vitest.config.ts',
         'src/main.ts',
         'src/common/decorators/**',
-        'dist/**',
-        'test/**',
-        '*.mjs',
       ],
       thresholds: {
         statements: 80,
