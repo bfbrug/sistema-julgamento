@@ -65,6 +65,7 @@
 | P00 | 2026-04-27 | feature/p00-setup-monorepo | N/A — sem código de produção | pnpm fixado em 9.15.0; turbo 2.5.3; typescript 5.8.3; eslint 9.26.0 |
 | P01 | 2026-04-28 | feature/p01-bootstrap-api | statements 98%, branches 82%, functions 100%, lines 98% | NestJS 11 + Fastify; @Inject explícito para PrismaService (conflito PrismaClient Proxy + NestJS DI); postgres na porta 5434 (5432 ocupada por outro container) |
 | P02 | 2026-04-28 | feature/p02-bootstrap-web | statements 100%, branches 96%, functions 100%, lines 100% | Next.js 15 + React 19 + Tailwind 4; Geist font; singleFork no Vitest (OOM com workers paralelos); cross-env para NODE_OPTIONS no build Windows |
+| P03 | 2026-04-28 | feature/p03-modulo-auth | statements 89.06%, branches 84.52%, functions 83.33%, lines 89.06% | @nestjs/jwt e passport; Refresh tokens salvos como hash no banco; JwtAuthGuard e RolesGuard globais; `swc` / metadata ausente do Vitest contornado usando `@Inject` explícito nos construtores |
 
 ---
 
@@ -83,3 +84,4 @@
 | P02 | cross-env NODE_OPTIONS=--max-old-space-size=4096 no build | definir variável no shell do CI | ✅ |
 | P02 | globals browser+node no eslint.config.mjs raiz, escopo packages/web | .eslintrc local (conflita com flat config) | ✅ |
 | P02 | Sidebar e PublicHeader excluídos da cobertura (stubs sem lógica) | adicionar testes de snapshot | ✅ |
+| P03 | Uso de `@Inject()` explícito em `AuthService` e Guards | Adicionar `@swc/core` e plugar no Vitest | ✅ |

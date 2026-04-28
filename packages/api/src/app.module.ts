@@ -16,6 +16,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
     LoggerModule.forRoot({
       pinoHttp: {
         level: env.LOG_LEVEL,
+        redact: ['req.headers.authorization', 'req.body.password', 'password'],
         transport:
           env.NODE_ENV === 'development'
             ? { target: 'pino-pretty', options: { colorize: true } }
