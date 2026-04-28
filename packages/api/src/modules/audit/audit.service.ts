@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 export interface RecordAuditInput {
-  action: 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'LOGOUT';
+  action: string;
+  entityType?: string;
+  entityId?: string;
+  actorId?: string;
   userId?: string;
   ipAddress?: string;
   userAgent?: string;
+  payload?: any;
   details?: Record<string, any>;
 }
 

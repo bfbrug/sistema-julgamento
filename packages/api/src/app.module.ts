@@ -7,9 +7,11 @@ import { HealthModule } from './modules/health/health.module'
 import { env } from './config/env'
 import { AuthModule } from './modules/auth/auth.module'
 import { AuditModule } from './modules/audit/audit.module'
+import { UsersModule } from './modules/users/users.module'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
+import { RolesGuard } from './modules/auth/guards/roles.guard'
 
 @Module({
   imports: [
@@ -27,6 +29,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
     HealthModule,
     AuthModule,
     AuditModule,
+    UsersModule,
     ThrottlerModule.forRoot([
       { name: 'default', ttl: 60000, limit: 100 },
       { name: 'auth', ttl: env.THROTTLE_AUTH_TTL * 1000, limit: env.THROTTLE_AUTH_LIMIT },
@@ -48,6 +51,10 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })
