@@ -60,6 +60,9 @@ jobs:
       - name: Type check
         run: pnpm type-check
 
+      - name: Generate Prisma client
+        run: pnpm --filter @judging/api prisma:generate
+
       - name: Test
         run: pnpm test:ci
         env:
