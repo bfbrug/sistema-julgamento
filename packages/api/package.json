@@ -17,6 +17,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@judging/shared": "workspace:^",
     "@nestjs/common": "11.1.0",
     "@nestjs/core": "11.1.0",
     "@nestjs/jwt": "^11.0.2",

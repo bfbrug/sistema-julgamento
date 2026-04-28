@@ -9,8 +9,8 @@ export interface RecordAuditInput {
   userId?: string;
   ipAddress?: string;
   userAgent?: string;
-  payload?: any;
-  details?: Record<string, any>;
+  payload?: unknown;
+  details?: Record<string, unknown>;
 }
 
 @Injectable()

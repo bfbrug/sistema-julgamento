@@ -1,3 +1,5 @@
+import type { ApiError as SharedApiError, ApiSuccess } from '@judging/shared'
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -9,16 +11,7 @@ export class ApiError extends Error {
   }
 }
 
-interface ApiErrorBody {
-  error: string
-  code?: string
-}
-
-interface ApiSuccessBody<T> {
-  data: T
-}
-
-type ApiResponseBody<T> = ApiSuccessBody<T> | ApiErrorBody
+type ApiResponseBody<T> = ApiSuccess<T> | SharedApiError
 
 interface ApiClientOptions<B> {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -27,13 +20,14 @@ interface ApiClientOptions<B> {
   headers?: Record<string, string>
 }
 
-function isApiError(body: unknown): body is ApiErrorBody {
+function isApiError(body: unknown): body is SharedApiError {
   return typeof body === 'object' && body !== null && 'error' in body
 }
 
-function isApiSuccess<T>(body: unknown): body is ApiSuccessBody<T> {
+function isApiSuccess<T>(body: unknown): body is ApiSuccess<T> {
   return typeof body === 'object' && body !== null && 'data' in body
 }
+
 
 export async function apiClient<T, B = unknown>({
   method,

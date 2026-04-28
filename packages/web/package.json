@@ -12,6 +12,7 @@
     "test:ci": "vitest run --coverage"
   },
   "dependencies": {
+    "@judging/shared": "workspace:^",
     "next": "^15",
     "react": "^19",
     "react-dom": "^19",
