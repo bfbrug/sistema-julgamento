@@ -6,8 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 2 de 20 |
-| **Próximo prompt** | P02 — Bootstrap do Frontend |
+| **Prompts concluídos** | 3 de 20 |
+| **Fase atual** | 1 — Autenticação e usuários |
+| **Próximo prompt** | P03 — Autenticação JWT |
 | **Última atualização** | 2026-04-28 |
 
 ---
@@ -18,7 +19,7 @@
 
 - [x] **P00** — Setup do monorepo
 - [x] **P01** — Bootstrap da API
-- [ ] **P02** — Bootstrap do Frontend
+- [x] **P02** — Bootstrap do Frontend
 
 ### Fase 1 — Autenticação
 
@@ -63,6 +64,7 @@
 |---|---|---|---|---|
 | P00 | 2026-04-27 | feature/p00-setup-monorepo | N/A — sem código de produção | pnpm fixado em 9.15.0; turbo 2.5.3; typescript 5.8.3; eslint 9.26.0 |
 | P01 | 2026-04-28 | feature/p01-bootstrap-api | statements 98%, branches 82%, functions 100%, lines 98% | NestJS 11 + Fastify; @Inject explícito para PrismaService (conflito PrismaClient Proxy + NestJS DI); postgres na porta 5434 (5432 ocupada por outro container) |
+| P02 | 2026-04-28 | feature/p02-bootstrap-web | statements 100%, branches 96%, functions 100%, lines 100% | Next.js 15 + React 19 + Tailwind 4; Geist font; singleFork no Vitest (OOM com workers paralelos); cross-env para NODE_OPTIONS no build Windows |
 
 ---
 
@@ -77,3 +79,7 @@
 | P01 | @Inject(PrismaService) explícito no HealthController | injeção implícita por tipo | ✅ |
 | P01 | pool: 'forks' + test.env no vitest.config para propagar DATABASE_URL | dotenv no setupFiles (hoisting ESM impede) | ✅ |
 | P01 | tsconfig.build.json separado para build (rootDir: src) | rootDir no tsconfig principal | ✅ |
+| P02 | Vitest com pool: forks + singleFork: true | workers paralelos (OOM em Windows com jsdom) | ✅ |
+| P02 | cross-env NODE_OPTIONS=--max-old-space-size=4096 no build | definir variável no shell do CI | ✅ |
+| P02 | globals browser+node no eslint.config.mjs raiz, escopo packages/web | .eslintrc local (conflita com flat config) | ✅ |
+| P02 | Sidebar e PublicHeader excluídos da cobertura (stubs sem lógica) | adicionar testes de snapshot | ✅ |
