@@ -57,9 +57,6 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Generate Prisma client
-        run: pnpm --filter @judging/api prisma:generate
-
       - name: Type check
         run: pnpm type-check
 

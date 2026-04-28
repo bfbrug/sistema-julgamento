@@ -12,8 +12,11 @@
     "lint": {
       "outputs": []
     },
+    "prisma:generate": {
+      "outputs": ["node_modules/.prisma/**"]
+    },
     "type-check": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "prisma:generate"],
       "outputs": []
     },
     "test": {
