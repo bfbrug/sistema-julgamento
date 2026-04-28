@@ -27,6 +27,16 @@ docker compose ps
 pnpm dev
 ```
 
+### Popular banco de dados (Seeder)
+
+```bash
+pnpm --filter @judging/api prisma db seed
+```
+
+**Credenciais disponíveis após o seed:**
+- **Gestor:** `admin@example.com` / `changeMe123!`
+- **Jurados:** `jurado1@example.com`, `jurado2@example.com`, `jurado3@example.com` / `changeMe123!`
+
 ## Referências
 
 - [PROJECT_STANDARDS.md](./PROJECT_STANDARDS.md) — fonte de verdade arquitetural
