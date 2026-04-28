@@ -1,13 +1,19 @@
 import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
-import { loadEnv } from 'vite'
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    env: loadEnv(mode, process.cwd(), ''),
-    setupFiles: [],
+    pool: 'forks',
+    env: {
+      NODE_ENV: 'test',
+      PORT: '3001',
+      LOG_LEVEL: 'error',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5434/judging_test',
+      CORS_ORIGIN: 'http://localhost:3001',
+    },
+    setupFiles: ['./test/global-setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -17,8 +23,10 @@ export default defineConfig(({ mode }) => ({
         'prisma/**',
         'vitest.config.ts',
         'src/main.ts',
+        'src/common/decorators/**',
         'dist/**',
         'test/**',
+        '*.mjs',
       ],
       thresholds: {
         statements: 80,
@@ -33,4 +41,4 @@ export default defineConfig(({ mode }) => ({
       '@': resolve(__dirname, 'src'),
     },
   },
-}))
+})

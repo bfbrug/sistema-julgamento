@@ -1,4 +1,4 @@
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common'
+import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common'
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import { PrismaService } from '../../config/prisma.service'
 import { Public } from '../../common/decorators/public.decorator'
@@ -6,7 +6,7 @@ import { Public } from '../../common/decorators/public.decorator'
 @Controller('health')
 export class HealthController {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
     @InjectPinoLogger(HealthController.name)
     private readonly logger: PinoLogger,
   ) {}
