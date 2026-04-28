@@ -6,9 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 1 de 20 |
-| **Próximo prompt** | P01 — Bootstrap da API |
-| **Última atualização** | 2026-04-27 |
+| **Prompts concluídos** | 2 de 20 |
+| **Próximo prompt** | P02 — Bootstrap do Frontend |
+| **Última atualização** | 2026-04-28 |
 
 ---
 
@@ -17,7 +17,7 @@
 ### Fase 0 — Fundação
 
 - [x] **P00** — Setup do monorepo
-- [ ] **P01** — Bootstrap da API
+- [x] **P01** — Bootstrap da API
 - [ ] **P02** — Bootstrap do Frontend
 
 ### Fase 1 — Autenticação
@@ -62,6 +62,7 @@
 | Prompt | Concluído em | Branch mergeada | Cobertura final | Observações |
 |---|---|---|---|---|
 | P00 | 2026-04-27 | feature/p00-setup-monorepo | N/A — sem código de produção | pnpm fixado em 9.15.0; turbo 2.5.3; typescript 5.8.3; eslint 9.26.0 |
+| P01 | 2026-04-28 | feature/p01-bootstrap-api | statements 98%, branches 82%, functions 100%, lines 98% | NestJS 11 + Fastify; @Inject explícito para PrismaService (conflito PrismaClient Proxy + NestJS DI); postgres na porta 5434 (5432 ocupada por outro container) |
 
 ---
 
@@ -73,3 +74,6 @@
 | P00 | turbo fixado em 2.5.3 | range `^2.x` | ⏳ |
 | P00 | eslint 9.26.0 com formato `.cjs` (eslintrc legacy) | flat config (eslint.config.js) | ⏳ |
 | P00 | vitest 3.1.3 apenas em `shared` por ora | instalar em todos os pacotes | ⏳ |
+| P01 | @Inject(PrismaService) explícito no HealthController | injeção implícita por tipo | ✅ |
+| P01 | pool: 'forks' + test.env no vitest.config para propagar DATABASE_URL | dotenv no setupFiles (hoisting ESM impede) | ✅ |
+| P01 | tsconfig.build.json separado para build (rootDir: src) | rootDir no tsconfig principal | ✅ |
