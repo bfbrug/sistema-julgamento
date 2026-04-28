@@ -4,12 +4,15 @@ import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import { loginSchema } from '@judging/shared'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
-  const isEmpty = email.trim() === '' || senha.trim() === ''
+  const validation = loginSchema.safeParse({ email, password: senha })
+  const isValid = validation.success
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
@@ -36,12 +39,18 @@ export default function LoginPage() {
               onChange={(e) => setSenha(e.target.value)}
               placeholder="••••••••"
             />
+            {error && <p className="text-sm text-red-600">{error}</p>}
             <Button
               type="submit"
               className="mt-2 w-full"
-              disabled={isEmpty}
+              disabled={!isValid}
               onClick={() => {
                 // TODO P03: implementar submit de login
+                if (!isValid) {
+                  setError(validation.error.errors[0]!.message)
+                  return
+                }
+                console.log('Login validado via Zod shared')
               }}
             >
               Entrar
@@ -52,3 +61,4 @@ export default function LoginPage() {
     </div>
   )
 }
+
