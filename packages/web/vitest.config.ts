@@ -24,6 +24,8 @@ export default defineConfig({
         'src/app/**/page.tsx',
         'src/app/globals.css',
         'src/index.ts',
+        'src/components/admin/**',
+        'src/components/public/**',
         'next.config.mjs',
         '**/*.config.{ts,mjs}',
         'vitest.setup.ts',
