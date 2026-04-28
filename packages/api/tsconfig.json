@@ -4,13 +4,14 @@
     "outDir": "dist",
     "rootDir": "src",
     "module": "CommonJS",
-    "moduleResolution": "node16",
+    "moduleResolution": "node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "types": ["vitest/globals", "node"]
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["dist", "node_modules"]
