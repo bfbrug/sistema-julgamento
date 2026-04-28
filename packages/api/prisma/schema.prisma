@@ -18,7 +18,11 @@ model User {
   updatedAt    DateTime @updatedAt
   deletedAt    DateTime?
 
-  refreshTokens RefreshToken[]
+  refreshTokens           RefreshToken[]
+  managedEvents           JudgingEvent[]        @relation("EventManager")
+  judgeProfiles           Judge[]
+  participantStateChanges ParticipantStateLog[]
+  auditLogs               AuditLog[]
 
   @@index([email])
   @@map("users")
@@ -41,7 +45,223 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model JudgingEvent {
+  id              String          @id @default(uuid())
+  name            String
+  eventDate       DateTime        @db.Date
+  location        String
+  organizer       String
+  managerId       String
+  calculationRule CalculationRule @default(R1)
+  scoreMin        Decimal         @db.Decimal(3, 1)
+  scoreMax        Decimal         @db.Decimal(3, 1)
+  topN            Int             @default(10)
+  status          EventStatus     @default(DRAFT)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  manager           User                  @relation("EventManager", fields: [managerId], references: [id])
+  categories        Category[]
+  judges            Judge[]
+  participants      Participant[]
+  certificateConfig CertificateConfig?
+  tiebreakerConfig  TiebreakerConfig?
+  certificateText   String?
+
+  @@index([managerId])
+  @@index([status])
+  @@map("judging_events")
+}
+
+model Category {
+  id           String   @id @default(uuid())
+  eventId      String
+  name         String
+  displayOrder Int
+
+  event              JudgingEvent      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  judgeCategories    JudgeCategory[]
+  scores             Score[]
+  tiebreakerFirst    TiebreakerConfig? @relation("FirstCategory")
+  tiebreakerSecond   TiebreakerConfig? @relation("SecondCategory")
+
+  @@unique([eventId, name])
+  @@index([eventId])
+  @@map("categories")
+}
+
+model Judge {
+  id          String   @id @default(uuid())
+  userId      String
+  eventId     String
+  displayName String
+  createdAt   DateTime @default(now())
+
+  user             User              @relation(fields: [userId], references: [id])
+  event            JudgingEvent      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  judgeCategories  JudgeCategory[]
+  scores           Score[]
+
+  @@unique([userId, eventId])
+  @@index([eventId])
+  @@map("judges")
+}
+
+model JudgeCategory {
+  id         String @id @default(uuid())
+  judgeId    String
+  categoryId String
+
+  judge    Judge    @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([judgeId, categoryId])
+  @@index([categoryId])
+  @@map("judge_categories")
+}
+
+model Participant {
+  id                 String           @id @default(uuid())
+  eventId            String
+  name               String
+  photoPath          String?
+  presentationOrder  Int
+  isAbsent           Boolean          @default(false)
+  currentState       ParticipantState @default(WAITING)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  event        JudgingEvent          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  scores       Score[]
+  stateHistory ParticipantStateLog[]
+
+  @@unique([eventId, presentationOrder])
+  @@index([eventId])
+  @@index([currentState])
+  @@map("participants")
+}
+
+model ParticipantStateLog {
+  id              String           @id @default(uuid())
+  participantId   String
+  state           ParticipantState
+  enteredAt       DateTime         @default(now())
+  changedByUserId String?
+
+  participant    Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  changedByUser  User?       @relation(fields: [changedByUserId], references: [id])
+
+  @@index([participantId])
+  @@map("participant_state_logs")
+}
+
+model Score {
+  id             String    @id @default(uuid())
+  participantId  String
+  judgeId        String
+  categoryId     String
+  value          Decimal   @db.Decimal(3, 1)
+  isFinalized    Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  finalizedAt    DateTime?
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  judge       Judge       @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, judgeId, categoryId])
+  @@index([participantId])
+  @@index([judgeId])
+  @@index([categoryId])
+  @@map("scores")
+}
+
+model TiebreakerConfig {
+  id                String  @id @default(uuid())
+  eventId           String  @unique
+  firstCategoryId   String? @unique
+  secondCategoryId  String? @unique
+
+  event           JudgingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  firstCategory   Category?    @relation("FirstCategory",  fields: [firstCategoryId], references: [id])
+  secondCategory  Category?    @relation("SecondCategory", fields: [secondCategoryId], references: [id])
+
+  @@map("tiebreaker_configs")
+}
+
+model CertificateConfig {
+  id              String   @id @default(uuid())
+  eventId         String   @unique
+  backgroundPath  String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  event       JudgingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  signatures  CertificateSignature[]
+
+  @@map("certificate_configs")
+}
+
+model CertificateSignature {
+  id                    String @id @default(uuid())
+  certificateConfigId   String
+  personName            String
+  personRole            String
+  imagePath             String
+  displayOrder          Int
+
+  certificateConfig CertificateConfig @relation(fields: [certificateConfigId], references: [id], onDelete: Cascade)
+
+  @@unique([certificateConfigId, displayOrder])
+  @@index([certificateConfigId])
+  @@map("certificate_signatures")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String?
+  actorType   String
+  action      String
+  entityType  String
+  entityId    String
+  payload     Json
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
+
 enum UserRole {
   GESTOR
   JURADO
+}
+
+enum CalculationRule {
+  R1
+  R2
+}
+
+enum EventStatus {
+  DRAFT
+  REGISTERING
+  IN_PROGRESS
+  FINISHED
+}
+
+enum ParticipantState {
+  WAITING
+  PREVIEW
+  SCORING
+  REVIEW
+  FINISHED
+  ABSENT
 }
