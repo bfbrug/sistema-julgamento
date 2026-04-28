@@ -6,6 +6,16 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL é obrigatória'),
   CORS_ORIGIN: z.string().url('CORS_ORIGIN deve ser uma URL válida').default('http://localhost:3001'),
+  JWT_ACCESS_SECRET: z.string().min(1, 'JWT_ACCESS_SECRET é obrigatória'),
+  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_SECRET: z.string().min(1, 'JWT_REFRESH_SECRET é obrigatória'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  BCRYPT_ROUNDS: z.coerce.number().int().positive().default(10),
+  THROTTLE_AUTH_TTL: z.coerce.number().int().positive().default(60),
+  THROTTLE_AUTH_LIMIT: z.coerce.number().int().positive().default(5),
+}).refine(data => data.JWT_ACCESS_SECRET !== data.JWT_REFRESH_SECRET, {
+  message: 'JWT_ACCESS_SECRET e JWT_REFRESH_SECRET não podem ser iguais',
+  path: ['JWT_REFRESH_SECRET']
 })
 
 const parsed = envSchema.safeParse(process.env)

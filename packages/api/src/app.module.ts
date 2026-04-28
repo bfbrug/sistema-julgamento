@@ -5,6 +5,11 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { HealthModule } from './modules/health/health.module'
 import { env } from './config/env'
+import { AuthModule } from './modules/auth/auth.module'
+import { AuditModule } from './modules/audit/audit.module'
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
+import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
 
 @Module({
   imports: [
@@ -19,7 +24,30 @@ import { env } from './config/env'
     }),
     DatabaseModule,
     HealthModule,
+    AuthModule,
+    AuditModule,
+    ThrottlerModule.forRoot([
+      { name: 'default', ttl: 60000, limit: 100 },
+      { name: 'auth', ttl: env.THROTTLE_AUTH_TTL * 1000, limit: env.THROTTLE_AUTH_LIMIT },
+    ]),
   ],
-  providers: [HttpExceptionFilter, ResponseInterceptor],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -6,11 +6,12 @@ import { Test } from '@nestjs/testing'
 import { FastifyAdapter } from '@nestjs/platform-fastify'
 import { ValidationPipe } from '@nestjs/common'
 import { AppModule } from '../../../app.module'
-import { HttpExceptionFilter } from '../http-exception.filter'
-import { ResponseInterceptor } from '../../interceptors/response.interceptor'
 import { Logger } from 'nestjs-pino'
 import { AppException } from '../../exceptions/app.exception'
 
+import { Public } from '../../../common/decorators/public.decorator'
+
+@Public()
 @Controller('test-errors')
 class TestErrorController {
   @Get('not-found')
@@ -47,8 +48,6 @@ describe('HttpExceptionFilter (E2E)', () => {
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true, errorHttpStatusCode: 422 }),
     )
-    app.useGlobalFilters(app.get(HttpExceptionFilter))
-    app.useGlobalInterceptors(app.get(ResponseInterceptor))
 
     await app.init()
     await app.getHttpAdapter().getInstance().ready()

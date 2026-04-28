@@ -2,7 +2,9 @@ import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/co
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import { PrismaService } from '../../config/prisma.service'
 import { Public } from '../../common/decorators/public.decorator'
+import { SkipThrottle } from '@nestjs/throttler'
 
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(
