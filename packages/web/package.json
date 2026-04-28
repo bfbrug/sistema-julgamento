@@ -3,11 +3,32 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "echo 'P02 implementará isto'",
-    "build": "echo 'P02 implementará isto'",
-    "lint": "echo 'P02 implementará isto'",
-    "type-check": "echo 'P02 implementará isto'",
-    "test": "echo 'P02 implementará isto'",
-    "test:ci": "echo 'P02 implementará isto'"
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "next lint --dir src",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:ci": "vitest run --coverage"
+  },
+  "dependencies": {
+    "next": "^15",
+    "react": "^19",
+    "react-dom": "^19",
+    "zod": "3.24.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^3",
+    "autoprefixer": "^10.5.0",
+    "jsdom": "^29.1.0",
+    "tailwindcss": "^4",
+    "vitest": "^3"
   }
 }
