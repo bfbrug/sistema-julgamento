@@ -1,50 +1,57 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { useCategories, useCreateCategory } from '../useCategories'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useReorderCategories } from '../useCategories'
 import { apiClient } from '@/lib/api'
-import type { ReactNode } from 'react'
 
 vi.mock('@/lib/api', () => ({
   apiClient: vi.fn(),
 }))
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false } },
-})
-
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+import type { ReactNode } from 'react'
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 )
 
 describe('useCategories', () => {
-  const eventId = 'event-1'
-
   beforeEach(() => {
-    vi.clearAllMocks()
     queryClient.clear()
+    vi.clearAllMocks()
   })
 
-  it('should fetch categories', async () => {
-    const mockCategories = [{ id: '1', name: 'Cat 1' }]
-    vi.mocked(apiClient).mockResolvedValue(mockCategories)
-
-    const { result } = renderHook(() => useCategories(eventId), { wrapper })
-
+  it('useCategories busca categorias', async () => {
+    vi.mocked(apiClient).mockResolvedValue([{ id: '1', name: 'Cat' }])
+    const { result } = renderHook(() => useCategories('e1'), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data).toEqual(mockCategories)
-    expect(apiClient).toHaveBeenCalledWith({ method: 'GET', path: `/events/${eventId}/categories` })
+    expect(apiClient).toHaveBeenCalledWith({ method: 'GET', path: '/events/e1/categories' })
   })
 
-  it('should create a category', async () => {
-    const mockCategory = { id: '2', name: 'New Cat' }
-    vi.mocked(apiClient).mockResolvedValue(mockCategory)
+  it('useCreateCategory categoria', async () => {
+    vi.mocked(apiClient).mockResolvedValue({ id: '1', name: 'Cat' })
+    const { result } = renderHook(() => useCreateCategory('e1'), { wrapper })
+    await result.current.mutateAsync({ name: 'Cat', displayOrder: 1 })
+    expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST', path: '/events/e1/categories' }))
+  })
 
-    const { result } = renderHook(() => useCreateCategory(eventId), { wrapper })
+  it('useUpdateCategory atualiza', async () => {
+    vi.mocked(apiClient).mockResolvedValue({ id: '1', name: 'Cat' })
+    const { result } = renderHook(() => useUpdateCategory('e1', 'c1'), { wrapper })
+    await result.current.mutateAsync({ name: 'Cat2' })
+    expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ method: 'PATCH', path: '/events/e1/categories/c1' }))
+  })
 
-    result.current.mutate({ name: 'New Cat', displayOrder: 1 })
+  it('useDeleteCategory exclui', async () => {
+    vi.mocked(apiClient).mockResolvedValue({})
+    const { result } = renderHook(() => useDeleteCategory('e1'), { wrapper })
+    await result.current.mutateAsync('c1')
+    expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ method: 'DELETE', path: '/events/e1/categories/c1' }))
+  })
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data).toEqual(mockCategory)
+  it('useReorderCategories reordena', async () => {
+    vi.mocked(apiClient).mockResolvedValue({})
+    const { result } = renderHook(() => useReorderCategories('e1'), { wrapper })
+    await result.current.mutateAsync(['c2', 'c1'])
+    expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST', path: '/events/e1/categories/reorder' }))
   })
 })
