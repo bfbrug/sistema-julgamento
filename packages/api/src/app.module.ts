@@ -13,6 +13,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
 import { RolesGuard } from './modules/auth/guards/roles.guard'
+import { CategoriesModule } from './modules/categories/categories.module'
 
 @Module({
   imports: [
@@ -30,6 +31,8 @@ import { RolesGuard } from './modules/auth/guards/roles.guard'
     HealthModule,
     AuthModule,
     AuditModule,
+    EventsModule,
+    CategoriesModule,
     UsersModule,
     EventsModule,
     ThrottlerModule.forRoot([
