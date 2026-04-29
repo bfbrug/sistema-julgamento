@@ -65,7 +65,7 @@ describe('ParticipantStateMachine', () => {
     
     expect(computeParticipantState('REVIEW', sessions, 2)).toBe('FINISHED')
     
-    sessions[1].status = 'IN_REVIEW'
+    sessions[1]!.status = 'IN_REVIEW'
     expect(computeParticipantState('REVIEW', sessions, 2)).toBe('REVIEW')
   })
 

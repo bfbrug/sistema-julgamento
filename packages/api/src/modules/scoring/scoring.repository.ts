@@ -77,7 +77,7 @@ export class ScoringRepository {
   }
 
   async upsertScore(
-    data: Prisma.ScoreUpsertArgs['create'],
+    data: Prisma.ScoreUncheckedCreateInput,
   ): Promise<Score> {
     return this.prisma.score.upsert({
       where: {

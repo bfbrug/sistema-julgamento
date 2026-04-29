@@ -67,9 +67,8 @@ export class ScoringService {
       },
     })
 
-    await this.auditService.log({
+    await this.auditService.record({
       actorId: managerId,
-      actorType: 'USER',
       action: 'PARTICIPANT_ACTIVATED',
       entityType: 'PARTICIPANT',
       entityId: participantId,
@@ -107,9 +106,8 @@ export class ScoringService {
       status: 'IN_SCORING',
     })
 
-    await this.auditService.log({
+    await this.auditService.record({
       actorId: userId,
-      actorType: 'USER',
       action: 'JUDGE_STARTED_SCORING',
       entityType: 'PARTICIPANT',
       entityId: participantId,
@@ -168,9 +166,8 @@ export class ScoringService {
       }
     })
 
-    await this.auditService.log({
+    await this.auditService.record({
       actorId: userId,
-      actorType: 'USER',
       action: 'SCORES_REGISTERED',
       entityType: 'PARTICIPANT',
       entityId: participantId,
@@ -219,9 +216,8 @@ export class ScoringService {
       status: 'IN_REVIEW',
     })
 
-    await this.auditService.log({
+    await this.auditService.record({
       actorId: userId,
-      actorType: 'USER',
       action: 'JUDGE_CONFIRMED_SCORES',
       entityType: 'PARTICIPANT',
       entityId: participantId,
@@ -260,9 +256,8 @@ export class ScoringService {
       status: 'IN_SCORING',
     })
 
-    await this.auditService.log({
+    await this.auditService.record({
       actorId: userId,
-      actorType: 'USER',
       action: 'JUDGE_REVISED_SCORES',
       entityType: 'PARTICIPANT',
       entityId: participantId,
@@ -318,9 +313,8 @@ export class ScoringService {
       status: 'FINISHED',
     })
 
-    await this.auditService.log({
+    await this.auditService.record({
       actorId: userId,
-      actorType: 'USER',
       action: 'JUDGE_FINALIZED_SCORES',
       entityType: 'PARTICIPANT',
       entityId: participantId,
@@ -348,9 +342,8 @@ export class ScoringService {
       participantId,
     })
 
-    await this.auditService.log({
+    await this.auditService.record({
       actorId: managerId,
-      actorType: 'USER',
       action: 'PARTICIPANT_MARKED_ABSENT',
       entityType: 'PARTICIPANT',
       entityId: participantId,
@@ -400,14 +393,13 @@ export class ScoringService {
       })
       
       if (newState === 'FINISHED') {
-        await this.auditService.log({
+        await this.auditService.record({
           actorId: userId,
-          actorType: 'USER',
-          action: 'PARTICIPANT_FINISHED',
+              action: 'PARTICIPANT_FINISHED',
           entityType: 'PARTICIPANT',
           entityId: participantId,
           payload: { eventId: participant.eventId },
-        }, tx)
+        })
         return true
       }
     }
