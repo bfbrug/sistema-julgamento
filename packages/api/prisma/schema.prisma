@@ -98,10 +98,11 @@ model Judge {
   displayName String
   createdAt   DateTime @default(now())
 
-  user             User              @relation(fields: [userId], references: [id])
-  event            JudgingEvent      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user             User                      @relation(fields: [userId], references: [id])
+  event            JudgingEvent              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   judgeCategories  JudgeCategory[]
   scores           Score[]
+  sessions         JudgeParticipantSession[]
 
   @@unique([userId, eventId])
   @@index([eventId])
@@ -132,9 +133,10 @@ model Participant {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
-  event        JudgingEvent          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event        JudgingEvent              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   scores       Score[]
   stateHistory ParticipantStateLog[]
+  sessions     JudgeParticipantSession[]
 
   @@unique([eventId, presentationOrder])
   @@index([eventId])
@@ -154,6 +156,25 @@ model ParticipantStateLog {
 
   @@index([participantId])
   @@map("participant_state_logs")
+}
+
+model JudgeParticipantSession {
+  id            String             @id @default(uuid())
+  judgeId       String
+  participantId String
+  status        JudgeSessionStatus @default(NOT_STARTED)
+  startedAt     DateTime?
+  confirmedAt   DateTime?
+  finalizedAt   DateTime?
+  updatedAt     DateTime           @updatedAt
+
+  judge       Judge       @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([judgeId, participantId])
+  @@index([participantId])
+  @@index([status])
+  @@map("judge_participant_sessions")
 }
 
 model Score {
@@ -264,4 +285,11 @@ enum ParticipantState {
   REVIEW
   FINISHED
   ABSENT
+}
+
+enum JudgeSessionStatus {
+  NOT_STARTED
+  IN_SCORING
+  IN_REVIEW
+  FINISHED
 }
