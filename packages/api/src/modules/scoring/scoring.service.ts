@@ -7,6 +7,7 @@ import { PrismaService } from '../../config/prisma.service'
 import { RegisterScoresDto } from './dto/register-scores.dto'
 import { WS_EVENTS } from '@judging/shared'
 import { ScoringGateway } from './scoring.gateway'
+import { PublicLiveGateway } from './public-live.gateway'
 import { CalculationService } from '../calculation/calculation.service'
 
 @Injectable()
@@ -16,6 +17,7 @@ export class ScoringService {
     @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ScoringGateway) private readonly gateway: ScoringGateway,
+    @Inject(PublicLiveGateway) private readonly publicGateway: PublicLiveGateway,
     @Inject(CalculationService) private readonly calculationService: CalculationService,
   ) {}
 
@@ -99,6 +101,13 @@ export class ScoringService {
       judgeCount: judgesCount,
     })
 
+    this.publicGateway.emitToEvent(eventId, 'public_participant_activated', {
+      id: participant.id,
+      name: participant.name,
+      photoPath: participant.photoPath,
+      presentationOrder: participant.presentationOrder,
+    })
+
     await this.auditService.record({
       actorId: managerId,
       action: 'PARTICIPANT_ACTIVATED',
@@ -144,6 +153,10 @@ export class ScoringService {
     this.gateway.emitToEvent(eventId, WS_EVENTS.SCORING_STARTED, {
       eventId,
       participantId,
+    })
+
+    this.publicGateway.emitToEvent(eventId, 'public_participant_state_changed', {
+      state: 'SCORING',
     })
 
     await this.auditService.record({
@@ -241,6 +254,8 @@ export class ScoringService {
       status: 'IN_REVIEW',
     })
 
+    await this.emitPublicJudgeProgress(eventId, participantId)
+
     await this.auditService.record({
       actorId: userId,
       action: 'JUDGE_CONFIRMED_SCORES',
@@ -280,6 +295,8 @@ export class ScoringService {
       judgeDisplayName: judge?.displayName || 'Jurado',
       status: 'IN_SCORING',
     })
+
+    await this.emitPublicJudgeProgress(eventId, participantId)
 
     await this.auditService.record({
       actorId: userId,
@@ -327,6 +344,9 @@ export class ScoringService {
           eventId,
           participantId,
         })
+        this.publicGateway.emitToEvent(eventId, 'public_participant_state_changed', {
+          state: 'FINISHED',
+        })
       }
     }, { isolationLevel: 'Serializable' })
 
@@ -337,6 +357,8 @@ export class ScoringService {
       judgeDisplayName: judge?.displayName || 'Jurado',
       status: 'FINISHED',
     })
+
+    await this.emitPublicJudgeProgress(eventId, participantId)
 
     this.calculationService.invalidateCache(eventId)
 
@@ -367,6 +389,10 @@ export class ScoringService {
     this.gateway.emitToEvent(eventId, WS_EVENTS.PARTICIPANT_ABSENT, {
       eventId,
       participantId,
+    })
+
+    this.publicGateway.emitToEvent(eventId, 'public_participant_state_changed', {
+      state: 'ABSENT',
     })
 
     await this.auditService.record({
@@ -435,6 +461,17 @@ export class ScoringService {
       }
     }
     return false
+  }
+
+  private async emitPublicJudgeProgress(eventId: string, participantId: string) {
+    const totalJudges = await this.repository.getActiveJudgesCount(eventId)
+    const finished = await this.prisma.judgeParticipantSession.count({
+      where: { participantId, status: 'FINISHED' },
+    })
+    this.publicGateway.emitToEvent(eventId, 'public_judges_progress', {
+      finished,
+      total: totalJudges,
+    })
   }
 
   async getJudgeState(eventId: string, judgeId: string) {

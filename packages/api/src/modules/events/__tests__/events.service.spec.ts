@@ -4,6 +4,7 @@ import { EventsService } from '../events.service'
 import { EventsRepository } from '../events.repository'
 import { AuditService } from '../../audit/audit.service'
 import { ScoringGateway } from '../../scoring/scoring.gateway'
+import { PublicLiveGateway } from '../../scoring/public-live.gateway'
 import { EventStatus, CalculationRule } from '@prisma/client'
 
 const makeEvent = (overrides: Record<string, unknown> = {}) => ({
@@ -53,6 +54,7 @@ describe('EventsService', () => {
 
     auditService = { record: vi.fn() }
     const scoringGateway = { emitToEvent: vi.fn() }
+    const publicLiveGateway = { emitToEvent: vi.fn() }
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,6 +62,7 @@ describe('EventsService', () => {
         { provide: EventsRepository, useValue: repository },
         { provide: AuditService, useValue: auditService },
         { provide: ScoringGateway, useValue: scoringGateway },
+        { provide: PublicLiveGateway, useValue: publicLiveGateway },
       ],
     }).compile()
 
