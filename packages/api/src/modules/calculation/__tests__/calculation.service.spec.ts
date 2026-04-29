@@ -3,6 +3,7 @@ import { CalculationService } from '../calculation.service'
 import { CalculationRepository } from '../calculation.repository'
 import { R1Strategy } from '../strategies/r1-strategy'
 import { R2Strategy } from '../strategies/r2-strategy'
+import { TiebreakerService } from '../tiebreaker/tiebreaker.service'
 import { Prisma } from '@prisma/client'
 
 describe('CalculationService', () => {
@@ -14,6 +15,8 @@ describe('CalculationService', () => {
     getJudgesActiveInEvent: vi.fn(),
     getEligibleParticipants: vi.fn(),
     getExcludedParticipants: vi.fn(),
+    getTiebreakerConfig: vi.fn(),
+    getCategoryNamesMap: vi.fn(),
   }
 
   beforeEach(async () => {
@@ -26,6 +29,7 @@ describe('CalculationService', () => {
         },
         R1Strategy,
         R2Strategy,
+        TiebreakerService,
       ],
     }).compile()
 
@@ -50,6 +54,8 @@ describe('CalculationService', () => {
     ])
 
     mockRepository.getExcludedParticipants.mockResolvedValue([])
+    mockRepository.getTiebreakerConfig.mockResolvedValue(null)
+    mockRepository.getCategoryNamesMap.mockResolvedValue(new Map([['c1', 'Cat 1']]))
   })
 
   it('should be defined', () => {
@@ -183,5 +189,90 @@ describe('CalculationService', () => {
     })
 
     await expect(service.calculate('event-1', 'manager-1')).rejects.toThrow('Regra de cálculo não suportada: R3')
+  })
+
+  it('should resolve tie when tiebreaker config is provided', async () => {
+    mockRepository.getEligibleParticipants.mockResolvedValue([
+      {
+        id: 'p1',
+        name: 'P1',
+        presentationOrder: 1,
+        scores: [{ judgeId: 'j1', categoryId: 'c1', value: new Prisma.Decimal(10) }],
+      },
+      {
+        id: 'p2',
+        name: 'P2',
+        presentationOrder: 2,
+        scores: [{ judgeId: 'j1', categoryId: 'c1', value: new Prisma.Decimal(10) }],
+      },
+    ])
+    
+    // p1 has better category score (though here they have same total, tiebreaker will look at category)
+    // Actually in this mock, both will have 10 in c1.
+    // Let's make them different in the scores.
+    mockRepository.getEligibleParticipants.mockResolvedValue([
+      {
+        id: 'p1',
+        name: 'P1',
+        presentationOrder: 1,
+        scores: [
+          { judgeId: 'j1', categoryId: 'c1', value: new Prisma.Decimal(10) },
+          { judgeId: 'j1', categoryId: 'c2', value: new Prisma.Decimal(8) },
+        ],
+      },
+      {
+        id: 'p2',
+        name: 'P2',
+        presentationOrder: 2,
+        scores: [
+          { judgeId: 'j1', categoryId: 'c1', value: new Prisma.Decimal(8) },
+          { judgeId: 'j1', categoryId: 'c2', value: new Prisma.Decimal(10) },
+        ],
+      },
+    ])
+    // Both sum to 18, so finalScoreRaw will be same (9.0 if 2 categories)
+    
+    mockRepository.getTiebreakerConfig.mockResolvedValue({
+      firstCategoryId: 'c1',
+      secondCategoryId: null,
+    })
+    mockRepository.getCategoryNamesMap.mockResolvedValue(new Map([
+      ['c1', 'Cat 1'],
+      ['c2', 'Cat 2'],
+    ]))
+
+    const result = await service.calculate('event-1', 'manager-1')
+    
+    expect(result.data.rankings[0]!.participant.id).toBe('p1') // better in c1
+    expect(result.data.rankings[0]!.position).toBe(1)
+    expect(result.data.rankings[1]!.participant.id).toBe('p2')
+    expect(result.data.rankings[1]!.position).toBe(2)
+    expect(result.data.rankings[0]!.tiebreaker?.resolvedBy).toBe('FIRST_CATEGORY')
+  })
+
+  it('should return top-N with boundary expansion', async () => {
+    mockRepository.getEligibleParticipants.mockResolvedValue([
+      { id: 'p1', name: 'P1', presentationOrder: 1, scores: [{ judgeId: 'j1', categoryId: 'c1', value: new Prisma.Decimal(10) }] },
+      { id: 'p2', name: 'P2', presentationOrder: 2, scores: [{ judgeId: 'j1', categoryId: 'c1', value: new Prisma.Decimal(9) }] },
+      { id: 'p3', name: 'P3', presentationOrder: 3, scores: [{ judgeId: 'j1', categoryId: 'c1', value: new Prisma.Decimal(8) }] },
+      { id: 'p4', name: 'P4', presentationOrder: 4, scores: [{ judgeId: 'j1', categoryId: 'c1', value: new Prisma.Decimal(8) }] },
+      { id: 'p5', name: 'P5', presentationOrder: 5, scores: [{ judgeId: 'j1', categoryId: 'c1', value: new Prisma.Decimal(7) }] },
+    ])
+
+    // Top 3 should include p1, p2, p3 and p4 (since p3 and p4 tie for 3rd)
+    const result = await service.getTopN('event-1', 'manager-1', 3)
+    
+    expect(result.data.rankings).toHaveLength(4)
+    expect(result.data.rankings.map(r => r.participant.id)).toEqual(['p1', 'p2', 'p3', 'p4'])
+  })
+
+  it('should return empty rankings for getTopN with n=0 or empty results', async () => {
+    mockRepository.getEligibleParticipants.mockResolvedValue([])
+    const result = await service.getTopN('event-1', 'manager-1', 5)
+    expect(result.data.rankings).toHaveLength(0)
+    
+    mockRepository.getEligibleParticipants.mockResolvedValue([{ id: 'p1', name: 'P1', presentationOrder: 1, scores: [] }])
+    const result2 = await service.getTopN('event-1', 'manager-1', 0)
+    expect(result2.data.rankings).toHaveLength(0)
   })
 })
