@@ -285,6 +285,7 @@ enum ReportType {
   TOP_N
   GENERAL
   DETAILED_BY_JUDGE
+  CERTIFICATES
 }
 
 enum ReportJobStatus {

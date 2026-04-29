@@ -1,7 +1,7 @@
 export interface CertificateConfig {
   id: string
   eventId: string
-  backgroundPath: string
+  backgroundPath: string | null
   createdAt: string
   updatedAt: string
 }

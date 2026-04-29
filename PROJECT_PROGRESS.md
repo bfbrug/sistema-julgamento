@@ -6,9 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 17 de 20 |
+| **Prompts concluídos** | 18 de 20 |
 | **Fase atual** | 5 — Relatórios e certificados |
-| **Próximo prompt** | P18 — Módulo certificates |
+| **Próximo prompt** | P19 — Upload de imagens (background, assinatura) |
 | **Última atualização** | 2026-04-29 |
 
 ---
@@ -51,7 +51,7 @@
 - [x] **P15** — UI do jurado
 - [x] **P16** — Painel ao vivo público
 - [x] **P17** — Geração de PDF com Puppeteer
-- [ ] **P18** — Módulo de certificados
+- [x] **P18** — Módulo de certificados
 - [ ] **P19** — Upload de imagens (background, assinatura)
 
 ### Fase 6 — Qualidade e produção
@@ -83,6 +83,7 @@
 | P15 | 2026-04-29 | feature/p15-ui-jurado | 87% | Fluxo completo do jurado: preview → scoring → review → finished; WebSocket sync; drafts sessionStorage; cobertura de hooks existentes aumentada |
 | P16 | 2026-04-29 | feature/p16-painel-ao-vivo | 85%+ | Painel de visualização pública em tempo real; WebSocket sync |
 | P17 | 2026-04-29 | feature/p17-modulo-reports | 80%+ | Módulo reports; Puppeteer PDF generation, BullMQ worker |
+| P18 | 2026-04-29 | feature/p18-modulo-certificates | 81% API / 81% Web | CRUD config, upload background/3 assinaturas, texto com placeholders, geração lote BullMQ, UI aba Certificados |
 
 
 ### 2026-04-29 — Tag v0.5.0 — Fim da Fase 5 (parcial)
