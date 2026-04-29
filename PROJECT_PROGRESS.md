@@ -42,7 +42,7 @@
 ### Fase 4 — Tempo real
 
 - [x] **P11** — Scoring gateway com WebSocket
-- [ ] **P12** — Frontend de julgamento em tempo real
+- [x] **P12** — Motor de cálculo (R1 e R2)
 - [ ] **P13** — Painel do organizador
 
 ### Fase 5 — Relatórios e certificados
@@ -75,6 +75,7 @@
 | P09 | 2026-04-28 | feature/p09-modulo-judges | statements 88.8%, branches 87.64%, functions 84.97%, lines 88.8% | CRUD de jurados aninhado em events/:eventId/judges; matriz Jurado×Categoria com GET/PUT/POST validate; validador puro (5 RNs); R2 com cobertura insuficiente gera warning (fallback R1); bloqueio de cell com scores; atomicidade via $transaction; 218 testes passando |
 | P10 | 2026-04-29 | feature/p10-modulo-participants | statements 90%, branches 90%, functions 92%, lines 90% | CRUD aninhado; reorder atômico no banco; upload de foto local com validação de magic bytes (`file-type`); proteção contra path traversal; mark-absent isolando logicamente de WAITING; 271 testes passando |
 | P11 | 2026-04-29 | feature/p11-scoring-gateway | Unit 90%, Service tests 44% (overall 6.57%) | Implementação do Scoring Gateway (WS) + Máquina de Estados; Tabela JudgeParticipantSession; Transação serializable com lock FOR UPDATE; Auditoria de todas as ações de scoring. |
+| P12 | 2026-04-29 | feature/p12-calculation-engine | statements 100%, branches 98.91%, functions 100%, lines 100% | R1 e R2 strategies com fallback R1; CalculationService isolado com cache em memória (TTL 30s) e invalidação no finalizeScores; Helpers numéricos Kahan sum e banker's rounding implementados. |
 
 ### 2026-04-28 — Tag v0.2.0 — Fim da Fase 2
 
