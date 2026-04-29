@@ -52,12 +52,13 @@ export class AuthService {
       payload = this.jwtService.verify<JwtPayload>(refreshToken, {
         secret: env.JWT_REFRESH_SECRET,
       });
-    } catch (e: any) {
-      if (e.name === 'TokenExpiredError') {
+    } catch (e: unknown) {
+      if (typeof e === 'object' && e !== null && 'name' in e && e.name === 'TokenExpiredError') {
         throw new UnauthorizedException({ code: 'TOKEN_EXPIRED', message: 'Token expirado' });
       }
       throw new UnauthorizedException({ code: 'INVALID_TOKEN', message: 'Token inválido' });
     }
+
 
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
 
@@ -112,13 +113,14 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: env.JWT_ACCESS_SECRET,
-      expiresIn: env.JWT_ACCESS_EXPIRES_IN as any,
+      expiresIn: env.JWT_ACCESS_EXPIRES_IN as unknown as number,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: env.JWT_REFRESH_SECRET,
-      expiresIn: env.JWT_REFRESH_EXPIRES_IN as any,
+      expiresIn: env.JWT_REFRESH_EXPIRES_IN as unknown as number,
     });
+
 
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
 
