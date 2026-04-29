@@ -6,9 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 7 de 20 |
+| **Prompts concluídos** | 8 de 20 |
 | **Fase atual** | 3 — CRUDs do gestor |
-| **Próximo prompt** | P07 — Módulo de participantes |
+| **Próximo prompt** | P08 — Módulo categories |
 | **Última atualização** | 2026-04-28 |
 
 ---
@@ -33,10 +33,10 @@
 
 ### Fase 3 — Julgamento
 
-- [ ] **P07** — Módulo de participantes
-- [ ] **P08** — Módulo de jurados
-- [ ] **P09** — Registro de notas
-- [ ] **P10** — Apuração e resultados
+- [x] **P07** — Módulo events (CRUD de evento + configurações)
+- [ ] **P08** — Módulo categories
+- [ ] **P09** — Módulo judges
+- [ ] **P10** — Módulo participants
 
 
 ### Fase 4 — Tempo real
@@ -70,6 +70,7 @@
 | P04 | 2026-04-28 | feature/p04-modulo-users | statements 81.95%, branches 85.31%, functions 84.5%, lines 81.95% | CRUD com roles GESTOR e JURADO; bypass soft delete com `undefined`; @Inject() mantido para SWC |
 | P05 | 2026-04-28 | feature/p05-schema-prisma | statements 82.18%, branches 84.86%, functions 85.13%, lines 82.18% | 12 novos modelos; removido JUDGE_FINISHED do enum; seeder exportando main para uso nos testes |
 | P06 | 2026-04-28 | feature/p06-pacote-shared | statements 82.2%, branches 80%, functions 80%, lines 82.2% | Tipos e schemas Zod compartilhados; reexports por sub-path; linting e vitest globals configurados |
+| P07 | 2026-04-28 | feature/p07-modulo-events | 141 testes passando; thresholds atingidos | CRUD de eventos; máquina de estados DRAFT→REGISTERING→IN_PROGRESS→FINISHED; tiebreaker e certificate-text; isolamento por gestor (404 em vez de 403); DTOs excluídos da cobertura (declarações puras) |
 
 ### 2026-04-28 — Tag v0.2.0 — Fim da Fase 2
 
@@ -95,3 +96,6 @@
 | P06 | Uso de sub-paths no `exports` do shared | export único no index.ts | ✅ |
 | P06 | Vitest globals injetados via `tsconfig` e `eslint.config.mjs` | imports manuais em cada arquivo | ✅ |
 | P06 | Substituição de `any` por `unknown` em guards e services da API | manter `any` e suprimir lint | ✅ |
+| P07 | DTOs excluídos da cobertura do Vitest (`**/dto/**`) | testes de validação de DTO (desnecessário para declarações puras) | ✅ |
+| P07 | Isolamento por gestor retorna 404 (não 403) para eventos de outros gestores | 403 Forbidden | ✅ |
+| P07 | EventStateMachine como classe pura sem injeção de dependência | injetar como provider NestJS | ✅ |
