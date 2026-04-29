@@ -10,9 +10,9 @@ import { loginSchema, type LoginDto, type LoginResponse } from '@judging/shared'
 import { apiClient } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const setSession = useAuthStore((state) => state.setSession)
@@ -88,4 +88,10 @@ export default function LoginPage() {
   )
 }
 
-
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  )
+}
