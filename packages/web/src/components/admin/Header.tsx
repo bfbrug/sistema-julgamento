@@ -2,9 +2,8 @@
 
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'next/navigation'
-import { LogOut, User, Key, ChevronDown } from 'lucide-react'
+import { LogOut, Key, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
-import { Button } from '../ui/Button'
 
 export function Header() {
   const { user, clearSession } = useAuthStore()
