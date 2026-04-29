@@ -1,4 +1,5 @@
 import { Injectable, Inject, ConflictException, UnprocessableEntityException, ForbiddenException, NotFoundException } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
 import { ScoringRepository } from './scoring.repository'
 import { computeParticipantState } from './state-machine/participant-state.machine'
 import { AuditService } from '../audit/audit.service'
@@ -18,11 +19,12 @@ export class ScoringService {
 
   async activateParticipant(eventId: string, participantId: string, managerId: string) {
     const active = await this.repository.findActiveParticipant(eventId)
-    if (active && active.id !== participantId) {
+
+    if (active) {
       throw new ConflictException({
-        code: 'ANOTHER_PARTICIPANT_ACTIVE',
-        message: 'Já existe outro participante ativo neste evento',
-        details: { activeId: active.id },
+        code: 'PARTICIPANT_ALREADY_ACTIVE',
+        message: 'Já existe um participante ativo no evento',
+        activeParticipantId: active.id,
       })
     }
 
@@ -31,40 +33,60 @@ export class ScoringService {
       throw new NotFoundException('Participante não encontrado')
     }
 
-    if (participant.currentState === 'FINISHED' || participant.currentState === 'ABSENT') {
-      throw new UnprocessableEntityException('Participante já finalizou ou está ausente')
+    if (participant.currentState !== 'WAITING') {
+      throw new UnprocessableEntityException({
+        code: 'INVALID_PARTICIPANT_STATE',
+        message: `Participante está em estado ${participant.currentState}, não pode ser ativado`,
+      })
     }
 
-    const judges = await this.prisma.judge.findMany({
-      where: {
-        eventId,
-        judgeCategories: { some: {} },
-      },
-      select: { id: true },
-    })
+    if (participant.isAbsent) {
+      throw new UnprocessableEntityException({
+        code: 'PARTICIPANT_IS_ABSENT',
+        message: 'Participante está marcado como ausente',
+      })
+    }
+
+    const judges = await this.repository.getActiveJudges(eventId)
 
     await this.prisma.$transaction(async (tx) => {
-      await this.repository.updateParticipantState(participantId, 'PREVIEW', managerId, tx)
-      
-      const sessions = judges.map((j) => ({
-        judgeId: j.id,
-        participantId,
-        status: 'NOT_STARTED' as const,
-      }))
-
-      await tx.judgeParticipantSession.createMany({
-        data: sessions,
-        skipDuplicates: true,
+      await tx.participant.update({
+        where: { id: participantId },
+        data: { currentState: 'PREVIEW' },
       })
+
+      await tx.participantStateLog.create({
+        data: {
+          participantId,
+          state: 'PREVIEW',
+          changedByUserId: managerId,
+        },
+      })
+
+      for (const judge of judges) {
+        await tx.judgeParticipantSession.upsert({
+          where: {
+            judgeId_participantId: {
+              judgeId: judge.id,
+              participantId,
+            },
+          },
+          create: {
+            judgeId: judge.id,
+            participantId,
+            eventId,
+            status: 'NOT_STARTED',
+          },
+          update: {},
+        })
+      }
     })
 
     this.gateway.emitToEvent(eventId, WS_EVENTS.PARTICIPANT_ACTIVATED, {
       eventId,
-      participant: {
-        id: participant.id,
-        name: participant.name,
-        presentationOrder: participant.presentationOrder,
-      },
+      participantId,
+      participantName: participant.name,
+      judgeCount: judges.length,
     })
 
     await this.auditService.record({
@@ -76,94 +98,94 @@ export class ScoringService {
     })
   }
 
-  async startScoring(eventId: string, participantId: string, judgeId: string, userId: string) {
-    const session = await this.repository.findSession(judgeId, participantId)
-    if (!session) throw new NotFoundException('Sessão não encontrada')
-    if (session.status !== 'NOT_STARTED') return // Já começou
+  async startScoring(eventId: string, participantId: string, managerId: string) {
+    const participant = await this.repository.findParticipantById(participantId)
+    if (!participant || participant.eventId !== eventId) {
+      throw new NotFoundException('Participante não encontrado')
+    }
 
-    const judge = await this.prisma.judge.findUnique({
-      where: { id: judgeId },
-      select: { displayName: true },
-    })
+    if (participant.currentState !== 'PREVIEW') {
+      throw new UnprocessableEntityException({
+        code: 'INVALID_PARTICIPANT_STATE',
+        message: `Participante está em estado ${participant.currentState}, não pode iniciar scoring`,
+      })
+    }
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.judgeParticipantSession.update({
-        where: { id: session.id },
+      await tx.participant.update({
+        where: { id: participantId },
+        data: { currentState: 'SCORING' },
+      })
+
+      await tx.participantStateLog.create({
         data: {
-          status: 'IN_SCORING',
-          startedAt: new Date(),
+          participantId,
+          state: 'SCORING',
+          changedByUserId: managerId,
         },
       })
 
-      await this.recomputeColetiveState(participantId, userId, tx)
+      await tx.judgeParticipantSession.updateMany({
+        where: { participantId, status: 'NOT_STARTED' },
+        data: { status: 'IN_SCORING', startedAt: new Date() },
+      })
     })
 
-    this.gateway.emitToEvent(eventId, WS_EVENTS.JUDGE_STARTED, {
+    this.gateway.emitToEvent(eventId, WS_EVENTS.SCORING_STARTED, {
       eventId,
       participantId,
-      judgeId,
-      judgeDisplayName: judge?.displayName || 'Jurado',
-      status: 'IN_SCORING',
     })
 
     await this.auditService.record({
-      actorId: userId,
-      action: 'JUDGE_STARTED_SCORING',
+      actorId: managerId,
+      action: 'SCORING_STARTED',
       entityType: 'PARTICIPANT',
       entityId: participantId,
-      payload: { judgeId },
+      payload: { eventId },
     })
   }
 
-  async registerScores(
-    eventId: string,
-    participantId: string,
-    judgeId: string,
-    userId: string,
-    dto: RegisterScoresDto,
-  ) {
+  async registerScores(eventId: string, participantId: string, judgeId: string, dto: RegisterScoresDto, userId: string) {
     const session = await this.repository.findSession(judgeId, participantId)
-    if (!session || session.status !== 'IN_SCORING') {
-      throw new UnprocessableEntityException('Sessão não está em fase de lançamento de notas')
+    if (!session || !['IN_SCORING', 'IN_REVIEW'].includes(session.status)) {
+      throw new ForbiddenException('Sessão de scoring não está ativa')
     }
-
-    const event = await this.prisma.judgingEvent.findUnique({
-      where: { id: eventId },
-      select: { scoreMin: true, scoreMax: true },
-    })
 
     const judgeCategories = await this.repository.getJudgeCategories(judgeId)
     const allowedCategoryIds = new Set(judgeCategories.map((jc) => jc.categoryId))
 
-    for (const item of dto.scores) {
-      if (!allowedCategoryIds.has(item.categoryId)) {
-        throw new ForbiddenException(`Jurado não avalia a categoria ${item.categoryId}`)
-      }
-      if (item.value < Number(event!.scoreMin) || item.value > Number(event!.scoreMax)) {
-        throw new UnprocessableEntityException(`Nota ${item.value} fora do range permitido`)
+    for (const score of dto.scores) {
+      if (!allowedCategoryIds.has(score.categoryId)) {
+        throw new ForbiddenException(`Categoria ${score.categoryId} não atribuída a este jurado`)
       }
     }
 
     await this.prisma.$transaction(async (tx) => {
-      for (const item of dto.scores) {
+      for (const score of dto.scores) {
         await tx.score.upsert({
           where: {
-            participantId_judgeId_categoryId: {
-              participantId,
+            judgeId_participantId_categoryId: {
               judgeId,
-              categoryId: item.categoryId,
+              participantId,
+              categoryId: score.categoryId,
             },
           },
-          update: { value: item.value, isFinalized: false },
           create: {
-            participantId,
             judgeId,
-            categoryId: item.categoryId,
-            value: item.value,
-            isFinalized: false,
+            participantId,
+            categoryId: score.categoryId,
+            eventId,
+            value: score.value,
           },
+          update: { value: score.value },
         })
       }
+    })
+
+    this.gateway.emitToEvent(eventId, WS_EVENTS.SCORES_UPDATED, {
+      eventId,
+      participantId,
+      judgeId,
     })
 
     await this.auditService.record({
@@ -178,7 +200,7 @@ export class ScoringService {
   async confirmScores(eventId: string, participantId: string, judgeId: string, userId: string) {
     const session = await this.repository.findSession(judgeId, participantId)
     if (!session || session.status !== 'IN_SCORING') {
-      throw new UnprocessableEntityException('Sessão não está em fase de lançamento de notas')
+      throw new UnprocessableEntityException('Sessão não está em fase de scoring')
     }
 
     const judgeCategories = await this.repository.getJudgeCategories(judgeId)
@@ -186,8 +208,8 @@ export class ScoringService {
 
     if (scores.length < judgeCategories.length) {
       throw new UnprocessableEntityException({
-        code: 'MISSING_SCORES_FOR_CONFIRMATION',
-        message: 'Ainda faltam notas a serem lançadas',
+        code: 'INCOMPLETE_SCORES',
+        message: 'Todas as categorias devem ser pontuadas antes de confirmar',
       })
     }
 
@@ -395,7 +417,7 @@ export class ScoringService {
       if (newState === 'FINISHED') {
         await this.auditService.record({
           actorId: userId,
-              action: 'PARTICIPANT_FINISHED',
+          action: 'PARTICIPANT_FINISHED',
           entityType: 'PARTICIPANT',
           entityId: participantId,
           payload: { eventId: participant.eventId },
