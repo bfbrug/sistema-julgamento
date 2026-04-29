@@ -13,7 +13,7 @@ describe('ScoringService', () => {
   let gateway: ScoringGateway
 
   const mockAuditService = {
-    log: vi.fn(),
+    record: vi.fn(),
   }
 
   const mockGateway = {

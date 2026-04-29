@@ -35,13 +35,11 @@ describe('ScoringGateway', () => {
       ],
     }).compile()
 
-    app = moduleFixture.createNestApplication()
-    await app.init()
-    gateway = app.get<ScoringGateway>(ScoringGateway)
+    gateway = moduleFixture.get<ScoringGateway>(ScoringGateway)
   })
 
   afterEach(async () => {
-    await app.close()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
