@@ -17,6 +17,7 @@ import { EventStateMachine } from './state-machine/event-state.machine'
 import { EventStatus, CalculationRule } from '@prisma/client'
 import { plainToInstance } from 'class-transformer'
 import { ScoringGateway } from '../scoring/scoring.gateway'
+import { PublicLiveGateway } from '../scoring/public-live.gateway'
 
 const KNOWN_PLACEHOLDERS = ['{{participante}}', '{{evento}}', '{{data}}', '{{local}}', '{{organizador}}']
 
@@ -52,6 +53,7 @@ export class EventsService {
     @Inject(EventsRepository) private readonly repository: EventsRepository,
     @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(ScoringGateway) private readonly scoringGateway: ScoringGateway,
+    @Inject(PublicLiveGateway) private readonly publicGateway: PublicLiveGateway,
   ) {}
 
   async create(dto: CreateEventDto, managerId: string): Promise<EventResponseDto> {
@@ -226,6 +228,10 @@ export class EventsService {
         eventId: id,
         status: EventStatus.FINISHED,
       })
+      this.publicGateway.emitToEvent(id, 'public_event_state_changed', {
+        status: EventStatus.FINISHED,
+      })
+      this.publicGateway.emitToEvent(id, 'public_event_finished', {})
     }
 
     await this.auditService.record({
