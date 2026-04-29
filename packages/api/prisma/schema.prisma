@@ -68,6 +68,7 @@ model JudgingEvent {
   certificateConfig CertificateConfig?
   tiebreakerConfig  TiebreakerConfig?
   certificateText   String?
+  reportJobs        ReportJob[]
 
   @@index([managerId])
   @@index([status])
@@ -259,6 +260,38 @@ model AuditLog {
   @@index([createdAt])
   @@index([action])
   @@map("audit_logs")
+}
+
+model ReportJob {
+  id               String          @id @default(uuid())
+  eventId          String
+  type             ReportType
+  status           ReportJobStatus @default(QUEUED)
+  progress         Int             @default(0)
+  filePath         String?
+  verificationCode String?
+  error            String?
+  requestedBy      String
+  createdAt        DateTime        @default(now())
+  completedAt      DateTime?
+
+  event JudgingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, type, status])
+  @@map("report_jobs")
+}
+
+enum ReportType {
+  TOP_N
+  GENERAL
+  DETAILED_BY_JUDGE
+}
+
+enum ReportJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 enum UserRole {
