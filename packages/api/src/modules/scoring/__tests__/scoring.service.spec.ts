@@ -4,6 +4,7 @@ import { ScoringRepository } from '../scoring.repository'
 import { AuditService } from '../../audit/audit.service'
 import { PrismaService } from '../../../config/prisma.service'
 import { ScoringGateway } from '../scoring.gateway'
+import { PublicLiveGateway } from '../public-live.gateway'
 import { ConflictException, UnprocessableEntityException } from '@nestjs/common'
 import { CalculationService } from '../../calculation/calculation.service'
 
@@ -18,6 +19,10 @@ describe('ScoringService', () => {
   }
 
   const mockGateway = {
+    emitToEvent: vi.fn(),
+  }
+
+  const mockPublicGateway = {
     emitToEvent: vi.fn(),
   }
 
@@ -78,6 +83,7 @@ describe('ScoringService', () => {
               updateMany: vi.fn(),
               findMany: vi.fn(),
               upsert: vi.fn(),
+              count: vi.fn(),
             },
             participant: { findUnique: vi.fn(), update: vi.fn() },
             participantStateLog: { create: vi.fn() },
@@ -88,6 +94,7 @@ describe('ScoringService', () => {
           },
         },
         { provide: ScoringGateway, useValue: mockGateway },
+        { provide: PublicLiveGateway, useValue: mockPublicGateway },
         { provide: CalculationService, useValue: { invalidateCache: vi.fn() } },
       ],
     }).compile()
