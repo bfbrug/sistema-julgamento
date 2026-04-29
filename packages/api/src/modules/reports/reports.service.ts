@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException, UnprocessableEntityException } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
-import { ReportType, EventStatus, ReportJobStatus } from '@prisma/client'
+import { ReportType, EventStatus } from '@prisma/client'
 import { ReportsRepository } from './reports.repository'
 import { AuditService } from '../audit/audit.service'
 import { IStorageService, STORAGE_SERVICE } from '../storage/storage.service.interface'

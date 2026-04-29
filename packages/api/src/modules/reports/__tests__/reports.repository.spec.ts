@@ -5,7 +5,6 @@ import { ReportJobStatus, ReportType } from '@prisma/client'
 
 describe('ReportsRepository', () => {
   let repository: ReportsRepository
-  let prisma: PrismaService
 
   const mockPrisma = {
     reportJob: {
@@ -39,7 +38,6 @@ describe('ReportsRepository', () => {
     }).compile()
 
     repository = module.get<ReportsRepository>(ReportsRepository)
-    prisma = module.get<PrismaService>(PrismaService)
   })
 
   it('create() should call prisma.reportJob.create', async () => {
