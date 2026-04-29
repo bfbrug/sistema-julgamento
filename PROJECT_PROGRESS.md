@@ -83,7 +83,7 @@
 | P15 | 2026-04-29 | feature/p15-ui-jurado | 87% | Fluxo completo do jurado: preview → scoring → review → finished; WebSocket sync; drafts sessionStorage; cobertura de hooks existentes aumentada |
 | P16 | 2026-04-29 | feature/p16-painel-ao-vivo | 85%+ | Painel de visualização pública em tempo real; WebSocket sync |
 | P17 | 2026-04-29 | feature/p17-modulo-reports | 80%+ | Módulo reports; Puppeteer PDF generation, BullMQ worker |
-| P18 | 2026-04-29 | feature/p18-modulo-certificates | 81% API / 81% Web | CRUD config, upload background/3 assinaturas, texto com placeholders, geração lote BullMQ, UI aba Certificados |
+| P18 | 2026-04-29 | feature/p18-modulo-certificates (#18) | 81% API / 81% Web | CRUD config, upload background/3 assinaturas, texto com placeholders, geração lote BullMQ, UI aba Certificados |
 
 
 ### 2026-04-29 — Tag v0.5.0 — Fim da Fase 5 (parcial)
