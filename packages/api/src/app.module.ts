@@ -16,6 +16,7 @@ import { RolesGuard } from './modules/auth/guards/roles.guard'
 import { CategoriesModule } from './modules/categories/categories.module'
 import { JudgesModule } from './modules/judges/judges.module'
 import { ParticipantsModule } from './modules/participants/participants.module'
+import { ScoringModule } from './modules/scoring/scoring.module'
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { ParticipantsModule } from './modules/participants/participants.module'
     CategoriesModule,
     JudgesModule,
     ParticipantsModule,
+    ScoringModule,
     UsersModule,
     EventsModule,
     ThrottlerModule.forRoot([

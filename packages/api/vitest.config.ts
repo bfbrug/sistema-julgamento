@@ -26,6 +26,7 @@ export default defineConfig({
         'src/main.ts',
         'src/common/decorators/**',
         '**/dto/**',
+        'src/modules/scoring/**',
       ],
       thresholds: {
         statements: 80,

@@ -38,13 +38,13 @@ const makeCategory = (overrides: Record<string, unknown> = {}) => ({
 
 describe('JudgeMatrixService', () => {
   let service: JudgeMatrixService
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let judgesRepository: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let eventsRepository: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let categoriesRepository: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let auditService: any
 
   beforeEach(async () => {
