@@ -6,9 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 8 de 20 |
+| **Prompts concluídos** | 9 de 20 |
 | **Fase atual** | 3 — CRUDs do gestor |
-| **Próximo prompt** | P08 — Módulo categories |
+| **Próximo prompt** | P09 — Módulo judges |
 | **Última atualização** | 2026-04-28 |
 
 ---
@@ -34,7 +34,7 @@
 ### Fase 3 — Julgamento
 
 - [x] **P07** — Módulo events (CRUD de evento + configurações)
-- [ ] **P08** — Módulo categories
+- [x] **P08** — Módulo categories
 - [ ] **P09** — Módulo judges
 - [ ] **P10** — Módulo participants
 
@@ -71,6 +71,7 @@
 | P05 | 2026-04-28 | feature/p05-schema-prisma | statements 82.18%, branches 84.86%, functions 85.13%, lines 82.18% | 12 novos modelos; removido JUDGE_FINISHED do enum; seeder exportando main para uso nos testes |
 | P06 | 2026-04-28 | feature/p06-pacote-shared | statements 82.2%, branches 80%, functions 80%, lines 82.2% | Tipos e schemas Zod compartilhados; reexports por sub-path; linting e vitest globals configurados |
 | P07 | 2026-04-28 | feature/p07-modulo-events | 141 testes passando; thresholds atingidos | CRUD de eventos; máquina de estados DRAFT→REGISTERING→IN_PROGRESS→FINISHED; tiebreaker e certificate-text; isolamento por gestor (404 em vez de 403); DTOs excluídos da cobertura (declarações puras) |
+| P08 | 2026-04-28 | feature/p08-modulo-categories | statements 85.63%, branches 85.18%, functions 80.74%, lines 85.63% | CRUD de categorias aninhado em events/:eventId/categories; reorder atômico com PATCH /reorder declarado antes de PATCH /:id (conflito Fastify); compactação de displayOrder após remoção; bloqueio em IN_PROGRESS e FINISHED; proteção CATEGORY_HAS_SCORES e CATEGORY_REFERENCED_BY_TIEBREAKER; 163 testes passando |
 
 ### 2026-04-28 — Tag v0.2.0 — Fim da Fase 2
 
