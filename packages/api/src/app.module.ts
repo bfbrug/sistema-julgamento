@@ -14,6 +14,7 @@ import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
 import { RolesGuard } from './modules/auth/guards/roles.guard'
 import { CategoriesModule } from './modules/categories/categories.module'
+import { JudgesModule } from './modules/judges/judges.module'
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { CategoriesModule } from './modules/categories/categories.module'
     AuditModule,
     EventsModule,
     CategoriesModule,
+    JudgesModule,
     UsersModule,
     EventsModule,
     ThrottlerModule.forRoot([

@@ -9,6 +9,6 @@ import { AuditModule } from '../audit/audit.module'
   imports: [EventsModule, AuditModule],
   controllers: [CategoriesController],
   providers: [CategoriesService, CategoriesRepository],
-  exports: [CategoriesService],
+  exports: [CategoriesService, CategoriesRepository],
 })
 export class CategoriesModule {}
