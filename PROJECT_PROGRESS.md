@@ -6,9 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 12 de 20 |
-| **Fase atual** | 4 — Tempo real |
-| **Próximo prompt** | P12 — Frontend de julgamento em tempo real |
+| **Prompts concluídos** | 14 de 20 |
+| **Fase atual** | 5 — Relatórios e certificados |
+| **Próximo prompt** | P14 — Geração de PDF com Puppeteer |
 | **Última atualização** | 2026-04-29 |
 
 ---
@@ -39,11 +39,11 @@
 - [x] **P10** — Módulo participants
 
 
-### Fase 4 — Tempo real
+### Fase 4 — Motor de julgamento
 
 - [x] **P11** — Scoring gateway com WebSocket
 - [x] **P12** — Motor de cálculo (R1 e R2)
-- [ ] **P13** — Painel do organizador
+- [x] **P13** — Cascata de desempate
 
 ### Fase 5 — Relatórios e certificados
 
@@ -76,7 +76,9 @@
 | P10 | 2026-04-29 | feature/p10-modulo-participants | statements 90%, branches 90%, functions 92%, lines 90% | CRUD aninhado; reorder atômico no banco; upload de foto local com validação de magic bytes (`file-type`); proteção contra path traversal; mark-absent isolando logicamente de WAITING; 271 testes passando |
 | P11 | 2026-04-29 | feature/p11-scoring-gateway | Unit 90%, Service tests 44% (overall 6.57%) | Implementação do Scoring Gateway (WS) + Máquina de Estados; Tabela JudgeParticipantSession; Transação serializable com lock FOR UPDATE; Auditoria de todas as ações de scoring. |
 | P12 | 2026-04-29 | feature/p12-calculation-engine | statements 100%, branches 98.91%, functions 100%, lines 100% | R1 e R2 strategies com fallback R1; CalculationService isolado com cache em memória (TTL 30s) e invalidação no finalizeScores; Helpers numéricos Kahan sum e banker's rounding implementados. |
+| P13 | 2026-04-29 | feature/p13-tiebreaker | 100% no módulo tiebreaker, 95% total | Cascata de desempate determinística (2 níveis); Extrator de agregados R1/R2; Endpoint /top com expansão na fronteira; 68 testes no módulo de cálculo. |
 
+### 2026-04-29 — Tag v0.4.0 — Fim da Fase 4
 ### 2026-04-28 — Tag v0.2.0 — Fim da Fase 2
 
 ---

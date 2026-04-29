@@ -31,7 +31,22 @@ export class CalculationRepository {
       scoreMax: decimalToNumber(event.scoreMax),
       status: event.status,
       categories: event.categories,
+      topN: event.topN,
     }
+  }
+
+  async getTiebreakerConfig(eventId: string) {
+    return this.prisma.tiebreakerConfig.findUnique({
+      where: { eventId },
+    })
+  }
+
+  async getCategoryNamesMap(eventId: string): Promise<Map<string, string>> {
+    const categories = await this.prisma.category.findMany({
+      where: { eventId },
+      select: { id: true, name: true },
+    })
+    return new Map(categories.map((c) => [c.id, c.name]))
   }
 
   async getEligibleParticipants(eventId: string) {
@@ -80,10 +95,10 @@ export class CalculationRepository {
       },
     })
 
-    return judges.map((j: any) => ({
+    return judges.map((j) => ({
       id: j.id,
       name: j.displayName,
-      categoriesIds: j.judgeCategories.map((c: any) => c.categoryId),
+      categoriesIds: j.judgeCategories.map((c) => c.categoryId),
     }))
   }
 }
