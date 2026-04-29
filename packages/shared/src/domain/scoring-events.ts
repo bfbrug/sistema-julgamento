@@ -4,6 +4,8 @@ export const WS_EVENTS = {
   PARTICIPANT_ACTIVATED: 'participant_activated',
   PARTICIPANT_FINISHED: 'participant_finished',
   PARTICIPANT_ABSENT: 'participant_absent',
+  SCORING_STARTED: 'scoring_started',
+  SCORES_UPDATED: 'scores_updated',
   JUDGE_STARTED: 'judge_started',
   JUDGE_CONFIRMED: 'judge_confirmed',
   JUDGE_REVISING: 'judge_revising',
