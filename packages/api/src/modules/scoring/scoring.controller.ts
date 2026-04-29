@@ -37,6 +37,16 @@ export class ScoringController {
     return this.service.activateParticipant(eventId, participantId, user.sub)
   }
 
+  @Post('start/:participantId')
+  @Roles('GESTOR')
+  async start(
+    @Param('eventId') eventId: string,
+    @Param('participantId') participantId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.service.startScoring(eventId, participantId, user.sub)
+  }
+
   @Post('mark-absent/:participantId')
   @Roles('GESTOR')
   async markAbsent(
@@ -55,17 +65,6 @@ export class ScoringController {
 
   // JURADO ENDPOINTS
 
-  @Post('start/:participantId')
-  @Roles('JURADO')
-  async start(
-    @Param('eventId') eventId: string,
-    @Param('participantId') participantId: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    const judgeId = await this.getJudgeId(user.sub, eventId)
-    return this.service.startScoring(eventId, participantId, judgeId, user.sub)
-  }
-
   @Post('register/:participantId')
   @Roles('JURADO')
   async register(
@@ -75,7 +74,7 @@ export class ScoringController {
     @Body() dto: RegisterScoresDto,
   ) {
     const judgeId = await this.getJudgeId(user.sub, eventId)
-    return this.service.registerScores(eventId, participantId, judgeId, user.sub, dto)
+    return this.service.registerScores(eventId, participantId, judgeId, dto, user.sub)
   }
 
   @Post('confirm/:participantId')
