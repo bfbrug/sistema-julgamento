@@ -13,6 +13,10 @@ const envSchema = z.object({
   BCRYPT_ROUNDS: z.coerce.number().int().positive().default(10),
   THROTTLE_AUTH_TTL: z.coerce.number().int().positive().default(60),
   THROTTLE_AUTH_LIMIT: z.coerce.number().int().positive().default(5),
+  STORAGE_DRIVER: z.enum(['local']).default('local'),
+  STORAGE_LOCAL_ROOT: z.string().default('./uploads'),
+  PARTICIPANT_PHOTO_MAX_BYTES: z.coerce.number().int().positive().default(2097152),
+  PARTICIPANT_PHOTO_ALLOWED_MIMES: z.string().default('image/jpeg,image/png'),
 }).refine(data => data.JWT_ACCESS_SECRET !== data.JWT_REFRESH_SECRET, {
   message: 'JWT_ACCESS_SECRET e JWT_REFRESH_SECRET não podem ser iguais',
   path: ['JWT_REFRESH_SECRET']

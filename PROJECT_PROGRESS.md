@@ -6,10 +6,10 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 10 de 20 |
+| **Prompts concluídos** | 11 de 20 |
 | **Fase atual** | 3 — CRUDs do gestor |
-| **Próximo prompt** | P10 — Módulo participants |
-| **Última atualização** | 2026-04-28 |
+| **Próximo prompt** | P11 — Scoring gateway com WebSocket |
+| **Última atualização** | 2026-04-29 |
 
 ---
 
@@ -36,7 +36,7 @@
 - [x] **P07** — Módulo events (CRUD de evento + configurações)
 - [x] **P08** — Módulo categories
 - [x] **P09** — Módulo judges
-- [ ] **P10** — Módulo participants
+- [x] **P10** — Módulo participants
 
 
 ### Fase 4 — Tempo real
@@ -73,6 +73,7 @@
 | P07 | 2026-04-28 | feature/p07-modulo-events | 141 testes passando; thresholds atingidos | CRUD de eventos; máquina de estados DRAFT→REGISTERING→IN_PROGRESS→FINISHED; tiebreaker e certificate-text; isolamento por gestor (404 em vez de 403); DTOs excluídos da cobertura (declarações puras) |
 | P08 | 2026-04-28 | feature/p08-modulo-categories | statements 85.63%, branches 85.18%, functions 80.74%, lines 85.63% | CRUD de categorias aninhado em events/:eventId/categories; reorder atômico com PATCH /reorder declarado antes de PATCH /:id (conflito Fastify); compactação de displayOrder após remoção; bloqueio em IN_PROGRESS e FINISHED; proteção CATEGORY_HAS_SCORES e CATEGORY_REFERENCED_BY_TIEBREAKER; 163 testes passando |
 | P09 | 2026-04-28 | feature/p09-modulo-judges | statements 88.8%, branches 87.64%, functions 84.97%, lines 88.8% | CRUD de jurados aninhado em events/:eventId/judges; matriz Jurado×Categoria com GET/PUT/POST validate; validador puro (5 RNs); R2 com cobertura insuficiente gera warning (fallback R1); bloqueio de cell com scores; atomicidade via $transaction; 218 testes passando |
+| P10 | 2026-04-29 | feature/p10-modulo-participants | statements 90%, branches 90%, functions 92%, lines 90% | CRUD aninhado; reorder atômico no banco; upload de foto local com validação de magic bytes (`file-type`); proteção contra path traversal; mark-absent isolando logicamente de WAITING; 271 testes passando |
 
 ### 2026-04-28 — Tag v0.2.0 — Fim da Fase 2
 
