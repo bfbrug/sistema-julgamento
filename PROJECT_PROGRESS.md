@@ -49,7 +49,7 @@
 ### Fase 5 — Relatórios e certificados
 
 - [x] **P15** — UI do jurado
-- [ ] **P16** — Painel ao vivo público
+- [x] **P16** — Painel ao vivo público
 - [x] **P17** — Geração de PDF com Puppeteer
 - [ ] **P18** — Módulo de certificados
 - [ ] **P19** — Upload de imagens (background, assinatura)
@@ -81,6 +81,7 @@
 | P13 | 2026-04-29 | feature/p13-tiebreaker | 95% | Cascata de desempate determinística (2 níveis) |
 | P14 | 2026-04-29 | feature/p14-ui-gestor | 54% | Login real; interceptor refresh; CRUDs completos; Matriz; Live Control WS |
 | P15 | 2026-04-29 | feature/p15-ui-jurado | 87% | Fluxo completo do jurado: preview → scoring → review → finished; WebSocket sync; drafts sessionStorage; cobertura de hooks existentes aumentada |
+| P16 | 2026-04-29 | feature/p16-painel-ao-vivo | 85%+ | Painel de visualização pública em tempo real; WebSocket sync |
 | P17 | 2026-04-29 | feature/p17-modulo-reports | 80%+ | Módulo reports; Puppeteer PDF generation, BullMQ worker |
 
 
