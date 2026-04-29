@@ -73,7 +73,7 @@ describe('CertificatesController', () => {
       file: vi.fn().mockResolvedValueOnce({ toBuffer: vi.fn().mockResolvedValueOnce(Buffer.from('img')), filename: 'bg.jpg', fields: {} }),
     } as unknown as FastifyRequest
     const result = await controller.uploadBackground('e1', mockReq, { user: { sub: 'm1' } })
-    expect(result.path).toBe('bg.png')
+    expect((result as { path: string }).path).toBe('bg.png')
   })
 
   it('POST /signatures adiciona assinatura', async () => {
@@ -86,7 +86,7 @@ describe('CertificatesController', () => {
       }),
     } as unknown as FastifyRequest
     const result = await controller.addSignature('e1', mockReq, { user: { sub: 'm1' } })
-    expect(result.id).toBe('s1')
+    expect((result as { id: string }).id).toBe('s1')
   })
 
   it('PUT /signatures/:id atualiza assinatura', async () => {
