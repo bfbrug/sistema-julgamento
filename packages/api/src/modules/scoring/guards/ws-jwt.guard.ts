@@ -28,7 +28,7 @@ export class WsJwtGuard implements CanActivate {
       })
 
       // Atribui o usuário ao cliente para uso posterior
-      ;(client as any).user = payload
+      ;(client as Socket & { user?: unknown }).user = payload
       return true
     } catch (err) {
       this.logger.error('WebSocket JWT verification failed', err)

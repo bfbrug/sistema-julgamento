@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { INestApplication } from '@nestjs/common'
 import { ScoringGateway } from '../scoring.gateway'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../../../config/prisma.service'
 
 describe('ScoringGateway', () => {
-  let app: INestApplication
   let gateway: ScoringGateway
 
   beforeEach(async () => {

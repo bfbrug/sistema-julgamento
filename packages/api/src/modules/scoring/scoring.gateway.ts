@@ -63,7 +63,7 @@ export class ScoringGateway implements OnGatewayConnection, OnGatewayDisconnect 
         return
       }
 
-      ;(client as any).user = payload
+      ;(client as Socket & { user?: unknown }).user = payload
       this.logger.log(`Client connected: ${client.id} (user: ${payload.sub}) to event: ${eventId}`)
       void client.join(`event:${eventId}`)
     } catch (err) {
@@ -76,7 +76,7 @@ export class ScoringGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.logger.log(`Client disconnected: ${client.id}`)
   }
 
-  emitToEvent(eventId: string, event: string, payload: any) {
+  emitToEvent(eventId: string, event: string, payload: unknown) {
     if (this.server) {
       this.server.to(`event:${eventId}`).emit(event, payload)
     }

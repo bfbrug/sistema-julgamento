@@ -35,13 +35,13 @@ const makeJudge = (overrides: Record<string, unknown> = {}) => ({
 
 describe('JudgesService', () => {
   let service: JudgesService
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let repository: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let eventsRepository: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let usersRepository: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let auditService: any
 
   beforeEach(async () => {

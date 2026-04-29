@@ -354,7 +354,7 @@ export class ScoringService {
   private async recomputeColetiveState(
     participantId: string,
     userId: string,
-    tx: any,
+    tx: Prisma.TransactionClient,
   ): Promise<boolean> {
     const participant = await tx.participant.findUnique({
       where: { id: participantId },
@@ -373,8 +373,8 @@ export class ScoringService {
     })
 
     const newState = computeParticipantState(
-      participant.currentState as any,
-      sessions as any,
+      participant.currentState as Parameters<typeof computeParticipantState>[0],
+      sessions as Parameters<typeof computeParticipantState>[1],
       activeJudgesCount,
     )
 
