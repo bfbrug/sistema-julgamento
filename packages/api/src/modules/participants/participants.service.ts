@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { EventStatus, ParticipantState } from '@prisma/client'
-import { fileTypeFromBuffer } from 'file-type'
+import * as FileType from 'file-type'
 import { ParticipantsRepository, ParticipantWithCounts } from './participants.repository'
 import { EventsRepository } from '../events/events.repository'
 import { AuditService } from '../audit/audit.service'
@@ -245,7 +245,7 @@ export class ParticipantsService {
 
     // RN-10.5: validar MIME por magic bytes
     const allowedMimes = env.PARTICIPANT_PHOTO_ALLOWED_MIMES.split(',').map((m) => m.trim())
-    const detectedType = await fileTypeFromBuffer(file.buffer)
+    const detectedType = await FileType.fromBuffer(file.buffer)
     const detectedMime = detectedType?.mime ?? null
 
     if (!detectedMime || !allowedMimes.includes(detectedMime)) {

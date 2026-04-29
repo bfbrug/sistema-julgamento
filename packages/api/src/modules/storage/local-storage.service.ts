@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { randomUUID } from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
-import { fileTypeFromBuffer } from 'file-type'
+import * as FileType from 'file-type'
 import { env } from '../../config/env'
 import { IStorageService } from './storage.service.interface'
 import { UploadInput, UploadedFileMetadata } from './storage.types'
@@ -40,7 +40,7 @@ export class LocalStorageService implements IStorageService {
 
   async upload(input: UploadInput): Promise<UploadedFileMetadata> {
     // RN-10.5: validar MIME por magic bytes
-    const detectedType = await fileTypeFromBuffer(input.buffer)
+    const detectedType = await FileType.fromBuffer(input.buffer)
     const detectedMime = detectedType?.mime ?? null
 
     const allowedMimes = CATEGORY_ALLOWED_MIMES[input.category] ?? []
