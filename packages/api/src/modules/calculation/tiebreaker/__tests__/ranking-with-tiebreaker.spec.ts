@@ -37,8 +37,8 @@ describe('ranking-with-tiebreaker', () => {
 
     const result = calculateRankingsWithTiebreaker(results, { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
     
-    expect(result[0].categoryAggregates.get('cat1')).toBe(9) // (10+8)/2
-    expect(result[0].categoryAggregates.get('cat2')).toBe(8) // (8+8)/2
+    expect(result[0]!.categoryAggregates.get('cat1')).toBe(9) // (10+8)/2
+    expect(result[0]!.categoryAggregates.get('cat2')).toBe(8) // (8+8)/2
   })
 
   it('should use already calculated averages for R2', () => {
@@ -65,6 +65,6 @@ describe('ranking-with-tiebreaker', () => {
 
     const result = calculateRankingsWithTiebreaker(results, { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
     
-    expect(result[0].categoryAggregates.get('cat1')).toBe(9.5)
+    expect(result[0]!.categoryAggregates.get('cat1')).toBe(9.5)
   })
 })

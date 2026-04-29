@@ -1,12 +1,17 @@
 import { R1Breakdown, R2Breakdown } from '../strategies/calculation-strategy.interface'
-import { ParticipantWithRawScore, applyTiebreaker, TiebreakerConfig, RankedParticipant } from './tiebreaker-rules'
+import { applyTiebreaker, TiebreakerConfig, RankedParticipant } from './tiebreaker-rules'
 
 export function calculateRankingsWithTiebreaker(
-  results: any[],
+  results: unknown[],
   config: TiebreakerConfig,
   categoryNames: Map<string, string>,
 ): RankedParticipant[] {
-  const participantsWithAggregates = results.map((r) => ({
+  const participantsWithAggregates = (results as Array<{
+    participant: { id: string; name: string; presentationOrder: number }
+    finalScoreRaw: number
+    finalScore: number
+    breakdown: R1Breakdown | R2Breakdown
+  }>).map((r) => ({
     participantId: r.participant.id,
     name: r.participant.name,
     presentationOrder: r.participant.presentationOrder,

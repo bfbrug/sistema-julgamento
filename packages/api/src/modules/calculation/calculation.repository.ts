@@ -95,10 +95,10 @@ export class CalculationRepository {
       },
     })
 
-    return judges.map((j: any) => ({
+    return judges.map((j) => ({
       id: j.id,
       name: j.displayName,
-      categoriesIds: j.judgeCategories.map((c: any) => c.categoryId),
+      categoriesIds: j.judgeCategories.map((c) => c.categoryId),
     }))
   }
 }

@@ -5,7 +5,7 @@ import { calculateRankingsWithTiebreaker } from './ranking-with-tiebreaker'
 @Injectable()
 export class TiebreakerService {
   apply(
-    results: any[],
+    results: unknown[],
     config: TiebreakerConfig | null,
     categoryNames: Map<string, string>,
   ): RankedParticipant[] {

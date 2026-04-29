@@ -49,7 +49,7 @@ export function applyTiebreaker(
     if (currentGroup.length === 0) {
       currentGroup.push(p)
     } else {
-      const firstInGroup = currentGroup[0]
+      const firstInGroup = currentGroup[0]!
       // Use small epsilon for float comparison just in case, though raw scores should be exact enough
       if (Math.abs(p.finalScoreRaw - firstInGroup.finalScoreRaw) < 0.00001) {
         currentGroup.push(p)
@@ -66,8 +66,9 @@ export function applyTiebreaker(
 
   for (const group of groups) {
     if (group.length === 1) {
+      const p = group[0]!
       rankedParticipants.push({
-        ...group[0],
+        ...p,
         position: currentPosition,
         tiebreaker: null,
       })
@@ -256,7 +257,10 @@ export function selectTopN(ranked: RankedParticipant[], topN: number): RankedPar
   
   // Cutoff is the position of the N-th participant
   const actualTopN = Math.min(topN, ranked.length)
-  const cutoffPosition = ranked[actualTopN - 1].position
+  const cutoffItem = ranked[actualTopN - 1]
+  if (!cutoffItem) return []
+  
+  const cutoffPosition = cutoffItem.position
   
   return ranked.filter(p => p.position <= cutoffPosition)
 }

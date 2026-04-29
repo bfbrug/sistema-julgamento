@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { applyTiebreaker, selectTopN, ParticipantWithRawScore, TiebreakerConfig } from '../tiebreaker-rules'
+import { applyTiebreaker, selectTopN, ParticipantWithRawScore } from '../tiebreaker-rules'
 
 describe('tiebreaker-rules', () => {
   const categoryNames = new Map([
@@ -34,12 +34,12 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p2, p3, p1], { firstCategoryId: null, secondCategoryId: null }, categoryNames)
       
-      expect(result[0].participantId).toBe('1')
-      expect(result[0].position).toBe(1)
-      expect(result[1].participantId).toBe('2')
-      expect(result[1].position).toBe(2)
-      expect(result[2].participantId).toBe('3')
-      expect(result[2].position).toBe(3)
+      expect(result[0]!.participantId).toBe('1')
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.participantId).toBe('2')
+      expect(result[1]!.position).toBe(2)
+      expect(result[2]!.participantId).toBe('3')
+      expect(result[2]!.position).toBe(3)
     })
 
     it('3. should handle 2 participants with identical scores and no config (tie unresolved)', () => {
@@ -48,9 +48,9 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2], { firstCategoryId: null, secondCategoryId: null }, categoryNames)
       
-      expect(result[0].position).toBe(1)
-      expect(result[1].position).toBe(1)
-      expect(result[0].tiebreaker).toBeNull()
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.position).toBe(1)
+      expect(result[0]!.tiebreaker).toBeNull()
     })
 
     it('4. should handle 3 participants with identical scores and no config (tie unresolved)', () => {
@@ -61,10 +61,10 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2, p3, p4], { firstCategoryId: null, secondCategoryId: null }, categoryNames)
       
-      expect(result[0].position).toBe(1)
-      expect(result[1].position).toBe(1)
-      expect(result[2].position).toBe(1)
-      expect(result[3].position).toBe(4)
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.position).toBe(1)
+      expect(result[2]!.position).toBe(1)
+      expect(result[3]!.position).toBe(4)
     })
 
     it('5. should resolve tie with first category', () => {
@@ -73,13 +73,13 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2], { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
       
-      expect(result[0].participantId).toBe('2')
-      expect(result[0].position).toBe(1)
-      expect(result[0].tiebreaker?.resolvedBy).toBe('FIRST_CATEGORY')
+      expect(result[0]!.participantId).toBe('2')
+      expect(result[0]!.position).toBe(1)
+      expect(result[0]!.tiebreaker?.resolvedBy).toBe('FIRST_CATEGORY')
       
-      expect(result[1].participantId).toBe('1')
-      expect(result[1].position).toBe(2)
-      expect(result[1].tiebreaker?.resolvedBy).toBe('FIRST_CATEGORY')
+      expect(result[1]!.participantId).toBe('1')
+      expect(result[1]!.position).toBe(2)
+      expect(result[1]!.tiebreaker?.resolvedBy).toBe('FIRST_CATEGORY')
     })
 
     it('6. should stay tied if first category is also tied', () => {
@@ -88,9 +88,9 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2], { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
       
-      expect(result[0].position).toBe(1)
-      expect(result[1].position).toBe(1)
-      expect(result[0].tiebreaker?.resolvedBy).toBe('UNRESOLVED')
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.position).toBe(1)
+      expect(result[0]!.tiebreaker?.resolvedBy).toBe('UNRESOLVED')
     })
 
     it('7. should resolve tie with second category if first is tied', () => {
@@ -99,13 +99,13 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2], { firstCategoryId: 'cat1', secondCategoryId: 'cat2' }, categoryNames)
       
-      expect(result[0].participantId).toBe('2')
-      expect(result[0].position).toBe(1)
-      expect(result[0].tiebreaker?.resolvedBy).toBe('SECOND_CATEGORY')
+      expect(result[0]!.participantId).toBe('2')
+      expect(result[0]!.position).toBe(1)
+      expect(result[0]!.tiebreaker?.resolvedBy).toBe('SECOND_CATEGORY')
       
-      expect(result[1].participantId).toBe('1')
-      expect(result[1].position).toBe(2)
-      expect(result[1].tiebreaker?.resolvedBy).toBe('SECOND_CATEGORY')
+      expect(result[1]!.participantId).toBe('1')
+      expect(result[1]!.position).toBe(2)
+      expect(result[1]!.tiebreaker?.resolvedBy).toBe('SECOND_CATEGORY')
     })
 
     it('8. should stay tied if both categories are tied', () => {
@@ -114,9 +114,9 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2], { firstCategoryId: 'cat1', secondCategoryId: 'cat2' }, categoryNames)
       
-      expect(result[0].position).toBe(1)
-      expect(result[1].position).toBe(1)
-      expect(result[0].tiebreaker?.resolvedBy).toBe('UNRESOLVED')
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.position).toBe(1)
+      expect(result[0]!.tiebreaker?.resolvedBy).toBe('UNRESOLVED')
     })
 
     it('9. should resolve partially with first category', () => {
@@ -126,10 +126,10 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2, p3], { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
       
-      expect(result[0].position).toBe(1)
-      expect(result[1].position).toBe(1)
-      expect(result[2].position).toBe(3)
-      expect(result[2].participantId).toBe('3')
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.position).toBe(1)
+      expect(result[2]!.position).toBe(3)
+      expect(result[2]!.participantId).toBe('3')
     })
 
     it('10. should resolve all with first category', () => {
@@ -139,9 +139,9 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2, p3], { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
       
-      expect(result[0].position).toBe(1)
-      expect(result[1].position).toBe(2)
-      expect(result[2].position).toBe(3)
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.position).toBe(2)
+      expect(result[2]!.position).toBe(3)
     })
 
     it('11. should make participant lose if missing category score', () => {
@@ -150,8 +150,8 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2], { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
       
-      expect(result[0].participantId).toBe('1')
-      expect(result[1].participantId).toBe('2')
+      expect(result[0]!.participantId).toBe('1')
+      expect(result[1]!.participantId).toBe('2')
     })
 
     it('12. should stay tied if both missing category score', () => {
@@ -160,8 +160,8 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2], { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
       
-      expect(result[0].position).toBe(1)
-      expect(result[1].position).toBe(1)
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.position).toBe(1)
     })
 
     it('13. should ignore non-existent category in config', () => {
@@ -170,15 +170,15 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2], { firstCategoryId: 'invalid', secondCategoryId: null }, categoryNames)
       
-      expect(result[0].position).toBe(1)
-      expect(result[1].position).toBe(1)
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.position).toBe(1)
     })
 
     it('14. should handle 1 participant only', () => {
       const p1 = createParticipant('1', 10)
       const result = applyTiebreaker([p1], { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
       expect(result).toHaveLength(1)
-      expect(result[0].position).toBe(1)
+      expect(result[0]!.position).toBe(1)
     })
 
     it('15. should handle multiple separate tie groups', () => {
@@ -189,10 +189,10 @@ describe('tiebreaker-rules', () => {
       
       const result = applyTiebreaker([p1, p2, p3, p4], { firstCategoryId: 'cat1', secondCategoryId: null }, categoryNames)
       
-      expect(result[0].position).toBe(1)
-      expect(result[1].position).toBe(2)
-      expect(result[2].position).toBe(3)
-      expect(result[3].position).toBe(4)
+      expect(result[0]!.position).toBe(1)
+      expect(result[1]!.position).toBe(2)
+      expect(result[2]!.position).toBe(3)
+      expect(result[3]!.position).toBe(4)
     })
   })
 

@@ -16,7 +16,7 @@ describe('TiebreakerService', () => {
     ]
     const result = service.apply(results, null, categoryNames)
     expect(result).toHaveLength(1)
-    expect(result[0].position).toBe(1)
+    expect(result[0]!.position).toBe(1)
   })
 
   it('should call selectTopN', () => {
