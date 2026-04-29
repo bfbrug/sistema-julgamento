@@ -152,8 +152,8 @@ describe('CategoriesService', () => {
       const result = await service.list('event-1', 'manager-1')
 
       expect(result).toHaveLength(2)
-      expect(result[0].displayOrder).toBe(1)
-      expect(result[1].displayOrder).toBe(2)
+      expect(result[0]!.displayOrder).toBe(1)
+      expect(result[1]!.displayOrder).toBe(2)
     })
   })
 
