@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { CalculationController } from '../calculation.controller'
 import { CalculationService } from '../calculation.service'
+import { BadRequestException } from '@nestjs/common'
 
 describe('CalculationController', () => {
   let controller: CalculationController
@@ -8,6 +9,7 @@ describe('CalculationController', () => {
 
   const mockCalculationService = {
     calculate: vi.fn(),
+    getTopN: vi.fn(),
   }
 
   beforeEach(async () => {
@@ -43,6 +45,40 @@ describe('CalculationController', () => {
 
       expect(service.calculate).toHaveBeenCalledWith(eventId, managerId)
       expect(result).toEqual({ data: { rankings: [] } })
+    })
+  })
+
+  describe('getTopN', () => {
+    it('should call CalculationService.getTopN with correct params', async () => {
+      const eventId = 'event-1'
+      const managerId = 'manager-1'
+      const req = { user: { sub: managerId } }
+      const n = '5'
+
+      mockCalculationService.getTopN.mockResolvedValueOnce({
+        data: { rankings: [] },
+      })
+
+      const result = await controller.getTopN(eventId, n, req)
+
+      expect(service.getTopN).toHaveBeenCalledWith(eventId, managerId, 5)
+      expect(result).toEqual({ data: { rankings: [] } })
+    })
+
+    it('should throw BadRequestException if n is negative', async () => {
+      const eventId = 'event-1'
+      const req = { user: { sub: 'manager-1' } }
+      const n = '-1'
+
+      await expect(controller.getTopN(eventId, n, req)).rejects.toThrow('Parâmetro "n" deve ser um número positivo')
+    })
+
+    it('should throw BadRequestException if n is not a number', async () => {
+      const eventId = 'event-1'
+      const req = { user: { sub: 'manager-1' } }
+      const n = 'abc'
+
+      await expect(controller.getTopN(eventId, n, req)).rejects.toThrow('Parâmetro "n" deve ser um número positivo')
     })
   })
 })
