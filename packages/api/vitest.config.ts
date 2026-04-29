@@ -12,6 +12,8 @@ export default defineConfig({
       LOG_LEVEL: process.env.LOG_LEVEL ?? 'error',
       DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5434/judging_test',
       CORS_ORIGIN: process.env.CORS_ORIGIN ?? 'http://localhost:3001',
+      JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET ?? 'test-secret-1',
+      JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET ?? 'test-secret-2',
     },
     setupFiles: ['./test/global-setup.ts'],
     coverage: {

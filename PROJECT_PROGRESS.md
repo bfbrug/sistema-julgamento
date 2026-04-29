@@ -6,9 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 3 de 20 |
-| **Fase atual** | 1 — Autenticação e usuários |
-| **Próximo prompt** | P03 — Autenticação JWT |
+| **Prompts concluídos** | 6 de 20 |
+| **Fase atual** | 2 — Domínio do julgamento |
+| **Próximo prompt** | P06 — Pacote shared (tipos + Zod schemas) |
 | **Última atualização** | 2026-04-28 |
 
 ---
@@ -23,12 +23,12 @@
 
 ### Fase 1 — Autenticação
 
-- [ ] **P03** — Autenticação JWT
-- [ ] **P04** — Frontend de autenticação
+- [x] **P03** — Autenticação JWT
+- [x] **P04** — Frontend de autenticação
 
 ### Fase 2 — Domínio base
 
-- [ ] **P05** — Schema Prisma e migrations
+- [x] **P05** — Schema Prisma do domínio
 - [ ] **P06** — CRUD de eventos e categorias
 
 ### Fase 3 — Julgamento
@@ -65,6 +65,11 @@
 | P00 | 2026-04-27 | feature/p00-setup-monorepo | N/A — sem código de produção | pnpm fixado em 9.15.0; turbo 2.5.3; typescript 5.8.3; eslint 9.26.0 |
 | P01 | 2026-04-28 | feature/p01-bootstrap-api | statements 98%, branches 82%, functions 100%, lines 98% | NestJS 11 + Fastify; @Inject explícito para PrismaService (conflito PrismaClient Proxy + NestJS DI); postgres na porta 5434 (5432 ocupada por outro container) |
 | P02 | 2026-04-28 | feature/p02-bootstrap-web | statements 100%, branches 96%, functions 100%, lines 100% | Next.js 15 + React 19 + Tailwind 4; Geist font; singleFork no Vitest (OOM com workers paralelos); cross-env para NODE_OPTIONS no build Windows |
+| P03 | 2026-04-28 | feature/p03-modulo-auth | statements 89.06%, branches 84.52%, functions 83.33%, lines 89.06% | @nestjs/jwt e passport; Refresh tokens salvos como hash no banco; JwtAuthGuard e RolesGuard globais; `swc` / metadata ausente do Vitest contornado usando `@Inject` explícito nos construtores |
+| P04 | 2026-04-28 | feature/p04-modulo-users | statements 81.95%, branches 85.31%, functions 84.5%, lines 81.95% | CRUD com roles GESTOR e JURADO; bypass soft delete com `undefined`; @Inject() mantido para SWC |
+| P05 | 2026-04-28 | feature/p05-schema-prisma | statements 82.18%, branches 84.86%, functions 85.13%, lines 82.18% | 12 novos modelos; removido JUDGE_FINISHED do enum; seeder exportando main para uso nos testes |
+
+### 2026-04-28 — Tag v0.1.0 — Fim da Fase 1
 
 ---
 
@@ -83,3 +88,5 @@
 | P02 | cross-env NODE_OPTIONS=--max-old-space-size=4096 no build | definir variável no shell do CI | ✅ |
 | P02 | globals browser+node no eslint.config.mjs raiz, escopo packages/web | .eslintrc local (conflita com flat config) | ✅ |
 | P02 | Sidebar e PublicHeader excluídos da cobertura (stubs sem lógica) | adicionar testes de snapshot | ✅ |
+| P03 | Uso de `@Inject()` explícito em `AuthService` e Guards | Adicionar `@swc/core` e plugar no Vitest | ✅ |
+| P04 | Middleware `prisma.$use` para soft delete de `User` com bypass via `deletedAt: undefined` | Prisma Extension `$extends` | ✅ |

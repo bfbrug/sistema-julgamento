@@ -29,6 +29,8 @@ describe('env validation', () => {
     process.env['DATABASE_URL'] = 'postgresql://localhost/test'
     process.env['CORS_ORIGIN'] = 'http://localhost:3001'
     process.env['LOG_LEVEL'] = 'info'
+    process.env['JWT_ACCESS_SECRET'] = 'secret-1'
+    process.env['JWT_REFRESH_SECRET'] = 'secret-2'
 
     const { env } = await import('../env')
 
