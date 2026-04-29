@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { CalculationController } from '../calculation.controller'
 import { CalculationService } from '../calculation.service'
-import { BadRequestException } from '@nestjs/common'
 
 describe('CalculationController', () => {
   let controller: CalculationController
