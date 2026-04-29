@@ -47,7 +47,7 @@ export class ScoringService {
       })
     }
 
-    const judges = await this.repository.getActiveJudges(eventId)
+    const judgesCount = await this.repository.getActiveJudgesCount(eventId)
 
     await this.prisma.$transaction(async (tx) => {
       await tx.participant.update({
@@ -63,6 +63,15 @@ export class ScoringService {
         },
       })
 
+      // Cria sessões para todos os jurados ativos
+      const judges = await tx.judge.findMany({
+        where: {
+          eventId,
+          judgeCategories: { some: {} },
+        },
+        select: { id: true },
+      })
+
       for (const judge of judges) {
         await tx.judgeParticipantSession.upsert({
           where: {
@@ -74,7 +83,6 @@ export class ScoringService {
           create: {
             judgeId: judge.id,
             participantId,
-            eventId,
             status: 'NOT_STARTED',
           },
           update: {},
@@ -86,7 +94,7 @@ export class ScoringService {
       eventId,
       participantId,
       participantName: participant.name,
-      judgeCount: judges.length,
+      judgeCount: judgesCount,
     })
 
     await this.auditService.record({
@@ -145,7 +153,13 @@ export class ScoringService {
     })
   }
 
-  async registerScores(eventId: string, participantId: string, judgeId: string, dto: RegisterScoresDto, userId: string) {
+  async registerScores(
+    eventId: string,
+    participantId: string,
+    judgeId: string,
+    dto: RegisterScoresDto,
+    userId: string,
+  ) {
     const session = await this.repository.findSession(judgeId, participantId)
     if (!session || !['IN_SCORING', 'IN_REVIEW'].includes(session.status)) {
       throw new ForbiddenException('Sessão de scoring não está ativa')
@@ -160,27 +174,14 @@ export class ScoringService {
       }
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      for (const score of dto.scores) {
-        await tx.score.upsert({
-          where: {
-            judgeId_participantId_categoryId: {
-              judgeId,
-              participantId,
-              categoryId: score.categoryId,
-            },
-          },
-          create: {
-            judgeId,
-            participantId,
-            categoryId: score.categoryId,
-            eventId,
-            value: score.value,
-          },
-          update: { value: score.value },
-        })
-      }
-    })
+    for (const score of dto.scores) {
+      await this.repository.upsertScore({
+        judgeId,
+        participantId,
+        categoryId: score.categoryId,
+        value: score.value,
+      })
+    }
 
     this.gateway.emitToEvent(eventId, WS_EVENTS.SCORES_UPDATED, {
       eventId,
@@ -318,7 +319,7 @@ export class ScoringService {
       })
 
       const isLast = await this.recomputeColetiveState(participantId, userId, tx)
-      
+
       if (isLast) {
         this.gateway.emitToEvent(eventId, WS_EVENTS.PARTICIPANT_FINISHED, {
           eventId,
@@ -383,6 +384,10 @@ export class ScoringService {
       include: { event: true },
     })
 
+    if (!participant) {
+      throw new NotFoundException(`Participante ${participantId} não encontrado na transação`)
+    }
+
     const sessions = await tx.judgeParticipantSession.findMany({
       where: { participantId },
     })
@@ -413,7 +418,7 @@ export class ScoringService {
           changedByUserId: userId,
         },
       })
-      
+
       if (newState === 'FINISHED') {
         await this.auditService.record({
           actorId: userId,
