@@ -52,7 +52,12 @@
       "Bash(pnpm --filter @judging/web exec vitest run src/lib/__tests__/env.spec.ts)",
       "Bash(pnpm --filter @judging/web test:ci -- --reporter=verbose)",
       "mcp__plugin_context-mode_context-mode__ctx_execute",
-      "Bash(git -C c:/Users/Bruno/Desktop/www/jurados/sistema-julgamento branch --show-current)"
+      "Bash(git -C c:/Users/Bruno/Desktop/www/jurados/sistema-julgamento branch --show-current)",
+      "Bash(node -e \"require\\('ms'\\)\")",
+      "Bash(git rebase *)",
+      "Bash(git restore *)",
+      "Bash(pnpm vitest *)",
+      "Bash(git merge *)"
     ]
   }
 }

@@ -15,6 +15,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
 import { RolesGuard } from './modules/auth/guards/roles.guard'
 import { CategoriesModule } from './modules/categories/categories.module'
 import { JudgesModule } from './modules/judges/judges.module'
+import { ParticipantsModule } from './modules/participants/participants.module'
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { JudgesModule } from './modules/judges/judges.module'
     EventsModule,
     CategoriesModule,
     JudgesModule,
+    ParticipantsModule,
     UsersModule,
     EventsModule,
     ThrottlerModule.forRoot([
