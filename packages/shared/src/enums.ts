@@ -27,3 +27,11 @@ export const ParticipantState = {
   ABSENT: 'ABSENT',
 } as const
 export type ParticipantState = (typeof ParticipantState)[keyof typeof ParticipantState]
+
+export const JudgeSessionStatus = {
+  NOT_STARTED: 'NOT_STARTED',
+  IN_SCORING: 'IN_SCORING',
+  IN_REVIEW: 'IN_REVIEW',
+  FINISHED: 'FINISHED',
+} as const
+export type JudgeSessionStatus = (typeof JudgeSessionStatus)[keyof typeof JudgeSessionStatus]
