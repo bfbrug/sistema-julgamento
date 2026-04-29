@@ -1,4 +1,4 @@
-import { JudgeSessionStatus, ParticipantState } from '../enums'
+import { JudgeSessionStatus } from '../enums'
 
 export const WS_EVENTS = {
   PARTICIPANT_ACTIVATED: 'participant_activated',

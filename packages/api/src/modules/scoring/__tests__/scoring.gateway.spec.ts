@@ -4,12 +4,10 @@ import { ScoringGateway } from '../scoring.gateway'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../../../config/prisma.service'
-import { io, Socket } from 'socket.io-client'
 
 describe('ScoringGateway', () => {
   let app: INestApplication
   let gateway: ScoringGateway
-  let jwtService: JwtService
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -40,7 +38,6 @@ describe('ScoringGateway', () => {
     app = moduleFixture.createNestApplication()
     await app.init()
     gateway = app.get<ScoringGateway>(ScoringGateway)
-    jwtService = app.get<JwtService>(JwtService)
   })
 
   afterEach(async () => {

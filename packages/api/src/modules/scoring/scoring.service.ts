@@ -4,7 +4,7 @@ import { computeParticipantState } from './state-machine/participant-state.machi
 import { AuditService } from '../audit/audit.service'
 import { PrismaService } from '../../config/prisma.service'
 import { RegisterScoresDto } from './dto/register-scores.dto'
-import { ParticipantState, JudgeSessionStatus, WS_EVENTS } from '@judging/shared'
+import { WS_EVENTS } from '@judging/shared'
 import { ScoringGateway } from './scoring.gateway'
 
 @Injectable()

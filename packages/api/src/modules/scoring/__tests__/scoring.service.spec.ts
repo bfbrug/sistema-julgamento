@@ -4,8 +4,7 @@ import { ScoringRepository } from '../scoring.repository'
 import { AuditService } from '../../audit/audit.service'
 import { PrismaService } from '../../../config/prisma.service'
 import { ScoringGateway } from '../scoring.gateway'
-import { ConflictException, UnprocessableEntityException, NotFoundException } from '@nestjs/common'
-import { ParticipantState, JudgeSessionStatus } from '@judging/shared'
+import { ConflictException, UnprocessableEntityException } from '@nestjs/common'
 
 describe('ScoringService', () => {
   let service: ScoringService

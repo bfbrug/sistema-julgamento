@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { computeParticipantState } from '../participant-state.machine'
-import { ParticipantState, JudgeSessionStatus } from '@judging/shared'
+import { JudgeSessionStatus } from '@judging/shared'
 
 describe('ParticipantStateMachine', () => {
   it('should keep WAITING state regardless of sessions', () => {

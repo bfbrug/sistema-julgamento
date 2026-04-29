@@ -3,7 +3,6 @@ import { PrismaService } from '../../config/prisma.service'
 import {
   Participant,
   JudgeParticipantSession,
-  JudgeSessionStatus,
   ParticipantState,
   Score,
   Prisma,
