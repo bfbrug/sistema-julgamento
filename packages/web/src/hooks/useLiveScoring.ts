@@ -19,9 +19,19 @@ interface ParticipantState {
   [key: string]: unknown
 }
 
+interface QueueItem {
+  id: string
+  name: string
+  status: string
+  presentationOrder: number
+  photoUrl?: string
+  [key: string]: unknown
+}
+
 interface LiveState {
   currentParticipant: ParticipantState | null
   judges: JudgeState[]
+  queue: QueueItem[]
   [key: string]: unknown
 }
 

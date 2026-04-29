@@ -2,6 +2,7 @@
 
 import { Button } from '../ui/Button'
 import { AlertTriangle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface ConfirmDialogProps {
   isOpen: boolean
@@ -57,8 +58,4 @@ export function ConfirmDialog({
       </div>
     </div>
   )
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ')
 }

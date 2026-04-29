@@ -4,10 +4,11 @@ import { useParams, usePathname } from 'next/navigation'
 import { useEvent, useUpdateEvent } from '@/hooks/useEvents'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Edit, Play, Settings, List, Users, Trophy } from 'lucide-react'
+import { ArrowLeft, Play, Settings, List, Users, Trophy } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { EventStatus } from '@judging/shared'
+import { cn } from '@/lib/utils'
 
 export default function EventDetailLayout({ children }: { children: ReactNode }) {
   const { id } = useParams() as { id: string }
@@ -100,8 +101,4 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
       <div className="py-4">{children}</div>
     </div>
   )
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ')
 }

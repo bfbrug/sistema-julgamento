@@ -4,8 +4,8 @@ import { useParams } from 'next/navigation'
 import { useLiveScoring } from '@/hooks/useLiveScoring'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { Badge } from 'lucide-react' // Placeholder for badge
 import { Users, Trophy, Play, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function EventLivePage() {
   const { id: eventId } = useParams() as { id: string }
@@ -14,7 +14,7 @@ export default function EventLivePage() {
   if (!liveState) return <div className="p-12 text-center">Iniciando conexão...</div>
 
   const { currentParticipant, queue, judges } = liveState
-  const nextInQueue = queue.find((p: any) => p.status === 'WAITING')
+  const nextInQueue = queue.find((p) => p.status === 'WAITING')
 
   return (
     <div className="space-y-8 pb-20">
@@ -103,7 +103,7 @@ export default function EventLivePage() {
               <Users className="h-5 w-5" /> Status dos Jurados
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {judges.map((judge: any) => (
+              {judges.map((judge) => (
                 <Card
                   key={judge.id}
                   className={cn(
@@ -144,7 +144,7 @@ export default function EventLivePage() {
             <Clock className="h-5 w-5" /> Fila de Espera
           </h3>
           <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
-            {queue.map((p: any) => (
+            {queue.map((p) => (
               <div
                 key={p.id}
                 className={cn(
@@ -176,8 +176,4 @@ export default function EventLivePage() {
       </div>
     </div>
   )
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ')
 }

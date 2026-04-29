@@ -11,6 +11,16 @@ import { useState } from 'react'
 import { EventStatus } from '@judging/shared'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
+
+interface EventRow {
+  id: string
+  name: string
+  date: string
+  status: EventStatus
+  topN: number
+  [key: string]: unknown
+}
 
 export default function EventsPage() {
   const { data: events, isLoading } = useEvents()
@@ -21,11 +31,11 @@ export default function EventsPage() {
     { header: 'Nome', accessor: 'name' as const },
     { 
       header: 'Data', 
-      accessor: (event: any) => format(new Date(event.date), "dd 'de' MMMM, yyyy", { locale: ptBR })
+      accessor: (event: EventRow) => format(new Date(event.date), "dd 'de' MMMM, yyyy", { locale: ptBR })
     },
     { 
       header: 'Status', 
-      accessor: (event: any) => (
+      accessor: (event: EventRow) => (
         <span className={cn(
           'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
           statusColors[event.status as EventStatus]
@@ -37,7 +47,7 @@ export default function EventsPage() {
     { header: 'Top N', accessor: 'topN' as const },
     {
       header: 'Ações',
-      accessor: (event: any) => (
+      accessor: (event: EventRow) => (
         <div className="flex items-center gap-2">
           <Link href={`/events/${event.id}`}>
             <Button size="sm" variant="ghost" title="Detalhes">
@@ -108,8 +118,4 @@ const statusColors: Record<EventStatus, string> = {
   [EventStatus.REGISTERING]: 'bg-primary-100 text-primary-700',
   [EventStatus.IN_PROGRESS]: 'bg-warning-100 text-warning-700',
   [EventStatus.FINISHED]: 'bg-success-100 text-success-700',
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ')
 }

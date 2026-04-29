@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { Trash2, GripVertical, Plus, Shuffle, Upload } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -53,7 +53,7 @@ export default function EventParticipantsPage() {
     }
   }
 
-  const handleAddParticipant = (e: React.FormEvent) => {
+  const handleAddParticipant = (e: FormEvent) => {
     e.preventDefault()
     if (!newName.trim()) return
     createParticipant({ name: newName.trim() }, {
@@ -134,7 +134,13 @@ export default function EventParticipantsPage() {
   )
 }
 
-function SortableParticipantItem({ participant, index, onDelete }: { participant: any; index: number; onDelete: () => void }) {
+interface ParticipantItem {
+  id: string
+  name: string
+  [key: string]: unknown
+}
+
+function SortableParticipantItem({ participant, index, onDelete }: { participant: ParticipantItem; index: number; onDelete: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: participant.id })
 
   const style = {

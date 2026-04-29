@@ -41,8 +41,8 @@ export default function LoginPage() {
 
       const next = searchParams.get('next') || '/dashboard'
       router.push(next)
-    } catch (error: any) {
-      toast.error(error.message || 'Credenciais inválidas.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Credenciais inválidas.')
     } finally {
       setIsLoading(false)
     }

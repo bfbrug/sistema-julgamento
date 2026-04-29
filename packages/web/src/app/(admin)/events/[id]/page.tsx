@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { Trash2, GripVertical, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -52,7 +52,7 @@ export default function EventCategoriesPage() {
     }
   }
 
-  const handleAddCategory = (e: React.FormEvent) => {
+  const handleAddCategory = (e: FormEvent) => {
     e.preventDefault()
     if (!newName.trim()) return
     createCategory({ name: newName.trim(), weight: 1 }, {
@@ -109,7 +109,13 @@ export default function EventCategoriesPage() {
   )
 }
 
-function SortableCategoryItem({ category, onDelete }: { category: any; onDelete: () => void }) {
+interface CategoryItem {
+  id: string
+  name: string
+  [key: string]: unknown
+}
+
+function SortableCategoryItem({ category, onDelete }: { category: CategoryItem; onDelete: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: category.id })
 
   const style = {

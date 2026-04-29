@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react'
 import { EmptyState } from './EmptyState'
-import { Skeleton } from '../ui/Skeleton' // Preciso criar este
+import { cn } from '@/lib/utils'
 
 interface Column<T> {
   header: string
@@ -74,8 +74,4 @@ export function DataTable<T>({
       </table>
     </div>
   )
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ')
 }
