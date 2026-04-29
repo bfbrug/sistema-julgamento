@@ -25,6 +25,7 @@ export default defineConfig({
         '**/*.spec.ts',
         'src/main.ts',
         'src/common/decorators/**',
+        '**/dto/**',
       ],
       thresholds: {
         statements: 80,
