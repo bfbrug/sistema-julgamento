@@ -6,9 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 15 de 20 |
+| **Prompts concluídos** | 16 de 20 |
 | **Fase atual** | 5 — Relatórios e certificados |
-| **Próximo prompt** | P15 — UI do jurado |
+| **Próximo prompt** | P16 — Painel ao vivo público |
 | **Última atualização** | 2026-04-29 |
 
 ---
@@ -48,7 +48,7 @@
 
 ### Fase 5 — Relatórios e certificados
 
-- [ ] **P15** — UI do jurado
+- [x] **P15** — UI do jurado
 - [ ] **P16** — Painel ao vivo público
 - [ ] **P17** — Geração de PDF com Puppeteer
 - [ ] **P18** — Módulo de certificados
@@ -80,9 +80,10 @@
 | P12 | 2026-04-29 | feature/p12-calculation-engine | 100% | R1/R2 strategies; Kahan sum; banker's rounding |
 | P13 | 2026-04-29 | feature/p13-tiebreaker | 95% | Cascata de desempate determinística (2 níveis) |
 | P14 | 2026-04-29 | feature/p14-ui-gestor | 54% | Login real; interceptor refresh; CRUDs completos; Matriz; Live Control WS |
+| P15 | 2026-04-29 | feature/p15-ui-jurado | 87% | Fluxo completo do jurado: preview → scoring → review → finished; WebSocket sync; drafts sessionStorage; cobertura de hooks existentes aumentada |
 
 
-### 2026-04-29 — Tag v0.4.0 — Fim da Fase 4
+### 2026-04-29 — Tag v0.5.0 — Fim da Fase 5 (parcial)
 ### 2026-04-28 — Tag v0.2.0 — Fim da Fase 2
 
 ---
@@ -110,3 +111,5 @@
 | P07 | DTOs excluídos da cobertura do Vitest (`**/dto/**`) | testes de validação de DTO (desnecessário para declarações puras) | ✅ |
 | P07 | Isolamento por gestor retorna 404 (não 403) para eventos de outros gestores | 403 Forbidden | ✅ |
 | P07 | EventStateMachine como classe pura sem injeção de dependência | injetar como provider NestJS | ✅ |
+| P15 | Backend emite `event_state_changed` via ScoringGateway ao finalizar evento | polling no frontend | ✅ |
+| P15 | Endpoint `my-state` retorna dados do evento (scoreMin, scoreMax, name, status) | endpoint separado para evento | ✅ |

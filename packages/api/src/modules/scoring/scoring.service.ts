@@ -438,9 +438,27 @@ export class ScoringService {
   }
 
   async getJudgeState(eventId: string, judgeId: string) {
+    const event = await this.prisma.judgingEvent.findUnique({
+      where: { id: eventId },
+      select: { id: true, name: true, status: true, scoreMin: true, scoreMax: true },
+    })
+    if (!event) {
+      throw new NotFoundException('Evento não encontrado')
+    }
+
     const activeParticipant = await this.repository.findActiveParticipant(eventId)
     if (!activeParticipant) {
-      return { activeParticipant: null, message: 'Aguardando próximo participante' }
+      return {
+        event: {
+          id: event.id,
+          name: event.name,
+          status: event.status,
+          scoreMin: Number(event.scoreMin),
+          scoreMax: Number(event.scoreMax),
+        },
+        activeParticipant: null,
+        message: 'Aguardando próximo participante',
+      }
     }
 
     const session = await this.repository.findSession(judgeId, activeParticipant.id)
@@ -458,6 +476,13 @@ export class ScoringService {
     })
 
     return {
+      event: {
+        id: event.id,
+        name: event.name,
+        status: event.status,
+        scoreMin: Number(event.scoreMin),
+        scoreMax: Number(event.scoreMax),
+      },
       activeParticipant: {
         id: activeParticipant.id,
         name: activeParticipant.name,
