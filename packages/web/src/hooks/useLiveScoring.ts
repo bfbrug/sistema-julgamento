@@ -6,11 +6,30 @@ import { useAuthStore } from '@/stores/auth.store'
 import { toast } from 'sonner'
 import { apiClient } from '@/lib/api'
 
+interface JudgeState {
+  id: string
+  status: string
+  progress: number
+  [key: string]: unknown
+}
+
+interface ParticipantState {
+  name: string
+  status: string
+  [key: string]: unknown
+}
+
+interface LiveState {
+  currentParticipant: ParticipantState | null
+  judges: JudgeState[]
+  [key: string]: unknown
+}
+
 export function useLiveScoring(eventId: string) {
   const { accessToken } = useAuthStore()
   const socketRef = useRef<Socket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const [liveState, setLiveState] = useState<any>(null)
+  const [liveState, setLiveState] = useState<LiveState | null>(null)
 
   const fetchState = useCallback(async () => {
     try {
@@ -41,22 +60,25 @@ export function useLiveScoring(eventId: string) {
       setIsConnected(false)
     })
 
-    socket.on('participant_activated', (payload) => {
-      setLiveState((prev: any) => ({ ...prev, currentParticipant: payload }))
+    socket.on('participant_activated', (payload: ParticipantState) => {
+      setLiveState((prev: LiveState | null) => prev ? { ...prev, currentParticipant: payload } : prev)
       toast.info(`Participante ${payload.name} ativado!`)
     })
 
-    socket.on('participant_state_changed', (payload) => {
-      setLiveState((prev: any) => ({
-        ...prev,
-        currentParticipant: { ...prev.currentParticipant, status: payload.status }
-      }))
+    socket.on('participant_state_changed', (payload: { status: string }) => {
+      setLiveState((prev: LiveState | null) => {
+        if (!prev?.currentParticipant) return prev
+        return {
+          ...prev,
+          currentParticipant: { ...prev.currentParticipant, status: payload.status }
+        }
+      })
     })
 
-    socket.on('judge_status_updated', (payload) => {
-      setLiveState((prev: any) => {
+    socket.on('judge_status_updated', (payload: { judgeId: string; status: string; progress: number }) => {
+      setLiveState((prev: LiveState | null) => {
         if (!prev) return prev
-        const updatedJudges = prev.judges.map((j: any) => 
+        const updatedJudges = prev.judges.map((j: JudgeState) => 
           j.id === payload.judgeId ? { ...j, status: payload.status, progress: payload.progress } : j
         )
         return { ...prev, judges: updatedJudges }
@@ -80,8 +102,8 @@ export function useLiveScoring(eventId: string) {
         path: `/scoring/events/${eventId}/activate`,
         body: { participantId },
       })
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao ativar participante.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao ativar participante.')
     }
   }
 
@@ -93,8 +115,8 @@ export function useLiveScoring(eventId: string) {
         body: { participantId },
       })
       fetchState()
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao marcar ausência.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao marcar ausência.')
     }
   }
 

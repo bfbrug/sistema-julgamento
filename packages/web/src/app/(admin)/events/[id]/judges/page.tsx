@@ -5,11 +5,16 @@ import { useJudges, useAddJudge, useRemoveJudge, useUpdateAssignments } from '@/
 import { useCategories } from '@/hooks/useCategories'
 import { useUsers } from '@/hooks/useUsers'
 import { useEvent } from '@/hooks/useEvents'
-import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { UserRole, CalculationRule } from '@judging/shared'
+import { UserRole, CalculationRule, type JudgeResponse } from '@judging/shared'
 import { Trash2, UserPlus, Info } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 export default function EventJudgesPage() {
   const { id: eventId } = useParams() as { id: string }
@@ -18,7 +23,7 @@ export default function EventJudgesPage() {
   const { data: judges, isLoading: loadingJudges } = useJudges(eventId)
   const { data: allUsers } = useUsers({ role: UserRole.JURADO, isActive: true })
   
-  const { mutate: addJudge, isPending: isAdding } = useAddJudge(eventId)
+  const { mutate: addJudge } = useAddJudge(eventId)
   const { mutate: removeJudge } = useRemoveJudge(eventId)
   const { mutate: updateAssignments, isPending: isSaving } = useUpdateAssignments(eventId)
 
@@ -28,7 +33,7 @@ export default function EventJudgesPage() {
   useEffect(() => {
     if (judges) {
       const initial: Record<string, string[]> = {}
-      judges.forEach((j) => {
+      judges.forEach((j: JudgeResponse) => {
         initial[j.id] = j.categories.map((c) => c.id)
       })
       setAssignments(initial)
@@ -198,8 +203,4 @@ export default function EventJudgesPage() {
       )}
     </div>
   )
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ')
 }

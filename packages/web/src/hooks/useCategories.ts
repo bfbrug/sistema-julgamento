@@ -49,8 +49,8 @@ export function useDeleteCategory(eventId: string) {
       queryClient.invalidateQueries({ queryKey: ['events', eventId, 'categories'] })
       toast.success('Categoria excluída!')
     },
-    onError: (error: any) => {
-      toast.error(error.message || 'Erro ao excluir categoria.')
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : 'Erro ao excluir categoria.')
     }
   })
 }

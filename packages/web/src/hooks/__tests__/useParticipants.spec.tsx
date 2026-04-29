@@ -27,7 +27,7 @@ describe('useParticipants', () => {
 
   it('should fetch participants', async () => {
     const mockParticipants = [{ id: '1', name: 'Part 1' }]
-    ;(apiClient as any).mockResolvedValue(mockParticipants)
+    vi.mocked(apiClient).mockResolvedValue(mockParticipants)
 
     const { result } = renderHook(() => useParticipants(eventId), { wrapper })
 

@@ -69,7 +69,7 @@ async function handleRefresh(): Promise<string | null> {
     }
     
     throw new Error('Refresh failed')
-  } catch (error) {
+  } catch {
     clearSession()
     window.location.href = `/auth/login?next=${window.location.pathname}`
     return null
@@ -104,9 +104,9 @@ export async function apiClient<T, B = unknown>({
         headers: getHeaders(),
         body: body !== undefined ? JSON.stringify(body) : undefined,
       })
-    } catch (error) {
+    } catch {
       toast.error('Erro de conexão. Verifique sua internet.')
-      throw error
+      throw new Error('Network error')
     }
   }
 

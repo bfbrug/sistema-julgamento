@@ -32,7 +32,7 @@ describe('useEvents', () => {
 
   it('should fetch events', async () => {
     const mockEvents = [{ id: '1', name: 'Event 1' }]
-    ;(apiClient as any).mockResolvedValue(mockEvents)
+    vi.mocked(apiClient).mockResolvedValue(mockEvents)
 
     const { result } = renderHook(() => useEvents(), { wrapper })
 
@@ -43,11 +43,11 @@ describe('useEvents', () => {
 
   it('should create an event', async () => {
     const mockEvent = { id: '2', name: 'New Event' }
-    ;(apiClient as any).mockResolvedValue(mockEvent)
+    vi.mocked(apiClient).mockResolvedValue(mockEvent)
 
     const { result } = renderHook(() => useCreateEvent(), { wrapper })
 
-    result.current.mutate({ name: 'New Event', date: '2026-05-01', location: 'Test', organizer: 'Test', calculationRule: 'R2', minScore: 0, maxScore: 10, topN: 3 } as any)
+    result.current.mutate({ name: 'New Event', date: '2026-05-01', location: 'Test', organizer: 'Test', calculationRule: 'R2', minScore: 0, maxScore: 10, topN: 3 } as Parameters<typeof result.current.mutate>[0])
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(mockEvent)

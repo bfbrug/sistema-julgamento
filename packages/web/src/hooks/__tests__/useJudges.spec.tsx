@@ -27,7 +27,7 @@ describe('useJudges', () => {
 
   it('should fetch judges', async () => {
     const mockJudges = [{ id: '1', user: { name: 'Judge 1' }, categories: [] }]
-    ;(apiClient as any).mockResolvedValue(mockJudges)
+    vi.mocked(apiClient).mockResolvedValue(mockJudges)
 
     const { result } = renderHook(() => useJudges(eventId), { wrapper })
 

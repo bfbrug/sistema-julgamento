@@ -27,7 +27,7 @@ describe('useCategories', () => {
 
   it('should fetch categories', async () => {
     const mockCategories = [{ id: '1', name: 'Cat 1' }]
-    ;(apiClient as any).mockResolvedValue(mockCategories)
+    vi.mocked(apiClient).mockResolvedValue(mockCategories)
 
     const { result } = renderHook(() => useCategories(eventId), { wrapper })
 
@@ -38,7 +38,7 @@ describe('useCategories', () => {
 
   it('should create a category', async () => {
     const mockCategory = { id: '2', name: 'New Cat' }
-    ;(apiClient as any).mockResolvedValue(mockCategory)
+    vi.mocked(apiClient).mockResolvedValue(mockCategory)
 
     const { result } = renderHook(() => useCreateCategory(eventId), { wrapper })
 

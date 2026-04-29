@@ -1,5 +1,7 @@
 'use client'
 
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { useEvents } from '@/hooks/useEvents'
@@ -7,6 +9,10 @@ import { useAuthStore } from '@/stores/auth.store'
 import { Calendar, Users, Trophy, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { EventStatus } from '@judging/shared'
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
@@ -100,8 +106,4 @@ export default function DashboardPage() {
       </div>
     </div>
   )
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ')
 }

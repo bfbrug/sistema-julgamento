@@ -44,12 +44,12 @@ describe('useLiveScoring', () => {
 
   it('should fetch initial state on connect', async () => {
     const mockState = { currentParticipant: null, queue: [], judges: [] }
-    ;(apiClient as any).mockResolvedValue(mockState)
+    vi.mocked(apiClient).mockResolvedValue(mockState)
 
-    const { result } = renderHook(() => useLiveScoring(eventId))
+    renderHook(() => useLiveScoring(eventId))
     
-    const mockSocket = (io as any).mock.results[0].value
-    const connectHandler = mockSocket.on.mock.calls.find((call: any) => call[0] === 'connect')[1]
+    const mockSocket = vi.mocked(io).mock.results[0].value as { on: ReturnType<typeof vi.fn> }
+    const connectHandler = (mockSocket.on.mock.calls as [string, () => void][]).find((call) => call[0] === 'connect')?.[1]
     
     connectHandler()
 

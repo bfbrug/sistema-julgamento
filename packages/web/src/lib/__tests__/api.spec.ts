@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { apiClient, ApiError } from '../api'
-import { useAuthStore } from '@/stores/auth.store'
 
 vi.mock('@/stores/auth.store', () => ({
   useAuthStore: {
@@ -20,7 +19,7 @@ describe('apiClient', () => {
   })
 
   it('should include Authorization header if token exists', async () => {
-    ;(global.fetch as any).mockResolvedValue({
+    vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: { success: true } }),
     })
@@ -38,7 +37,7 @@ describe('apiClient', () => {
   })
 
   it('should throw ApiError if response is not ok', async () => {
-    ;(global.fetch as any).mockResolvedValue({
+    vi.mocked(global.fetch).mockResolvedValue({
       ok: false,
       status: 400,
       json: () => Promise.resolve({ error: 'Bad Request', code: 'BAD_REQUEST' }),
@@ -49,7 +48,7 @@ describe('apiClient', () => {
 
   it('should return data on success', async () => {
     const mockData = { id: 1, name: 'Test' }
-    ;(global.fetch as any).mockResolvedValue({
+    vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: mockData }),
     })
