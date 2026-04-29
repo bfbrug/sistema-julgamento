@@ -16,6 +16,7 @@ import { EventResponseDto, TiebreakerConfigDto } from './dto/event-response.dto'
 import { EventStateMachine } from './state-machine/event-state.machine'
 import { EventStatus, CalculationRule } from '@prisma/client'
 import { plainToInstance } from 'class-transformer'
+import { ScoringGateway } from '../scoring/scoring.gateway'
 
 const KNOWN_PLACEHOLDERS = ['{{participante}}', '{{evento}}', '{{data}}', '{{local}}', '{{organizador}}']
 
@@ -50,6 +51,7 @@ export class EventsService {
   constructor(
     @Inject(EventsRepository) private readonly repository: EventsRepository,
     @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(ScoringGateway) private readonly scoringGateway: ScoringGateway,
   ) {}
 
   async create(dto: CreateEventDto, managerId: string): Promise<EventResponseDto> {
@@ -218,6 +220,13 @@ export class EventsService {
     }
 
     const updated = await this.repository.updateStatus(id, dto.targetStatus)
+
+    if (dto.targetStatus === EventStatus.FINISHED) {
+      this.scoringGateway.emitToEvent(id, 'event_state_changed', {
+        eventId: id,
+        status: EventStatus.FINISHED,
+      })
+    }
 
     await this.auditService.record({
       action: 'EVENT_STATUS_CHANGED',

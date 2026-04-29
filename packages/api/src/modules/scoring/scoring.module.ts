@@ -18,6 +18,6 @@ import { CalculationModule } from '../calculation/calculation.module'
     ScoringGateway,
     WsJwtGuard,
   ],
-  exports: [ScoringService],
+  exports: [ScoringService, ScoringGateway],
 })
 export class ScoringModule {}
