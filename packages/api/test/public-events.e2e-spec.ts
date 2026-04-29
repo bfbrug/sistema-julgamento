@@ -121,7 +121,7 @@ describe('PublicEventsController (e2e)', () => {
     })
 
     const category = await prisma.category.create({
-      data: { eventId, name: 'Criatividade', displayOrder: 1, weight: 1 },
+      data: { eventId, name: 'Criatividade', displayOrder: 1 },
     })
 
     const judge1 = await prisma.judge.create({
