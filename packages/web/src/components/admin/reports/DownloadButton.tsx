@@ -11,7 +11,7 @@ interface DownloadButtonProps {
 }
 
 export function DownloadButton({ eventId, type, lastJob }: DownloadButtonProps) {
-  const hasCompleted = lastJob?.status === 'completed'
+  const hasCompleted = lastJob?.status === 'COMPLETED'
   const apiBase = process.env['NEXT_PUBLIC_API_URL'] ?? ''
 
   const handleDownload = () => {

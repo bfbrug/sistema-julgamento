@@ -45,7 +45,7 @@ describe('ReportCard', () => {
   })
 
   it('botão "Baixar último" habilitado com job completed', () => {
-    const lastJob = { id: 'j1', status: 'completed' as const, completedAt: new Date().toISOString() } as never
+    const lastJob = { id: '1', eventId: 'e1', type: 'TOP_N', status: 'COMPLETED', progress: 100, filePath: 'mock.pdf', requestedBy: 'm1', createdAt: new Date().toISOString(), completedAt: new Date().toISOString() } as never
     render(
       <ReportCard eventId="e1" type="TOP_N" title="Top 10" description="" lastJob={lastJob} />,
     )

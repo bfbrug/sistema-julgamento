@@ -10,7 +10,7 @@ interface GenerationStatusProps {
 export function GenerationStatus({ job, isPolling }: GenerationStatusProps) {
   if (!job && !isPolling) return null
 
-  if (isPolling || job?.status === 'queued' || job?.status === 'processing') {
+  if (isPolling || job?.status === 'QUEUED' || job?.status === 'PROCESSING') {
     const progress = job?.progress ?? 0
     return (
       <div className="mt-3">
@@ -28,7 +28,7 @@ export function GenerationStatus({ job, isPolling }: GenerationStatusProps) {
     )
   }
 
-  if (job?.status === 'failed') {
+  if (job?.status === 'FAILED') {
     return (
       <p className="mt-2 text-xs text-danger-600">
         Falha: {job.error ?? 'erro desconhecido'}

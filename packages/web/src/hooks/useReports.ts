@@ -48,10 +48,10 @@ export function useJobPolling(eventId: string, jobId: string | null) {
         path: `/events/${eventId}/reports/jobs/${jobId}`,
       })
       setJob(result)
-      if (result.status === 'completed' || result.status === 'failed') {
+      if (result.status === 'COMPLETED' || result.status === 'FAILED') {
         setIsPolling(false)
         queryClient.invalidateQueries({ queryKey: ['reports', eventId] })
-        if (result.status === 'failed') toast.error(`Geração falhou: ${result.error ?? 'erro desconhecido'}`)
+        if (result.status === 'FAILED') toast.error(`Geração falhou: ${result.error ?? 'erro desconhecido'}`)
         else toast.success('Relatório gerado com sucesso!')
       }
     } catch {

@@ -1,6 +1,6 @@
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useReportJobs, useGenerateReport, useJobPolling } from '../useReports'
 import { apiClient } from '@/lib/api'
 import { toast } from 'sonner'
@@ -110,8 +110,8 @@ describe('useReports hooks', () => {
 
     it('polls job status until completed', async () => {
       vi.mocked(apiClient)
-        .mockResolvedValueOnce({ status: 'processing', progress: 50 })
-        .mockResolvedValueOnce({ status: 'completed', progress: 100 })
+        .mockResolvedValueOnce({ status: 'PROCESSING', progress: 50 })
+        .mockResolvedValueOnce({ status: 'COMPLETED', progress: 100 })
 
       const { result } = renderHook(() => useJobPolling('evt1', 'job1'), { wrapper })
 
@@ -125,21 +125,21 @@ describe('useReports hooks', () => {
         method: 'GET',
         path: '/events/evt1/reports/jobs/job1',
       })
-      expect(result.current.job).toEqual({ status: 'processing', progress: 50 })
+      expect(result.current.job).toEqual({ status: 'PROCESSING', progress: 50 })
       expect(result.current.isPolling).toBe(true)
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(2000)
       })
 
-      expect(result.current.job).toEqual({ status: 'completed', progress: 100 })
+      expect(result.current.job).toEqual({ status: 'COMPLETED', progress: 100 })
       expect(result.current.isPolling).toBe(false)
       expect(toast.success).toHaveBeenCalledWith('Relatório gerado com sucesso!')
     })
 
     it('shows error toast if polling fails with error status', async () => {
       vi.mocked(apiClient).mockReset()
-      vi.mocked(apiClient).mockResolvedValueOnce({ status: 'failed', error: 'some error' })
+      vi.mocked(apiClient).mockResolvedValueOnce({ status: 'FAILED', error: 'some error' })
 
       const { result } = renderHook(() => useJobPolling('evt1', 'job1'), { wrapper })
 
@@ -147,7 +147,7 @@ describe('useReports hooks', () => {
         await vi.advanceTimersByTimeAsync(2000)
       })
 
-      expect(result.current.job).toEqual({ status: 'failed', error: 'some error' })
+      expect(result.current.job).toEqual({ status: 'FAILED', error: 'some error' })
       expect(result.current.isPolling).toBe(false)
       expect(toast.error).toHaveBeenCalledWith('Geração falhou: some error')
     })
