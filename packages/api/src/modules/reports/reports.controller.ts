@@ -1,11 +1,11 @@
 import {
-  Controller, Post, Get, Param, Body, Req, Res, HttpCode,
+  Controller, Post, Get, Param, Body, Req, Res, HttpCode, Inject,
 } from '@nestjs/common'
-import { Roles } from '../auth/decorators/roles.decorator'
+import { Roles } from '../../common/decorators/roles.decorator'
 import { UserRole, ReportType } from '@prisma/client'
 import { ReportsService } from './reports.service'
 import { IStorageService, STORAGE_SERVICE } from '../storage/storage.service.interface'
-import { Inject } from '@nestjs/common'
+import type { FastifyReply } from 'fastify'
 import * as fs from 'fs'
 import * as path from 'path'
 import { env } from '../../config/env'
@@ -42,7 +42,7 @@ export class ReportsController {
     @Param('eventId') eventId: string,
     @Param('type') type: string,
     @Req() req: { user: { sub: string } },
-    @Res() res: import('@fastify/reply-from').FastifyReply,
+    @Res() res: FastifyReply,
   ) {
     const reportType = type.toUpperCase() as ReportType
     const filePath = await this.reportsService.download(eventId, req.user.sub, reportType)
@@ -50,13 +50,9 @@ export class ReportsController {
     const absPath = path.resolve(env.STORAGE_LOCAL_ROOT, filePath)
     const filename = path.basename(absPath)
 
-    const fastifyRes = res as unknown as {
-      header: (k: string, v: string) => void
-      send: (stream: unknown) => void
-    }
-    fastifyRes.header('Content-Type', 'application/pdf')
-    fastifyRes.header('Content-Disposition', `attachment; filename="${filename}"`)
-    fastifyRes.send(fs.createReadStream(absPath))
+    res.header('Content-Type', 'application/pdf')
+    res.header('Content-Disposition', `attachment; filename="${filename}"`)
+    res.send(fs.createReadStream(absPath))
   }
 
   @Get()
