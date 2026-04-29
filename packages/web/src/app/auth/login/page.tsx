@@ -77,7 +77,7 @@ export default function LoginPage() {
               type="submit"
               className="mt-2 w-full"
               disabled={!isValid || isLoading}
-              isLoading={isLoading}
+              loading={isLoading}
             >
               Entrar
             </Button>

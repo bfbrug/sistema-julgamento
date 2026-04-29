@@ -8,15 +8,17 @@ import { apiClient } from '@/lib/api'
 
 interface JudgeState {
   id: string
+  name: string
   status: string
   progress: number
-  [key: string]: unknown
 }
 
 interface ParticipantState {
+  id: string
   name: string
   status: string
-  [key: string]: unknown
+  presentationOrder: number
+  photoUrl?: string
 }
 
 interface QueueItem {
@@ -25,14 +27,12 @@ interface QueueItem {
   status: string
   presentationOrder: number
   photoUrl?: string
-  [key: string]: unknown
 }
 
 interface LiveState {
   currentParticipant: ParticipantState | null
   judges: JudgeState[]
   queue: QueueItem[]
-  [key: string]: unknown
 }
 
 export function useLiveScoring(eventId: string) {
@@ -43,7 +43,7 @@ export function useLiveScoring(eventId: string) {
 
   const fetchState = useCallback(async () => {
     try {
-      const state = await apiClient({ method: 'GET', path: `/scoring/events/${eventId}/state` })
+      const state = await apiClient<LiveState>({ method: 'GET', path: `/scoring/events/${eventId}/state` })
       setLiveState(state)
     } catch (error) {
       console.error('Failed to fetch live state', error)

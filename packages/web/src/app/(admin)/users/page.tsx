@@ -6,17 +6,10 @@ import { DataTable } from '@/components/admin/DataTable'
 import { Button } from '@/components/ui/Button'
 import { Edit, UserCog, Shield, Plus } from 'lucide-react'
 import Link from 'next/link'
-import { UserRole } from '@judging/shared'
+import { UserRole, type User } from '@judging/shared'
 import { cn } from '@/lib/utils'
 
-interface UserRow {
-  id: string
-  name: string
-  email: string
-  role: UserRole
-  isActive: boolean
-  [key: string]: unknown
-}
+type UserRow = User
 
 export default function UsersPage() {
   const { data: users, isLoading } = useUsers()
@@ -88,5 +81,4 @@ export default function UsersPage() {
 const roleColors: Record<UserRole, string> = {
   [UserRole.GESTOR]: 'bg-primary-100 text-primary-700',
   [UserRole.JURADO]: 'bg-secondary-100 text-secondary-700',
-  [UserRole.PUBLICO]: 'bg-neutral-100 text-neutral-700',
 }

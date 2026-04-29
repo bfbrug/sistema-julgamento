@@ -7,7 +7,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { useEvent } from '@/hooks/useEvents'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { UserRole, CalculationRule, type JudgeResponse } from '@judging/shared'
+import { UserRole, CalculationRule, type JudgeWithCategories as JudgeResponse } from '@judging/shared'
 import { Trash2, UserPlus, Info } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { clsx, type ClassValue } from 'clsx'
@@ -101,7 +101,7 @@ export default function EventJudgesPage() {
                 {judges?.map((judge) => (
                   <tr key={judge.id} className="hover:bg-secondary-50 transition-colors">
                     <td className="sticky left-0 bg-white group-hover:bg-secondary-50 border-b border-r border-secondary-200 px-4 py-3 font-medium text-secondary-900">
-                      {judge.user.name}
+                      {judge.displayName}
                     </td>
                     {categories.map((cat) => (
                       <td key={cat.id} className="border-b border-secondary-200 px-4 py-3 text-center">
@@ -181,7 +181,7 @@ export default function EventJudgesPage() {
           <div className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h3 className="text-lg font-bold text-secondary-900 mb-4">Adicionar Jurado</h3>
             <div className="max-h-60 overflow-y-auto space-y-2 mb-6">
-              {allUsers?.filter(u => !judges?.some(j => j.user.id === u.id)).map(user => (
+              {allUsers?.filter(u => !judges?.some(j => j.userId === u.id)).map(user => (
                 <button
                   key={user.id}
                   className="flex w-full items-center justify-between p-3 rounded hover:bg-secondary-50 border border-secondary-100 transition-colors"

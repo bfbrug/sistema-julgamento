@@ -22,7 +22,7 @@ describe('apiClient', () => {
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: { success: true } }),
-    })
+    } as Response)
 
     await apiClient({ method: 'GET', path: '/test' })
 
@@ -41,7 +41,7 @@ describe('apiClient', () => {
       ok: false,
       status: 400,
       json: () => Promise.resolve({ error: 'Bad Request', code: 'BAD_REQUEST' }),
-    })
+    } as Response)
 
     await expect(apiClient({ method: 'GET', path: '/test' })).rejects.toThrow(ApiError)
   })
@@ -51,7 +51,7 @@ describe('apiClient', () => {
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: mockData }),
-    })
+    } as Response)
 
     const result = await apiClient({ method: 'GET', path: '/test' })
 

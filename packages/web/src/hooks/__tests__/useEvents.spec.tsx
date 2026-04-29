@@ -47,7 +47,7 @@ describe('useEvents', () => {
 
     const { result } = renderHook(() => useCreateEvent(), { wrapper })
 
-    result.current.mutate({ name: 'New Event', date: '2026-05-01', location: 'Test', organizer: 'Test', calculationRule: 'R2', minScore: 0, maxScore: 10, topN: 3 } as Parameters<typeof result.current.mutate>[0])
+    result.current.mutate({ name: 'New Event', eventDate: '2026-05-01', location: 'Test', organizer: 'Test', calculationRule: 'R2', scoreMin: 0, scoreMax: 10, topN: 3 } as Parameters<typeof result.current.mutate>[0])
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(mockEvent)

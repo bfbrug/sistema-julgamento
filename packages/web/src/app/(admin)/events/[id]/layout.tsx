@@ -48,7 +48,7 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
 
       <PageHeader
         title={event.name}
-        description={`${event.location} • ${new Date(event.date).toLocaleDateString('pt-BR')}`}
+        description={`${event.location} • ${new Date(event.eventDate).toLocaleDateString('pt-BR')}`}
         action={
           <div className="flex gap-2">
             {event.status === EventStatus.DRAFT && (

@@ -13,14 +13,8 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 
-interface EventRow {
-  id: string
-  name: string
-  date: string
-  status: EventStatus
-  topN: number
-  [key: string]: unknown
-}
+import type { JudgingEvent } from '@judging/shared'
+type EventRow = JudgingEvent
 
 export default function EventsPage() {
   const { data: events, isLoading } = useEvents()
@@ -31,7 +25,7 @@ export default function EventsPage() {
     { header: 'Nome', accessor: 'name' as const },
     { 
       header: 'Data', 
-      accessor: (event: EventRow) => format(new Date(event.date), "dd 'de' MMMM, yyyy", { locale: ptBR })
+      accessor: (event: EventRow) => format(new Date(event.eventDate), "dd 'de' MMMM, yyyy", { locale: ptBR })
     },
     { 
       header: 'Status', 

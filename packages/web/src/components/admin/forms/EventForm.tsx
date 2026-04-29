@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createEventSchema, type CreateEventDto, CalculationRule } from '@judging/shared'
+import type { Resolver } from 'react-hook-form'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -19,14 +20,14 @@ export function EventForm({ initialData, onSubmit, isLoading }: EventFormProps) 
     handleSubmit,
     formState: { errors },
   } = useForm<CreateEventDto>({
-    resolver: zodResolver(createEventSchema),
+    resolver: zodResolver(createEventSchema) as Resolver<CreateEventDto>,
     defaultValues: {
       calculationRule: CalculationRule.R2,
-      minScore: 0,
-      maxScore: 10,
+      scoreMin: 0,
+      scoreMax: 10,
       topN: 3,
       ...initialData,
-      date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : undefined,
+      eventDate: initialData?.eventDate ? new Date(initialData.eventDate).toISOString().split('T')[0] : undefined,
     },
   })
 
@@ -43,11 +44,11 @@ export function EventForm({ initialData, onSubmit, isLoading }: EventFormProps) 
               placeholder="Ex: Campeonato de Skate 2026"
             />
             <Input
-              id="date"
+              id="eventDate"
               label="Data"
               type="date"
-              {...register('date')}
-              error={errors.date?.message}
+              {...register('eventDate')}
+              error={errors.eventDate?.message}
             />
             <Input
               id="location"
@@ -80,20 +81,20 @@ export function EventForm({ initialData, onSubmit, isLoading }: EventFormProps) 
               )}
             </div>
             <Input
-              id="minScore"
+              id="scoreMin"
               label="Nota Mínima"
               type="number"
               step="0.1"
-              {...register('minScore', { valueAsNumber: true })}
-              error={errors.minScore?.message}
+              {...register('scoreMin', { valueAsNumber: true })}
+              error={errors.scoreMin?.message}
             />
             <Input
-              id="maxScore"
+              id="scoreMax"
               label="Nota Máxima"
               type="number"
               step="0.1"
-              {...register('maxScore', { valueAsNumber: true })}
-              error={errors.maxScore?.message}
+              {...register('scoreMax', { valueAsNumber: true })}
+              error={errors.scoreMax?.message}
             />
             <Input
               id="topN"
@@ -102,22 +103,6 @@ export function EventForm({ initialData, onSubmit, isLoading }: EventFormProps) 
               {...register('topN', { valueAsNumber: true })}
               error={errors.topN?.message}
             />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-secondary-700">Texto do Certificado</label>
-            <textarea
-              {...register('certificateText')}
-              rows={4}
-              placeholder="Ex: Certificamos que {participant_name} participou do {event_name}..."
-              className="mt-1 block w-full rounded-md border border-secondary-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-            />
-            <p className="mt-2 text-xs text-secondary-500">
-              Placeholders: {'{participant_name}'}, {'{event_name}'}, {'{date}'}, {'{rank}'}, {'{score}'}
-            </p>
-            {errors.certificateText && (
-              <p className="mt-1 text-xs text-danger-500">{errors.certificateText.message}</p>
-            )}
           </div>
 
           <div className="flex justify-end gap-3">

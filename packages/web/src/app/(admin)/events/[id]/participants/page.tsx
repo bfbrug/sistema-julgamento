@@ -137,7 +137,6 @@ export default function EventParticipantsPage() {
 interface ParticipantItem {
   id: string
   name: string
-  [key: string]: unknown
 }
 
 function SortableParticipantItem({ participant, index, onDelete }: { participant: ParticipantItem; index: number; onDelete: () => void }) {

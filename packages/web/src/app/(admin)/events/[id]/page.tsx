@@ -55,7 +55,7 @@ export default function EventCategoriesPage() {
   const handleAddCategory = (e: FormEvent) => {
     e.preventDefault()
     if (!newName.trim()) return
-    createCategory({ name: newName.trim(), weight: 1 }, {
+    createCategory({ name: newName.trim(), displayOrder: 1 }, {
       onSuccess: () => setNewName('')
     })
   }
@@ -112,7 +112,6 @@ export default function EventCategoriesPage() {
 interface CategoryItem {
   id: string
   name: string
-  [key: string]: unknown
 }
 
 function SortableCategoryItem({ category, onDelete }: { category: CategoryItem; onDelete: () => void }) {

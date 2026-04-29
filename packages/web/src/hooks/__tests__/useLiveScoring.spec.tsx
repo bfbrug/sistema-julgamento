@@ -48,10 +48,10 @@ describe('useLiveScoring', () => {
 
     renderHook(() => useLiveScoring(eventId))
     
-    const mockSocket = vi.mocked(io).mock.results[0].value as { on: ReturnType<typeof vi.fn> }
+    const mockSocket = vi.mocked(io).mock.results[0]!.value as { on: ReturnType<typeof vi.fn> }
     const connectHandler = (mockSocket.on.mock.calls as [string, () => void][]).find((call) => call[0] === 'connect')?.[1]
-    
-    connectHandler()
+
+    if (connectHandler) connectHandler()
 
     await waitFor(() => expect(apiClient).toHaveBeenCalled())
   })

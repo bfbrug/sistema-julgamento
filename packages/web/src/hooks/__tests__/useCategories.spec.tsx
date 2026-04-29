@@ -42,7 +42,7 @@ describe('useCategories', () => {
 
     const { result } = renderHook(() => useCreateCategory(eventId), { wrapper })
 
-    result.current.mutate({ name: 'New Cat', weight: 1 })
+    result.current.mutate({ name: 'New Cat', displayOrder: 1 })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(mockCategory)

@@ -64,7 +64,7 @@ export default function DashboardPage() {
                   >
                     <div>
                       <p className="font-medium text-secondary-900">{event.name}</p>
-                      <p className="text-xs text-secondary-500">{new Date(event.date).toLocaleDateString('pt-BR')}</p>
+                      <p className="text-xs text-secondary-500">{new Date(event.eventDate).toLocaleDateString('pt-BR')}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={cn(
