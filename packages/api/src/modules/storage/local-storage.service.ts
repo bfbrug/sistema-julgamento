@@ -11,18 +11,21 @@ import { AppException } from '../../common/exceptions/app.exception'
 const MIME_TO_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
+  'application/pdf': 'pdf',
 }
 
 const CATEGORY_MAX_BYTES: Record<string, number> = {
   'participant-photo': env.PARTICIPANT_PHOTO_MAX_BYTES,
   'certificate-background': 10 * 1024 * 1024, // 10 MB
   'certificate-signature': 5 * 1024 * 1024,   // 5 MB
+  'reports': 50 * 1024 * 1024,                 // 50 MB
 }
 
 const CATEGORY_ALLOWED_MIMES: Record<string, string[]> = {
   'participant-photo': env.PARTICIPANT_PHOTO_ALLOWED_MIMES.split(',').map((m) => m.trim()),
   'certificate-background': ['image/jpeg', 'image/png'],
   'certificate-signature': ['image/jpeg', 'image/png'],
+  'reports': ['application/pdf'],
 }
 
 /**

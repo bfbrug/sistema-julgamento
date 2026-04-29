@@ -1,0 +1,34 @@
+{{> header}}
+  <h1>{{event.name}}</h1>
+  <p class="event-meta">{{event.eventDate}} &bull; {{event.location}} &bull; {{event.organizer}}</p>
+  <h2>Classificação Geral</h2>
+  <table>
+    <thead>
+      <tr>
+        <th class="position">Pos.</th>
+        <th>Participante</th>
+        <th class="score">Nota Final</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each entries}}
+      <tr>
+        <td class="position">{{this.position}}{{#if this.tied}}<span class="tie-marker">*</span>{{/if}}</td>
+        <td>{{this.participantName}}</td>
+        <td class="score">{{this.finalScore}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{#if tied}}
+  <p style="font-size:10px;color:#888;">* Posição compartilhada por empate</p>
+  {{/if}}
+  {{#if absents.length}}
+  <div class="section-title">Desclassificados por Ausência</div>
+  <ul class="absent-list">
+    {{#each absents}}
+    <li>{{this.participantName}}</li>
+    {{/each}}
+  </ul>
+  {{/if}}
+{{> footer}}

@@ -1,0 +1,27 @@
+{{> header}}
+  <h1>{{event.name}}</h1>
+  <p class="event-meta">{{event.eventDate}} &bull; {{event.location}} &bull; {{event.organizer}}</p>
+  <h2>Notas Detalhadas por Jurado</h2>
+  <div class="warning-box">Identidade dos jurados anonimizada. As notas individuais são confidenciais.</div>
+  {{#each judgeEntries}}
+  <div class="section-title">{{this.judgeAlias}}</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Participante</th>
+        <th>Categoria</th>
+        <th class="score">Nota</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each this.scores}}
+      <tr>
+        <td>{{this.participantName}}</td>
+        <td>{{this.categoryName}}</td>
+        <td class="score">{{this.value}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{/each}}
+{{> footer}}
