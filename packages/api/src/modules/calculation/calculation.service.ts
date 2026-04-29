@@ -41,12 +41,15 @@ export class CalculationService {
       throw new BadRequestException(`Regra de cálculo não suportada: ${event.calculationRule}`)
     }
 
-    const excluded: Array<{ participant: { id: string; name: string }; reason: 'ABSENT' | 'NO_SCORES' }> = excludedParticipantsData.map((p: any) => ({
+    const excluded: Array<{
+      participant: { id: string; name: string }
+      reason: 'ABSENT' | 'NO_SCORES'
+    }> = excludedParticipantsData.map((p) => ({
       participant: { id: p.id, name: p.name },
       reason: 'ABSENT',
     }))
 
-    const results: any[] = []
+    const results: unknown[] = []
     const r2FallbackCategories: Array<{ id: string; name: string; reason: string }> = []
 
     for (const participant of eligibleParticipants) {
@@ -54,7 +57,7 @@ export class CalculationService {
         participantId: participant.id,
         judgesActiveInEvent: judges,
         categories: event.categories,
-        scores: participant.scores.map((s: any) => ({
+        scores: participant.scores.map((s) => ({
           judgeId: s.judgeId,
           categoryId: s.categoryId,
           value: decimalToNumber(s.value),
@@ -179,8 +182,10 @@ export class CalculationService {
     }
 
     const actualN = Math.min(n, fullCalculation.data.rankings.length)
-    const cutoffPosition = fullCalculation.data.rankings[actualN - 1].position
+    const cutoffPosition = fullCalculation.data.rankings[actualN - 1]?.position
     
+    if (cutoffPosition === undefined) return fullCalculation
+
     const topRankings = fullCalculation.data.rankings.filter(r => r.position <= cutoffPosition)
 
     return {
