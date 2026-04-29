@@ -31,7 +31,22 @@ export class CalculationRepository {
       scoreMax: decimalToNumber(event.scoreMax),
       status: event.status,
       categories: event.categories,
+      topN: event.topN,
     }
+  }
+
+  async getTiebreakerConfig(eventId: string) {
+    return this.prisma.tiebreakerConfig.findUnique({
+      where: { eventId },
+    })
+  }
+
+  async getCategoryNamesMap(eventId: string): Promise<Map<string, string>> {
+    const categories = await this.prisma.category.findMany({
+      where: { eventId },
+      select: { id: true, name: true },
+    })
+    return new Map(categories.map((c) => [c.id, c.name]))
   }
 
   async getEligibleParticipants(eventId: string) {
