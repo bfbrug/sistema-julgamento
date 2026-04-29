@@ -5,6 +5,7 @@ import { AuditService } from '../../audit/audit.service'
 import { PrismaService } from '../../../config/prisma.service'
 import { ScoringGateway } from '../scoring.gateway'
 import { ConflictException, UnprocessableEntityException } from '@nestjs/common'
+import { CalculationService } from '../../calculation/calculation.service'
 
 describe('ScoringService', () => {
   let service: ScoringService
@@ -87,6 +88,7 @@ describe('ScoringService', () => {
           },
         },
         { provide: ScoringGateway, useValue: mockGateway },
+        { provide: CalculationService, useValue: { invalidateCache: vi.fn() } },
       ],
     }).compile()
 

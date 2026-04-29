@@ -17,6 +17,7 @@ import { CategoriesModule } from './modules/categories/categories.module'
 import { JudgesModule } from './modules/judges/judges.module'
 import { ParticipantsModule } from './modules/participants/participants.module'
 import { ScoringModule } from './modules/scoring/scoring.module'
+import { CalculationModule } from './modules/calculation/calculation.module'
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ScoringModule } from './modules/scoring/scoring.module'
     JudgesModule,
     ParticipantsModule,
     ScoringModule,
+    CalculationModule,
     UsersModule,
     EventsModule,
     ThrottlerModule.forRoot([

@@ -7,6 +7,7 @@ import { PrismaService } from '../../config/prisma.service'
 import { RegisterScoresDto } from './dto/register-scores.dto'
 import { WS_EVENTS } from '@judging/shared'
 import { ScoringGateway } from './scoring.gateway'
+import { CalculationService } from '../calculation/calculation.service'
 
 @Injectable()
 export class ScoringService {
@@ -15,6 +16,7 @@ export class ScoringService {
     @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ScoringGateway) private readonly gateway: ScoringGateway,
+    @Inject(CalculationService) private readonly calculationService: CalculationService,
   ) {}
 
   async activateParticipant(eventId: string, participantId: string, managerId: string) {
@@ -335,6 +337,8 @@ export class ScoringService {
       judgeDisplayName: judge?.displayName || 'Jurado',
       status: 'FINISHED',
     })
+
+    this.calculationService.invalidateCache(eventId)
 
     await this.auditService.record({
       actorId: userId,
