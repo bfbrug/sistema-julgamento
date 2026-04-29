@@ -5,6 +5,7 @@ import { R1Strategy } from './strategies/r1-strategy'
 import { R2Strategy } from './strategies/r2-strategy'
 import { CalculationInput, R2Breakdown } from './strategies/calculation-strategy.interface'
 import { decimalToNumber } from './helpers/numeric'
+import { TiebreakerService } from './tiebreaker/tiebreaker.service'
 
 @Injectable()
 export class CalculationService {
@@ -15,6 +16,7 @@ export class CalculationService {
     @Inject(CalculationRepository) private readonly repository: CalculationRepository,
     @Inject(R1Strategy) private readonly r1Strategy: R1Strategy,
     @Inject(R2Strategy) private readonly r2Strategy: R2Strategy,
+    @Inject(TiebreakerService) private readonly tiebreakerService: TiebreakerService,
   ) {}
 
   async calculate(eventId: string, managerId: string): Promise<CalculationResponseDto> {
@@ -95,32 +97,13 @@ export class CalculationService {
       }
     }
 
-    // Sort by finalScoreRaw desc
-    results.sort((a, b) => b.finalScoreRaw - a.finalScoreRaw)
+    // Apply Tiebreaker
+    const [tiebreakerConfig, categoryNames] = await Promise.all([
+      this.repository.getTiebreakerConfig(eventId),
+      this.repository.getCategoryNamesMap(eventId),
+    ])
 
-    // Assign positions (ties get same position)
-    let currentPosition = 1
-    let previousScoreRaw: number | null = null
-    let itemsSinceLastDifferentScore = 0
-
-    const rankings = results.map((result) => {
-      if (previousScoreRaw !== null && result.finalScoreRaw < previousScoreRaw) {
-        currentPosition += itemsSinceLastDifferentScore
-        itemsSinceLastDifferentScore = 1
-      } else {
-        itemsSinceLastDifferentScore++
-      }
-
-      previousScoreRaw = result.finalScoreRaw
-
-      return {
-        position: currentPosition,
-        participant: result.participant,
-        finalScore: result.finalScore,
-        finalScoreRaw: result.finalScoreRaw,
-        breakdown: result.breakdown,
-      }
-    })
+    const ranked = this.tiebreakerService.apply(results, tiebreakerConfig, categoryNames)
 
     const response: CalculationResponseDto = {
       data: {
@@ -133,11 +116,38 @@ export class CalculationService {
           status: event.status,
         },
         calculatedAt: new Date().toISOString(),
-        rankings,
+        tiebreakerConfig: tiebreakerConfig
+          ? {
+              firstCategory: tiebreakerConfig.firstCategoryId
+                ? {
+                    id: tiebreakerConfig.firstCategoryId,
+                    name: categoryNames.get(tiebreakerConfig.firstCategoryId) || '?',
+                  }
+                : null,
+              secondCategory: tiebreakerConfig.secondCategoryId
+                ? {
+                    id: tiebreakerConfig.secondCategoryId,
+                    name: categoryNames.get(tiebreakerConfig.secondCategoryId) || '?',
+                  }
+                : null,
+            }
+          : null,
+        rankings: ranked.map((r) => ({
+          position: r.position,
+          participant: {
+            id: r.participantId,
+            name: r.name,
+            presentationOrder: r.presentationOrder,
+          },
+          finalScore: r.finalScore,
+          finalScoreRaw: r.finalScoreRaw,
+          breakdown: r.breakdown,
+          tiebreaker: r.tiebreaker,
+        })),
         excluded,
         diagnostics: {
           totalParticipants: eligibleParticipants.length + excludedParticipantsData.length,
-          rankedParticipants: rankings.length,
+          rankedParticipants: ranked.length,
           excludedParticipants: excluded.length,
           r2FallbackCategories: r2FallbackCategories.length > 0 ? r2FallbackCategories : undefined,
         },
@@ -147,6 +157,39 @@ export class CalculationService {
     this.cache.set(cacheKey, { timestamp: Date.now(), data: response })
 
     return response
+  }
+
+  async getTopN(eventId: string, managerId: string, n: number): Promise<CalculationResponseDto> {
+    const fullCalculation = await this.calculate(eventId, managerId)
+    
+    // We need to use the actual position for boundary expansion
+    // The tiebreaker service has the logic for this
+    
+    // Convert DTO back to a format suitable for TiebreakerService.selectTopN
+    // Actually, we can just filter the rankings in the DTO
+    
+    if (fullCalculation.data.rankings.length === 0 || n <= 0) {
+      return {
+        ...fullCalculation,
+        data: {
+          ...fullCalculation.data,
+          rankings: [],
+        },
+      }
+    }
+
+    const actualN = Math.min(n, fullCalculation.data.rankings.length)
+    const cutoffPosition = fullCalculation.data.rankings[actualN - 1].position
+    
+    const topRankings = fullCalculation.data.rankings.filter(r => r.position <= cutoffPosition)
+
+    return {
+      ...fullCalculation,
+      data: {
+        ...fullCalculation.data,
+        rankings: topRankings,
+      },
+    }
   }
 
   invalidateCache(eventId: string) {
