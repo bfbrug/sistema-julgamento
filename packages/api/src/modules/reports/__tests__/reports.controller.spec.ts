@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ReportsController } from '../reports.controller'
 import { ReportType } from '@prisma/client'
 import * as fs from 'fs'
+import { FastifyReply } from 'fastify'
 
 vi.mock('fs', async () => {
   const actual = await vi.importActual<typeof import('fs')>('fs')
@@ -58,12 +59,12 @@ describe('ReportsController', () => {
 
   it('GET /:type/download: baixa PDF do job completed mais recente', async () => {
     mockReportsService.download.mockResolvedValueOnce('reports/mock.pdf')
-    vi.mocked(fs.createReadStream).mockReturnValue('mock-stream' as any)
+    vi.mocked(fs.createReadStream).mockReturnValue('mock-stream' as unknown as fs.ReadStream)
     
     const mockRes = {
       header: vi.fn(),
       send: vi.fn(),
-    } as any
+    } as unknown as FastifyReply
 
     await controller.download('e1', 'TOP_N', { user: { sub: 'm1' } }, mockRes)
     

@@ -1,3 +1,4 @@
+/* global Buffer */
 import { ReportsProcessor } from '../reports.processor'
 import { ReportType, ReportJobStatus } from '@prisma/client'
 import { Job } from 'bullmq'
@@ -46,15 +47,15 @@ describe('ReportsProcessor', () => {
 
     // Mock das operacoes de template
     vi.mocked(fs.existsSync).mockReturnValue(true)
-    vi.mocked(fs.readdirSync).mockReturnValue(['footer.hbs'] as any)
+    vi.mocked(fs.readdirSync).mockReturnValue(['footer.hbs'] as unknown as fs.Dirent[])
     vi.mocked(fs.readFileSync).mockReturnValue('template-content')
 
     processor = new ReportsProcessor(
-      mockPdfService as any,
-      mockRankingBuilder as any,
-      mockRepository as any,
-      mockAuditService as any,
-      mockStorageService as any
+      mockPdfService as unknown as import('../../../services/pdf.service').PdfService,
+      mockRankingBuilder as unknown as import('../ranking-builder.service').RankingBuilderService,
+      mockRepository as unknown as import('../reports.repository').ReportsRepository,
+      mockAuditService as unknown as import('../../audit/audit.service').AuditService,
+      mockStorageService as unknown as import('../../storage/storage.service.interface').IStorageService
     )
   })
 

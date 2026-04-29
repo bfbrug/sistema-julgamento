@@ -1,10 +1,11 @@
+/* global __dirname */
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Inject } from '@nestjs/common'
 import { Job } from 'bullmq'
 import { randomUUID } from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
-import Handlebars from 'handlebars'
+import * as Handlebars from 'handlebars'
 import { ReportType, ReportJobStatus } from '@prisma/client'
 import { PdfService } from '../../services/pdf.service'
 import { RankingBuilderService } from './ranking-builder.service'
@@ -50,7 +51,7 @@ export class ReportsProcessor extends WorkerHost {
     }
   }
 
-  private loadTemplate(name: string): HandlebarsTemplateDelegate {
+  private loadTemplate(name: string): Handlebars.TemplateDelegate {
     const filePath = path.join(this.templatesDir, `${name}.hbs`)
     const source = fs.readFileSync(filePath, 'utf-8')
     return Handlebars.compile(source)
