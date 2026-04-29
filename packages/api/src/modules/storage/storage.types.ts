@@ -1,4 +1,4 @@
-export type StorageCategory = 'participant-photo' | 'certificate-background' | 'certificate-signature'
+export type StorageCategory = 'participant-photo' | 'certificate-background' | 'certificate-signature' | 'reports'
 
 export interface UploadInput {
   buffer: Buffer

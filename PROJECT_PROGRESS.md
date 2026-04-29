@@ -6,9 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 16 de 20 |
+| **Prompts concluídos** | 17 de 20 |
 | **Fase atual** | 5 — Relatórios e certificados |
-| **Próximo prompt** | P16 — Painel ao vivo público |
+| **Próximo prompt** | P18 — Módulo certificates |
 | **Última atualização** | 2026-04-29 |
 
 ---
@@ -50,7 +50,7 @@
 
 - [x] **P15** — UI do jurado
 - [ ] **P16** — Painel ao vivo público
-- [ ] **P17** — Geração de PDF com Puppeteer
+- [x] **P17** — Geração de PDF com Puppeteer
 - [ ] **P18** — Módulo de certificados
 - [ ] **P19** — Upload de imagens (background, assinatura)
 
@@ -81,6 +81,7 @@
 | P13 | 2026-04-29 | feature/p13-tiebreaker | 95% | Cascata de desempate determinística (2 níveis) |
 | P14 | 2026-04-29 | feature/p14-ui-gestor | 54% | Login real; interceptor refresh; CRUDs completos; Matriz; Live Control WS |
 | P15 | 2026-04-29 | feature/p15-ui-jurado | 87% | Fluxo completo do jurado: preview → scoring → review → finished; WebSocket sync; drafts sessionStorage; cobertura de hooks existentes aumentada |
+| P17 | 2026-04-29 | feature/p17-modulo-reports | 80%+ | Módulo reports; Puppeteer PDF generation, BullMQ worker |
 
 
 ### 2026-04-29 — Tag v0.5.0 — Fim da Fase 5 (parcial)
