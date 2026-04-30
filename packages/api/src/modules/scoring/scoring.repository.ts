@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common'
+import { Injectable, Inject, ConflictException } from '@nestjs/common'
 import { PrismaService } from '../../config/prisma.service'
 import {
   Participant,
@@ -85,6 +85,26 @@ export class ScoringRepository {
     tx?: Prisma.TransactionClient,
   ): Promise<Score> {
     const client = tx ?? this.prisma
+
+    // Guard: não sobrescrever nota já finalizada
+    const existing = await client.score.findUnique({
+      where: {
+        participantId_judgeId_categoryId: {
+          participantId: data.participantId as string,
+          judgeId: data.judgeId as string,
+          categoryId: data.categoryId as string,
+        },
+      },
+      select: { isFinalized: true },
+    })
+
+    if (existing?.isFinalized) {
+      throw new ConflictException({
+        code: 'SCORE_ALREADY_FINALIZED',
+        message: 'Esta nota já foi finalizada e não pode ser alterada',
+      })
+    }
+
     return client.score.upsert({
       where: {
         participantId_judgeId_categoryId: {
