@@ -27,6 +27,7 @@ const mockStorage = {
   getPublicUrl: vi.fn().mockResolvedValue('/uploads/test.png'),
 }
 const mockLogger = { info: vi.fn(), error: vi.fn(), warn: vi.fn() }
+const mockPrisma = { $transaction: vi.fn(async (cb: any) => cb({ auditLog: { create: vi.fn() } })) }
 
 function makeService() {
   return new CertificatesService(
@@ -35,6 +36,7 @@ function makeService() {
     mockAudit as never,
     mockStorage as never,
     mockLogger as never,
+    mockPrisma as never,
   )
 }
 
@@ -82,7 +84,7 @@ describe('CertificatesService', () => {
       const result = await service.updateText('e1', 'm1', { certificateText: 'Olá {{desconhecido}}' })
       expect(result.certificateText).toBe('Olá {{desconhecido}}')
       expect(result.warnings).toContain('UNKNOWN_PLACEHOLDER')
-      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_TEXT_UPDATED' }))
+      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_TEXT_UPDATED' }), expect.anything())
     })
 
     it('rejeita texto > 1500 caracteres via DTO (simulado)', async () => {
@@ -106,7 +108,7 @@ describe('CertificatesService', () => {
       const result = await service.uploadBackground('e1', 'm1', Buffer.from('img'), 'bg.jpg')
       expect(result.path).toBe('new.png')
       expect(mockStorage.remove).toHaveBeenCalledWith('old.png')
-      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_BACKGROUND_UPLOADED' }))
+      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_BACKGROUND_UPLOADED' }), expect.anything())
     })
 
     it('rejeita arquivo > 5MB', async () => {
@@ -125,7 +127,7 @@ describe('CertificatesService', () => {
 
       await service.removeBackground('e1', 'm1')
       expect(mockStorage.remove).toHaveBeenCalledWith('bg.png')
-      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_BACKGROUND_REMOVED' }))
+      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_BACKGROUND_REMOVED' }), expect.anything())
     })
   })
 
@@ -143,7 +145,7 @@ describe('CertificatesService', () => {
 
       const result = await service.addSignature('e1', 'm1', Buffer.from('img'), 'sig.png', 'Ana', 'Dir', 1)
       expect(result.displayOrder).toBe(1)
-      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_SIGNATURE_ADDED' }))
+      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_SIGNATURE_ADDED' }), expect.anything())
     })
 
     it('rejeita 4ª assinatura', async () => {
@@ -209,7 +211,7 @@ describe('CertificatesService', () => {
 
       await service.removeSignature('e1', 'm1', 's1')
       expect(mockStorage.remove).toHaveBeenCalledWith('sig.png')
-      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_SIGNATURE_REMOVED' }))
+      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_SIGNATURE_REMOVED' }), expect.anything())
     })
   })
 
@@ -244,7 +246,7 @@ describe('CertificatesService', () => {
       const result = await service.enqueueBatchGeneration('e1', 'm1')
       expect(result.jobId).toBe('job-1')
       expect(mockQueue.add).toHaveBeenCalled()
-      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_BATCH_QUEUED' }))
+      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CERTIFICATE_BATCH_QUEUED' }), expect.anything())
     })
 
     it('falha se background ausente', async () => {

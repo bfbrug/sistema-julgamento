@@ -13,7 +13,7 @@ vi.mock('bcrypt');
 
 describe('AuthService', () => {
   let service: AuthService;
-  let prisma: PrismaService;
+  let prisma: any;
   let jwt: JwtService;
   let audit: AuditService;
 
@@ -30,15 +30,18 @@ describe('AuthService', () => {
   };
 
   beforeEach(async () => {
+    prisma = {
+      user: { findUnique: vi.fn() },
+      refreshToken: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    };
+    prisma.$transaction = vi.fn(async (cb: any) => cb(prisma));
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         {
           provide: PrismaService,
-          useValue: {
-            user: { findUnique: vi.fn() },
-            refreshToken: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
-          },
+          useValue: prisma,
         },
         {
           provide: JwtService,
@@ -52,7 +55,6 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    prisma = module.get<PrismaService>(PrismaService);
     jwt = module.get<JwtService>(JwtService);
     audit = module.get<AuditService>(AuditService);
   });
@@ -66,14 +68,14 @@ describe('AuthService', () => {
 
       expect(result).toHaveProperty('accessToken', 'token');
       expect(result).toHaveProperty('refreshToken', 'token');
-      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGIN_SUCCESS' }));
+      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGIN_SUCCESS', actorId: 'user-1', entityType: 'User', entityId: 'user-1', payload: { email: 'test@example.com' } }), expect.anything());
     });
 
     it('should throw UnauthorizedException if user not found', async () => {
       vi.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
 
       await expect(service.login('test@example.com', 'password')).rejects.toThrow(UnauthorizedException);
-      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGIN_FAILED' }));
+      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGIN_FAILED', actorId: undefined, entityType: 'User', entityId: 'unknown', payload: { email: 'test@example.com' } }));
     });
 
     it('should throw UnauthorizedException if password incorrect', async () => {
@@ -81,7 +83,7 @@ describe('AuthService', () => {
       (bcrypt.compare as Mock).mockResolvedValue(false);
 
       await expect(service.login('test@example.com', 'wrong')).rejects.toThrow(UnauthorizedException);
-      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGIN_FAILED' }));
+      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGIN_FAILED', actorId: 'user-1', entityType: 'User', entityId: 'user-1', payload: { email: 'test@example.com' } }));
     });
   });
 
@@ -137,8 +139,8 @@ describe('AuthService', () => {
     it('should revoke token and log audit', async () => {
       await service.logout('user-1', 'some-token');
 
-      expect(prisma.refreshToken.updateMany).toHaveBeenCalled();
-      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGOUT', userId: 'user-1' }));
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGOUT', actorId: 'user-1', entityType: 'User', entityId: 'user-1', payload: {} }), expect.anything());
     });
   });
 });

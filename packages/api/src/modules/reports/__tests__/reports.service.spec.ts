@@ -15,6 +15,7 @@ const mockQueue = { add: vi.fn().mockResolvedValue({}) }
 const mockAudit = { record: vi.fn().mockResolvedValue(undefined) }
 const mockStorage = { exists: vi.fn().mockResolvedValue(true) }
 const mockLogger = { info: vi.fn(), error: vi.fn(), warn: vi.fn() }
+const mockPrisma = { $transaction: vi.fn(async (cb: any) => cb({ auditLog: { create: vi.fn() } })) }
 
 function makeService() {
   return new ReportsService(
@@ -23,6 +24,7 @@ function makeService() {
     mockAudit as never,
     mockStorage as never,
     mockLogger as never,
+    mockPrisma as never,
   )
 }
 
@@ -62,7 +64,7 @@ describe('ReportsService', () => {
       expect(result.jobId).toBe('job-1')
       expect(result.status).toBe('queued')
       expect(mockQueue.add).toHaveBeenCalled()
-      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'REPORT_GENERATION_QUEUED' }))
+      expect(mockAudit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'REPORT_GENERATION_QUEUED' }), expect.anything())
     })
 
     it('retorna warning quando há jurados pendentes em IN_PROGRESS', async () => {
