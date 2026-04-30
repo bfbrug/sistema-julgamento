@@ -7,6 +7,7 @@ import { EventStatus } from '@prisma/client'
 import { CategoriesRepository, CategoryWithCounts } from './categories.repository'
 import { EventsRepository } from '../events/events.repository'
 import { AuditService } from '../audit/audit.service'
+import { PrismaService } from '../../config/prisma.service'
 import { AppException } from '../../common/exceptions/app.exception'
 import { CreateCategoryDto } from './dto/create-category.dto'
 import { UpdateCategoryDto } from './dto/update-category.dto'
@@ -34,6 +35,7 @@ export class CategoriesService {
     @Inject(CategoriesRepository) private readonly repository: CategoriesRepository,
     @Inject(EventsRepository) private readonly eventsRepository: EventsRepository,
     @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {}
 
   private async getEventOrThrow(eventId: string, managerId: string) {
@@ -71,22 +73,28 @@ export class CategoriesService {
     let displayOrder = dto.displayOrder
     if (displayOrder === undefined) {
       displayOrder = (await this.repository.maxDisplayOrder(eventId)) + 1
-    } else {
-      await this.repository.shiftDisplayOrderUp(eventId, displayOrder)
     }
 
-    const category = await this.repository.create({
-      name: dto.name,
-      displayOrder,
-      event: { connect: { id: eventId } },
-    })
+    const category = await this.prisma.$transaction(async (tx) => {
+      if (dto.displayOrder !== undefined) {
+        await this.repository.shiftDisplayOrderUp(eventId, displayOrder, tx)
+      }
 
-    await this.auditService.record({
-      action: 'CATEGORY_CREATED',
-      entityType: 'Category',
-      entityId: category.id,
-      actorId: managerId,
-      payload: { eventId, name: dto.name, displayOrder },
+      const created = await this.repository.create({
+        name: dto.name,
+        displayOrder,
+        event: { connect: { id: eventId } },
+      }, tx)
+
+      await this.auditService.record({
+        action: 'CATEGORY_CREATED',
+        entityType: 'Category',
+        entityId: created.id,
+        actorId: managerId,
+        payload: { eventId, name: dto.name, displayOrder },
+      }, tx)
+
+      return created
     })
 
     const withCounts = await this.repository.findById(category.id)
@@ -133,16 +141,20 @@ export class CategoriesService {
       }
     }
 
-    const updated = await this.repository.update(id, {
-      ...(dto.name !== undefined && { name: dto.name }),
-    })
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await this.repository.update(id, {
+        ...(dto.name !== undefined && { name: dto.name }),
+      }, tx)
 
-    await this.auditService.record({
-      action: 'CATEGORY_UPDATED',
-      entityType: 'Category',
-      entityId: id,
-      actorId: managerId,
-      payload: { before: { name: category.name }, after: dto },
+      await this.auditService.record({
+        action: 'CATEGORY_UPDATED',
+        entityType: 'Category',
+        entityId: id,
+        actorId: managerId,
+        payload: { before: { name: category.name }, after: dto },
+      }, tx)
+
+      return result
     })
 
     const withCounts = await this.repository.findById(updated.id)
@@ -176,15 +188,17 @@ export class CategoriesService {
       )
     }
 
-    await this.repository.delete(id)
-    await this.repository.compactDisplayOrder(eventId)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.delete(id, tx)
+      await this.repository.compactDisplayOrder(eventId, tx)
 
-    await this.auditService.record({
-      action: 'CATEGORY_DELETED',
-      entityType: 'Category',
-      entityId: id,
-      actorId: managerId,
-      payload: { eventId, name: category.name },
+      await this.auditService.record({
+        action: 'CATEGORY_DELETED',
+        entityType: 'Category',
+        entityId: id,
+        actorId: managerId,
+        payload: { eventId, name: category.name },
+      }, tx)
     })
   }
 
@@ -219,15 +233,17 @@ export class CategoriesService {
       )
     }
 
-    await this.repository.reorderInTransaction(dto.items)
-    await this.repository.compactDisplayOrder(eventId)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.reorderInTransaction(dto.items, tx)
+      await this.repository.compactDisplayOrder(eventId, tx)
 
-    await this.auditService.record({
-      action: 'CATEGORIES_REORDERED',
-      entityType: 'Category',
-      entityId: eventId,
-      actorId: managerId,
-      payload: { items: dto.items },
+      await this.auditService.record({
+        action: 'CATEGORIES_REORDERED',
+        entityType: 'Category',
+        entityId: eventId,
+        actorId: managerId,
+        payload: { items: dto.items },
+      }, tx)
     })
 
     return this.list(eventId, managerId)

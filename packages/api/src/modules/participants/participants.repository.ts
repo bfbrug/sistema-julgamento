@@ -13,8 +13,9 @@ export type ParticipantWithCounts = Participant & {
 export class ParticipantsRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.ParticipantCreateInput): Promise<Participant> {
-    return this.prisma.participant.create({ data })
+  async create(data: Prisma.ParticipantCreateInput, tx?: Prisma.TransactionClient): Promise<Participant> {
+    const client = tx ?? this.prisma
+    return client.participant.create({ data })
   }
 
   async findById(id: string): Promise<ParticipantWithCounts | null> {
@@ -54,12 +55,14 @@ export class ParticipantsRepository {
     return withCounts
   }
 
-  async update(id: string, data: Prisma.ParticipantUpdateInput): Promise<Participant> {
-    return this.prisma.participant.update({ where: { id }, data })
+  async update(id: string, data: Prisma.ParticipantUpdateInput, tx?: Prisma.TransactionClient): Promise<Participant> {
+    const client = tx ?? this.prisma
+    return client.participant.update({ where: { id }, data })
   }
 
-  async delete(id: string): Promise<void> {
-    await this.prisma.participant.delete({ where: { id } })
+  async delete(id: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    await client.participant.delete({ where: { id } })
   }
 
   async countScores(participantId: string): Promise<number> {
@@ -74,45 +77,69 @@ export class ParticipantsRepository {
     return result._max.presentationOrder ?? 0
   }
 
-  async shiftPresentationOrderUp(eventId: string, fromOrder: number): Promise<void> {
-    await this.prisma.participant.updateMany({
+  async shiftPresentationOrderUp(eventId: string, fromOrder: number, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    await client.participant.updateMany({
       where: { eventId, presentationOrder: { gte: fromOrder } },
       data: { presentationOrder: { increment: 1 } },
     })
   }
 
-  async compactPresentationOrder(eventId: string): Promise<void> {
-    const participants = await this.prisma.participant.findMany({
+  async compactPresentationOrder(eventId: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    const participants = await client.participant.findMany({
       where: { eventId },
       orderBy: { presentationOrder: 'asc' },
       select: { id: true },
     })
-    await this.prisma.$transaction(
-      participants.map((p, index) =>
-        this.prisma.participant.update({
-          where: { id: p.id },
-          data: { presentationOrder: index + 1 },
-        }),
-      ),
-    )
+    if (tx) {
+      await Promise.all(
+        participants.map((p, index) =>
+          tx.participant.update({
+            where: { id: p.id },
+            data: { presentationOrder: index + 1 },
+          }),
+        ),
+      )
+    } else {
+      await this.prisma.$transaction(
+        participants.map((p, index) =>
+          this.prisma.participant.update({
+            where: { id: p.id },
+            data: { presentationOrder: index + 1 },
+          }),
+        ),
+      )
+    }
   }
 
   async reorderInTransaction(
     items: Array<{ id: string; presentationOrder: number }>,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    await this.prisma.$transaction(
-      items.map(({ id, presentationOrder }) =>
-        this.prisma.participant.update({ where: { id }, data: { presentationOrder } }),
-      ),
-    )
+    if (tx) {
+      await Promise.all(
+        items.map(({ id, presentationOrder }) =>
+          tx.participant.update({ where: { id }, data: { presentationOrder } }),
+        ),
+      )
+    } else {
+      await this.prisma.$transaction(
+        items.map(({ id, presentationOrder }) =>
+          this.prisma.participant.update({ where: { id }, data: { presentationOrder } }),
+        ),
+      )
+    }
   }
 
   async createStateLog(
     participantId: string,
     state: ParticipantState,
     changedByUserId: string,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    await this.prisma.participantStateLog.create({
+    const client = tx ?? this.prisma
+    await client.participantStateLog.create({
       data: {
         participantId,
         state,

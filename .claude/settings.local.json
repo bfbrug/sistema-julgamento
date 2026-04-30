@@ -57,7 +57,25 @@
       "Bash(git rebase *)",
       "Bash(git restore *)",
       "Bash(pnpm vitest *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(npx tsc *)",
+      "Bash(git -C /c/Users/Bruno/Desktop/www/jurados/sistema-julgamento add packages/api/test/public-events.e2e-spec.ts)",
+      "Bash(git -C /c/Users/Bruno/Desktop/www/jurados/sistema-julgamento commit -m ' *)",
+      "Bash(git -C /c/Users/Bruno/Desktop/www/jurados/sistema-julgamento push)",
+      "Bash(git -C /c/Users/Bruno/Desktop/www/jurados/sistema-julgamento branch -a)",
+      "Bash(git -C /c/Users/Bruno/Desktop/www/jurados/sistema-julgamento log --oneline origin/main -5)",
+      "Bash(git -C /c/Users/Bruno/Desktop/www/jurados/sistema-julgamento log --oneline origin/main -8)",
+      "Bash(git -C /c/Users/Bruno/Desktop/www/jurados/sistema-julgamento log --oneline origin/develop -8)",
+      "Bash(git -C /c/Users/Bruno/Desktop/www/jurados/sistema-julgamento checkout -b sync/main-to-develop)",
+      "Bash(git -C /c/Users/Bruno/Desktop/www/jurados/sistema-julgamento push origin sync/main-to-develop)",
+      "Bash(git worktree *)",
+      "Bash(pnpm --filter @judging/api test:ci)",
+      "Bash(pnpm prisma:generate)",
+      "Bash(pnpm prisma *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Bruno\\Desktop\\www\\jurados\\sistema-julgamento\\.worktrees\\p17-modulo-reports\\packages\\web\\src\\app\\(admin)\\events\\[id]",
+      "c:\\Users\\Bruno\\Desktop\\www\\jurados\\sistema-julgamento\\.worktrees\\p17-modulo-reports\\packages\\web\\src\\app\\(admin)\\events\\[id]\\reports"
     ]
   }
 }

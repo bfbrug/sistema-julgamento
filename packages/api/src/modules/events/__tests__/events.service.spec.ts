@@ -6,6 +6,7 @@ import { AuditService } from '../../audit/audit.service'
 import { ScoringGateway } from '../../scoring/scoring.gateway'
 import { PublicLiveGateway } from '../../scoring/public-live.gateway'
 import { EventStatus, CalculationRule } from '@prisma/client'
+import { PrismaService } from '../../../config/prisma.service'
 
 const makeEvent = (overrides: Record<string, unknown> = {}) => ({
   id: 'event-1',
@@ -55,6 +56,7 @@ describe('EventsService', () => {
     auditService = { record: vi.fn() }
     const scoringGateway = { emitToEvent: vi.fn() }
     const publicLiveGateway = { emitToEvent: vi.fn() }
+    const prisma = { $transaction: vi.fn(async (cb: any) => cb({ auditLog: { create: vi.fn() } })) }
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -63,6 +65,7 @@ describe('EventsService', () => {
         { provide: AuditService, useValue: auditService },
         { provide: ScoringGateway, useValue: scoringGateway },
         { provide: PublicLiveGateway, useValue: publicLiveGateway },
+        { provide: PrismaService, useValue: prisma },
       ],
     }).compile()
 
@@ -88,6 +91,7 @@ describe('EventsService', () => {
       expect(res.id).toBe('event-1')
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'EVENT_CREATED' }),
+        expect.anything(),
       )
     })
 
@@ -153,6 +157,7 @@ describe('EventsService', () => {
       expect(repository.softDelete).toHaveBeenCalled()
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'EVENT_DELETED' }),
+        expect.anything(),
       )
     })
 
@@ -183,6 +188,7 @@ describe('EventsService', () => {
       expect(res.status).toBe(EventStatus.REGISTERING)
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'EVENT_STATUS_CHANGED' }),
+        expect.anything(),
       )
     })
 
@@ -243,6 +249,7 @@ describe('EventsService', () => {
       )
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'EVENT_TIEBREAKER_UPDATED' }),
+        expect.anything(),
       )
       expect(res).toBeDefined()
     })

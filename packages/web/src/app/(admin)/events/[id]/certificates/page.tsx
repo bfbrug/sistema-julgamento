@@ -1,0 +1,80 @@
+'use client'
+
+import { useParams } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
+import { PageHeader } from '@/components/admin/PageHeader'
+import { Button } from '@/components/ui/Button'
+import { CertificateTextEditor } from '@/components/admin/certificates/CertificateTextEditor'
+import { BackgroundUploader } from '@/components/admin/certificates/BackgroundUploader'
+import { SignatureManager } from '@/components/admin/certificates/SignatureManager'
+import { BatchGenerationCard } from '@/components/admin/certificates/BatchGenerationCard'
+import { useCertificateConfig } from '@/hooks/useCertificates'
+import { useEvent } from '@/hooks/useEvents'
+import { useParticipants } from '@/hooks/useParticipants'
+
+export default function CertificatesPage() {
+  const { id: eventId } = useParams() as { id: string }
+  const { data: config, isLoading: isLoadingConfig } = useCertificateConfig(eventId)
+  const { isLoading: isLoadingEvent } = useEvent(eventId)
+  const { data: participants, isLoading: isLoadingParticipants } = useParticipants(eventId)
+
+  const isLoading = isLoadingConfig || isLoadingEvent || isLoadingParticipants
+
+  const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
+  const backgroundUrl = config?.backgroundPath ? `${baseUrl}/uploads/${config.backgroundPath}` : null
+
+  return (
+    <>
+      <div className="mb-4">
+        <Link href={`/events/${eventId}`}>
+          <Button variant="ghost" size="sm" className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        </Link>
+      </div>
+
+      <PageHeader
+        title="Certificados"
+        description="Configure o layout, assinaturas e gere os certificados em PDF."
+      />
+
+      {isLoading ? (
+        <div className="animate-pulse space-y-4">
+          <div className="h-32 bg-secondary-100 rounded" />
+          <div className="h-48 bg-secondary-100 rounded" />
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <section className="rounded-xl border border-secondary-200 p-6">
+            <h2 className="text-base font-semibold text-secondary-900 mb-4">Texto do certificado</h2>
+            <CertificateTextEditor eventId={eventId} initialText={config?.certificateText ?? ''} />
+          </section>
+
+          <section className="rounded-xl border border-secondary-200 p-6">
+            <h2 className="text-base font-semibold text-secondary-900 mb-4">Imagem de fundo</h2>
+            <BackgroundUploader
+              eventId={eventId}
+              backgroundPath={config?.backgroundPath ?? null}
+              publicUrl={backgroundUrl}
+            />
+          </section>
+
+          <section className="rounded-xl border border-secondary-200 p-6">
+            <h2 className="text-base font-semibold text-secondary-900 mb-4">Assinaturas</h2>
+            <SignatureManager eventId={eventId} signatures={config?.signatures ?? []} />
+          </section>
+
+          <section>
+            <BatchGenerationCard
+              eventId={eventId}
+              config={config ?? null}
+              participantCount={participants?.length ?? 0}
+            />
+          </section>
+        </div>
+      )}
+    </>
+  )
+}

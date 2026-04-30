@@ -4,7 +4,7 @@ import { useParams, usePathname } from 'next/navigation'
 import { useEvent, useUpdateEvent } from '@/hooks/useEvents'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Play, Settings, List, Users, Trophy } from 'lucide-react'
+import { ArrowLeft, Play, Settings, List, Users, Trophy, Award, FileSearch } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { EventStatus } from '@judging/shared'
@@ -28,6 +28,8 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
     { href: `/events/${id}`, label: 'Categorias', icon: List, exact: true },
     { href: `/events/${id}/judges`, label: 'Jurados', icon: Users },
     { href: `/events/${id}/participants`, label: 'Participantes', icon: Trophy },
+    { href: `/events/${id}/certificates`, label: 'Certificados', icon: Award },
+    { href: `/events/${id}/audit`, label: 'Auditoria', icon: FileSearch },
     { href: `/events/${id}/edit`, label: 'Configurações', icon: Settings },
   ]
 

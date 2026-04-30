@@ -13,8 +13,9 @@ export type CategoryWithCounts = Category & {
 export class CategoriesRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.CategoryCreateInput): Promise<Category> {
-    return this.prisma.category.create({ data })
+  async create(data: Prisma.CategoryCreateInput, tx?: Prisma.TransactionClient): Promise<Category> {
+    const client = tx ?? this.prisma
+    return client.category.create({ data })
   }
 
   async findById(id: string): Promise<CategoryWithCounts | null> {
@@ -50,12 +51,14 @@ export class CategoriesRepository {
     return result._max.displayOrder ?? 0
   }
 
-  async update(id: string, data: Prisma.CategoryUpdateInput): Promise<Category> {
-    return this.prisma.category.update({ where: { id }, data })
+  async update(id: string, data: Prisma.CategoryUpdateInput, tx?: Prisma.TransactionClient): Promise<Category> {
+    const client = tx ?? this.prisma
+    return client.category.update({ where: { id }, data })
   }
 
-  async delete(id: string): Promise<void> {
-    await this.prisma.category.delete({ where: { id } })
+  async delete(id: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    await client.category.delete({ where: { id } })
   }
 
   async countScores(categoryId: string): Promise<number> {
@@ -75,34 +78,53 @@ export class CategoriesRepository {
 
   async reorderInTransaction(
     items: Array<{ id: string; displayOrder: number }>,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    await this.prisma.$transaction(
-      items.map(({ id, displayOrder }) =>
-        this.prisma.category.update({ where: { id }, data: { displayOrder } }),
-      ),
-    )
+    const client = tx ?? this.prisma
+    if (tx) {
+      for (const { id, displayOrder } of items) {
+        await client.category.update({ where: { id }, data: { displayOrder } })
+      }
+    } else {
+      await this.prisma.$transaction(
+        items.map(({ id, displayOrder }) =>
+          this.prisma.category.update({ where: { id }, data: { displayOrder } }),
+        ),
+      )
+    }
   }
 
-  async shiftDisplayOrderUp(eventId: string, fromOrder: number): Promise<void> {
-    await this.prisma.category.updateMany({
+  async shiftDisplayOrderUp(eventId: string, fromOrder: number, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    await client.category.updateMany({
       where: { eventId, displayOrder: { gte: fromOrder } },
       data: { displayOrder: { increment: 1 } },
     })
   }
 
-  async compactDisplayOrder(eventId: string): Promise<void> {
-    const categories = await this.prisma.category.findMany({
+  async compactDisplayOrder(eventId: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    const categories = await client.category.findMany({
       where: { eventId },
       orderBy: { displayOrder: 'asc' },
       select: { id: true },
     })
-    await this.prisma.$transaction(
-      categories.map((cat, index) =>
-        this.prisma.category.update({
-          where: { id: cat.id },
-          data: { displayOrder: index + 1 },
-        }),
-      ),
-    )
+    if (tx) {
+      for (let i = 0; i < categories.length; i++) {
+        await client.category.update({
+          where: { id: categories[i]!.id },
+          data: { displayOrder: i + 1 },
+        })
+      }
+    } else {
+      await this.prisma.$transaction(
+        categories.map((cat, index) =>
+          this.prisma.category.update({
+            where: { id: cat.id },
+            data: { displayOrder: index + 1 },
+          }),
+        ),
+      )
+    }
   }
 }

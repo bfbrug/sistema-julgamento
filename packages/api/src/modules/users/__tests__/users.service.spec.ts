@@ -36,6 +36,7 @@ describe('UsersService', () => {
         updateMany: vi.fn(),
       },
     }
+    prisma.$transaction = vi.fn(async (cb: any) => cb(prisma))
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -86,7 +87,7 @@ describe('UsersService', () => {
     vi.mocked(bcrypt.hash).mockResolvedValue('newhash' as never)
 
     await service.changePassword('1', { currentPassword: 'old', newPassword: 'new' })
-    expect(repository.update).toHaveBeenCalledWith('1', { passwordHash: 'newhash' })
+    expect(repository.update).toHaveBeenCalledWith('1', { passwordHash: 'newhash' }, prisma)
     expect(prisma.refreshToken.updateMany).toHaveBeenCalled()
   })
 

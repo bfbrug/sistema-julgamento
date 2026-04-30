@@ -6,6 +6,7 @@ import { CategoriesService } from '../categories.service'
 import { CategoriesRepository } from '../categories.repository'
 import { EventsRepository } from '../../events/events.repository'
 import { AuditService } from '../../audit/audit.service'
+import { PrismaService } from '../../../config/prisma.service'
 
 const makeEvent = (overrides: Record<string, unknown> = {}) => ({
   id: 'event-1',
@@ -50,6 +51,7 @@ describe('CategoriesService', () => {
     }
 
     auditService = { record: vi.fn() }
+    const prisma = { $transaction: vi.fn(async (cb: any) => cb({ auditLog: { create: vi.fn() } })) }
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,6 +59,7 @@ describe('CategoriesService', () => {
         { provide: CategoriesRepository, useValue: repository },
         { provide: EventsRepository, useValue: eventsRepository },
         { provide: AuditService, useValue: auditService },
+        { provide: PrismaService, useValue: prisma },
       ],
     }).compile()
 
@@ -76,6 +79,7 @@ describe('CategoriesService', () => {
 
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({ displayOrder: 3 }),
+        expect.anything(),
       )
       expect(res.displayOrder).toBe(3)
     })
@@ -89,7 +93,7 @@ describe('CategoriesService', () => {
 
       await service.create('event-1', { name: 'Nova', displayOrder: 1 }, 'manager-1')
 
-      expect(repository.shiftDisplayOrderUp).toHaveBeenCalledWith('event-1', 1)
+      expect(repository.shiftDisplayOrderUp).toHaveBeenCalledWith('event-1', 1, expect.anything())
     })
 
     it('lança AppException EVENT_IN_PROGRESS_LOCK em evento IN_PROGRESS', async () => {
@@ -137,6 +141,7 @@ describe('CategoriesService', () => {
 
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'CATEGORY_CREATED' }),
+        expect.anything(),
       )
     })
   })
@@ -172,6 +177,7 @@ describe('CategoriesService', () => {
       expect(res.name).toBe('Novo Nome')
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'CATEGORY_UPDATED' }),
+        expect.anything(),
       )
     })
 
@@ -193,10 +199,11 @@ describe('CategoriesService', () => {
 
       await service.remove('cat-1', 'event-1', 'manager-1')
 
-      expect(repository.delete).toHaveBeenCalledWith('cat-1')
-      expect(repository.compactDisplayOrder).toHaveBeenCalledWith('event-1')
+      expect(repository.delete).toHaveBeenCalledWith('cat-1', expect.anything())
+      expect(repository.compactDisplayOrder).toHaveBeenCalledWith('event-1', expect.anything())
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'CATEGORY_DELETED' }),
+        expect.anything(),
       )
     })
 
@@ -247,10 +254,11 @@ describe('CategoriesService', () => {
       const dto = { items: [{ id: 'cat-2', displayOrder: 1 }, { id: 'cat-1', displayOrder: 2 }] }
       await service.reorder('event-1', dto, 'manager-1')
 
-      expect(repository.reorderInTransaction).toHaveBeenCalledWith(dto.items)
-      expect(repository.compactDisplayOrder).toHaveBeenCalledWith('event-1')
+      expect(repository.reorderInTransaction).toHaveBeenCalledWith(dto.items, expect.anything())
+      expect(repository.compactDisplayOrder).toHaveBeenCalledWith('event-1', expect.anything())
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'CATEGORIES_REORDERED' }),
+        expect.anything(),
       )
     })
 

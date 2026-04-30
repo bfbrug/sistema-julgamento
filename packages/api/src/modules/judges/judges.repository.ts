@@ -15,30 +15,31 @@ export type JudgeWithRelations = Judge & {
 export class JudgesRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.JudgeCreateInput): Promise<Judge> {
-    return this.prisma.judge.create({ data })
+  async create(data: Prisma.JudgeCreateInput, tx?: Prisma.TransactionClient): Promise<Judge> {
+    const client = tx ?? this.prisma
+    return client.judge.create({ data })
   }
 
   async createWithCategories(
     judgeData: Prisma.JudgeCreateInput,
     categoryIds: string[],
+    tx?: Prisma.TransactionClient,
   ): Promise<JudgeWithRelations> {
-    return this.prisma.$transaction(async (tx) => {
-      const judge = await tx.judge.create({ data: judgeData })
-      if (categoryIds.length > 0) {
-        await tx.judgeCategory.createMany({
-          data: categoryIds.map((categoryId) => ({ judgeId: judge.id, categoryId })),
-        })
-      }
-      return tx.judge.findUniqueOrThrow({
-        where: { id: judge.id },
-        include: {
-          user: { select: { id: true, email: true, name: true } },
-          judgeCategories: {
-            include: { category: { select: { id: true, name: true, displayOrder: true } } },
-          },
-        },
+    const client = tx ?? this.prisma
+    const judge = await client.judge.create({ data: judgeData })
+    if (categoryIds.length > 0) {
+      await client.judgeCategory.createMany({
+        data: categoryIds.map((categoryId) => ({ judgeId: judge.id, categoryId })),
       })
+    }
+    return client.judge.findUniqueOrThrow({
+      where: { id: judge.id },
+      include: {
+        user: { select: { id: true, email: true, name: true } },
+        judgeCategories: {
+          include: { category: { select: { id: true, name: true, displayOrder: true } } },
+        },
+      },
     })
   }
 
@@ -73,12 +74,14 @@ export class JudgesRepository {
     })
   }
 
-  async update(id: string, data: Prisma.JudgeUpdateInput): Promise<Judge> {
-    return this.prisma.judge.update({ where: { id }, data })
+  async update(id: string, data: Prisma.JudgeUpdateInput, tx?: Prisma.TransactionClient): Promise<Judge> {
+    const client = tx ?? this.prisma
+    return client.judge.update({ where: { id }, data })
   }
 
-  async delete(id: string): Promise<void> {
-    await this.prisma.judge.delete({ where: { id } })
+  async delete(id: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    await client.judge.delete({ where: { id } })
   }
 
   async countScores(judgeId: string): Promise<number> {
@@ -100,22 +103,22 @@ export class JudgesRepository {
     newCells: Array<{ judgeId: string; categoryId: string }>,
     cellsToRemove: Array<{ judgeId: string; categoryId: string }>,
     cellsToAdd: Array<{ judgeId: string; categoryId: string }>,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      if (cellsToRemove.length > 0) {
-        await tx.judgeCategory.deleteMany({
-          where: {
-            OR: cellsToRemove.map(({ judgeId, categoryId }) => ({ judgeId, categoryId })),
-          },
-        })
-      }
-      if (cellsToAdd.length > 0) {
-        await tx.judgeCategory.createMany({
-          data: cellsToAdd,
-          skipDuplicates: true,
-        })
-      }
-      void newCells // satisfies unused var lint
-    })
+    const client = tx ?? this.prisma
+    if (cellsToRemove.length > 0) {
+      await client.judgeCategory.deleteMany({
+        where: {
+          OR: cellsToRemove.map(({ judgeId, categoryId }) => ({ judgeId, categoryId })),
+        },
+      })
+    }
+    if (cellsToAdd.length > 0) {
+      await client.judgeCategory.createMany({
+        data: cellsToAdd,
+        skipDuplicates: true,
+      })
+    }
+    void newCells // satisfies unused var lint
   }
 }

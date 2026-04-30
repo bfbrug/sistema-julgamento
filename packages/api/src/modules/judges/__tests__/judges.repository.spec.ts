@@ -7,6 +7,7 @@ const mockPrisma = {
   judge: {
     create: vi.fn(),
     findUnique: vi.fn(),
+    findUniqueOrThrow: vi.fn(),
     findMany: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
@@ -138,24 +139,15 @@ describe('JudgesRepository', () => {
     expect(result).toHaveLength(1)
   })
 
-  it('createWithCategories → executa $transaction com criação e vinculação', async () => {
+  it('createWithCategories → cria juiz e vincula categorias', async () => {
     const judge = makeJudge()
-    mockPrisma.$transaction.mockImplementation(async (fn: (tx: typeof mockPrisma) => Promise<unknown>) => {
-      const txMock = {
-        judge: {
-          create: vi.fn().mockResolvedValue(judge),
-          findUniqueOrThrow: vi.fn().mockResolvedValue({
-            ...judge,
-            user: { id: 'u1', email: 'j@t.com', name: 'J' },
-            judgeCategories: [{ id: 'jc-1', categoryId: 'cat-1', category: { id: 'cat-1', name: 'C', displayOrder: 1 } }],
-          }),
-        },
-        judgeCategory: {
-          createMany: vi.fn().mockResolvedValue({ count: 1 }),
-        },
-      }
-      return fn(txMock as unknown as typeof mockPrisma)
+    mockPrisma.judge.create.mockResolvedValue(judge)
+    mockPrisma.judge.findUniqueOrThrow.mockResolvedValue({
+      ...judge,
+      user: { id: 'u1', email: 'j@t.com', name: 'J' },
+      judgeCategories: [{ id: 'jc-1', categoryId: 'cat-1', category: { id: 'cat-1', name: 'C', displayOrder: 1 } }],
     })
+    mockPrisma.judgeCategory.createMany.mockResolvedValue({ count: 1 })
 
     const result = await repository.createWithCategories(
       { user: { connect: { id: 'u1' } }, displayName: 'J', event: { connect: { id: 'event-1' } } },
@@ -163,20 +155,11 @@ describe('JudgesRepository', () => {
     )
 
     expect(result.id).toBe('judge-1')
-    expect(mockPrisma.$transaction).toHaveBeenCalled()
+    expect(mockPrisma.judge.create).toHaveBeenCalled()
+    expect(mockPrisma.judgeCategory.createMany).toHaveBeenCalled()
   })
 
-  it('replaceJudgeCategoriesAtomically → executa $transaction com delete e create', async () => {
-    mockPrisma.$transaction.mockImplementation(async (fn: (tx: typeof mockPrisma) => Promise<unknown>) => {
-      const txMock = {
-        judgeCategory: {
-          deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
-          createMany: vi.fn().mockResolvedValue({ count: 1 }),
-        },
-      }
-      return fn(txMock as unknown as typeof mockPrisma)
-    })
-
+  it('replaceJudgeCategoriesAtomically → executa delete e create', async () => {
     await repository.replaceJudgeCategoriesAtomically(
       'event-1',
       [{ judgeId: 'j1', categoryId: 'cat-2' }],
@@ -184,22 +167,14 @@ describe('JudgesRepository', () => {
       [{ judgeId: 'j1', categoryId: 'cat-2' }],
     )
 
-    expect(mockPrisma.$transaction).toHaveBeenCalled()
+    expect(mockPrisma.judgeCategory.deleteMany).toHaveBeenCalled()
+    expect(mockPrisma.judgeCategory.createMany).toHaveBeenCalled()
   })
 
   it('replaceJudgeCategoriesAtomically sem remoções nem adições — não chama delete/create', async () => {
-    mockPrisma.$transaction.mockImplementation(async (fn: (tx: typeof mockPrisma) => Promise<unknown>) => {
-      const txMock = {
-        judgeCategory: {
-          deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
-          createMany: vi.fn().mockResolvedValue({ count: 0 }),
-        },
-      }
-      return fn(txMock as unknown as typeof mockPrisma)
-    })
-
     await repository.replaceJudgeCategoriesAtomically('event-1', [], [], [])
 
-    expect(mockPrisma.$transaction).toHaveBeenCalled()
+    expect(mockPrisma.judgeCategory.deleteMany).not.toHaveBeenCalled()
+    expect(mockPrisma.judgeCategory.createMany).not.toHaveBeenCalled()
   })
 })
