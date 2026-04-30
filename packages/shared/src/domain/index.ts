@@ -6,5 +6,5 @@ export * from './participant'
 export * from './score'
 export * from './tiebreaker'
 export * from './scoring-events'
-export * from './certificate'
+// certificate types moved to api-contracts/certificates to avoid ambiguity
 export * from './audit'

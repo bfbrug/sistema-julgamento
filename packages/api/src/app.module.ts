@@ -20,6 +20,7 @@ import { ParticipantsModule } from './modules/participants/participants.module'
 import { ScoringModule } from './modules/scoring/scoring.module'
 import { CalculationModule } from './modules/calculation/calculation.module'
 import { ReportsModule } from './modules/reports/reports.module'
+import { CertificatesModule } from './modules/certificates/certificates.module'
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { ReportsModule } from './modules/reports/reports.module'
     CalculationModule,
     UsersModule,
     ReportsModule,
+    CertificatesModule,
     ThrottlerModule.forRoot([
       { name: 'default', ttl: 60000, limit: 100 },
       { name: 'auth', ttl: env.THROTTLE_AUTH_TTL * 1000, limit: env.THROTTLE_AUTH_LIMIT },
