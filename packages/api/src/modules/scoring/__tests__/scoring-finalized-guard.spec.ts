@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ConflictException } from '@nestjs/common'
 import { ScoringRepository } from '../scoring.repository'
 import { PrismaService } from '../../../config/prisma.service'
-import { Prisma } from '@prisma/client'
 
 function makePrisma() {
   return {
