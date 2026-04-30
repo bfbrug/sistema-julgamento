@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../../config/prisma.service'
-import { ReportJobStatus, ReportType } from '@prisma/client'
+import { ReportJobStatus, ReportType, Prisma } from '@prisma/client'
 
 export interface CreateReportJobInput {
   eventId: string
@@ -21,8 +21,9 @@ export interface UpdateReportJobInput {
 export class ReportsRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async create(input: CreateReportJobInput) {
-    return this.prisma.reportJob.create({ data: input })
+  async create(input: CreateReportJobInput, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
+    return client.reportJob.create({ data: input })
   }
 
   async findById(id: string) {
@@ -31,8 +32,9 @@ export class ReportsRepository {
     return job
   }
 
-  async update(id: string, input: UpdateReportJobInput) {
-    return this.prisma.reportJob.update({ where: { id }, data: input })
+  async update(id: string, input: UpdateReportJobInput, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
+    return client.reportJob.update({ where: { id }, data: input })
   }
 
   async findLastCompleted(eventId: string, type: ReportType) {

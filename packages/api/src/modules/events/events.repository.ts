@@ -16,8 +16,9 @@ export type EventWithRelations = JudgingEvent & {
 export class EventsRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.JudgingEventCreateInput): Promise<EventWithRelations> {
-    return this.prisma.judgingEvent.create({
+  async create(data: Prisma.JudgingEventCreateInput, tx?: Prisma.TransactionClient): Promise<EventWithRelations> {
+    const client = tx ?? this.prisma
+    return client.judgingEvent.create({
       data,
       include: {
         tiebreakerConfig: true,
@@ -82,8 +83,9 @@ export class EventsRepository {
     return { data, total }
   }
 
-  async update(id: string, data: Prisma.JudgingEventUpdateInput): Promise<EventWithRelations> {
-    return this.prisma.judgingEvent.update({
+  async update(id: string, data: Prisma.JudgingEventUpdateInput, tx?: Prisma.TransactionClient): Promise<EventWithRelations> {
+    const client = tx ?? this.prisma
+    return client.judgingEvent.update({
       where: { id },
       data,
       include: {
@@ -93,15 +95,17 @@ export class EventsRepository {
     })
   }
 
-  async softDelete(id: string): Promise<void> {
-    await this.prisma.judgingEvent.update({
+  async softDelete(id: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    await client.judgingEvent.update({
       where: { id },
       data: { deletedAt: new Date() },
     })
   }
 
-  async updateStatus(id: string, status: EventStatus): Promise<EventWithRelations> {
-    return this.prisma.judgingEvent.update({
+  async updateStatus(id: string, status: EventStatus, tx?: Prisma.TransactionClient): Promise<EventWithRelations> {
+    const client = tx ?? this.prisma
+    return client.judgingEvent.update({
       where: { id },
       data: { status },
       include: {
@@ -114,16 +118,19 @@ export class EventsRepository {
   async upsertTiebreaker(
     eventId: string,
     data: { firstCategoryId?: string | null; secondCategoryId?: string | null },
+    tx?: Prisma.TransactionClient,
   ): Promise<TiebreakerConfig> {
-    return this.prisma.tiebreakerConfig.upsert({
+    const client = tx ?? this.prisma
+    return client.tiebreakerConfig.upsert({
       where: { eventId },
       create: { eventId, ...data },
       update: data,
     })
   }
 
-  async deleteTiebreaker(eventId: string): Promise<void> {
-    await this.prisma.tiebreakerConfig.deleteMany({ where: { eventId } })
+  async deleteTiebreaker(eventId: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    await client.tiebreakerConfig.deleteMany({ where: { eventId } })
   }
 
   async countCategoriesForEvent(eventId: string): Promise<number> {

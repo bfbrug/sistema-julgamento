@@ -9,7 +9,7 @@ import { AuditService } from '../audit/audit.service'
 import { PrismaService } from '../../config/prisma.service'
 import * as bcrypt from 'bcrypt'
 import { env } from '../../config/env'
-import { User, UserRole } from '@prisma/client'
+import { Prisma, User, UserRole } from '@prisma/client'
 import { AppException } from '../../common/exceptions/app.exception'
 
 @Injectable()
@@ -28,22 +28,24 @@ export class UsersService {
 
     const passwordHash = await bcrypt.hash(dto.password, env.BCRYPT_ROUNDS)
 
-    const user = await this.repository.create({
-      email: dto.email,
-      name: dto.name,
-      role: dto.role,
-      passwordHash,
-    })
+    return this.prisma.$transaction(async (tx) => {
+      const user = await this.repository.create({
+        email: dto.email,
+        name: dto.name,
+        role: dto.role,
+        passwordHash,
+      }, tx)
 
-    await this.auditService.record({
-      action: 'USER_CREATED',
-      entityType: 'User',
-      entityId: user.id,
-      actorId,
-      payload: { email: user.email, role: user.role },
-    })
+      await this.auditService.record({
+        action: 'USER_CREATED',
+        entityType: 'User',
+        entityId: user.id,
+        actorId,
+        payload: { email: user.email, role: user.role },
+      }, tx)
 
-    return user
+      return user
+    })
   }
 
   async findById(id: string, includeDeleted = false): Promise<User> {
@@ -88,17 +90,19 @@ export class UsersService {
       }
     }
 
-    const updated = await this.repository.update(id, dto)
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await this.repository.update(id, dto, tx)
 
-    await this.auditService.record({
-      action: 'USER_UPDATED',
-      entityType: 'User',
-      entityId: user.id,
-      actorId,
-      payload: { before: user, after: updated },
+      await this.auditService.record({
+        action: 'USER_UPDATED',
+        entityType: 'User',
+        entityId: user.id,
+        actorId,
+        payload: { before: user, after: updated },
+      }, tx)
+
+      return updated
     })
-
-    return updated
   }
 
   async softDelete(id: string, actorId: string): Promise<void> {
@@ -115,15 +119,17 @@ export class UsersService {
       }
     }
 
-    await this.repository.softDelete(id)
-    await this.revokeAllTokens(id)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.softDelete(id, tx)
+      await this.revokeAllTokens(id, tx)
 
-    await this.auditService.record({
-      action: 'USER_DELETED',
-      entityType: 'User',
-      entityId: user.id,
-      actorId,
-      payload: {},
+      await this.auditService.record({
+        action: 'USER_DELETED',
+        entityType: 'User',
+        entityId: user.id,
+        actorId,
+        payload: {},
+      }, tx)
     })
   }
 
@@ -133,32 +139,37 @@ export class UsersService {
       return user
     }
 
-    const restored = await this.repository.restore(id)
+    return this.prisma.$transaction(async (tx) => {
+      const restored = await this.repository.restore(id, tx)
 
-    await this.auditService.record({
-      action: 'USER_RESTORED',
-      entityType: 'User',
-      entityId: restored.id,
-      actorId,
-      payload: {},
+      await this.auditService.record({
+        action: 'USER_RESTORED',
+        entityType: 'User',
+        entityId: restored.id,
+        actorId,
+        payload: {},
+      }, tx)
+
+      return restored
     })
-
-    return restored
   }
 
   async updateMe(userId: string, dto: UpdateMeDto): Promise<User> {
     const user = await this.findById(userId)
-    const updated = await this.repository.update(userId, dto)
 
-    await this.auditService.record({
-      action: 'USER_SELF_UPDATED',
-      entityType: 'User',
-      entityId: userId,
-      actorId: userId,
-      payload: { before: user, after: updated },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await this.repository.update(userId, dto, tx)
+
+      await this.auditService.record({
+        action: 'USER_SELF_UPDATED',
+        entityType: 'User',
+        entityId: userId,
+        actorId: userId,
+        payload: { before: user, after: updated },
+      }, tx)
+
+      return updated
     })
-
-    return updated
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
@@ -170,20 +181,24 @@ export class UsersService {
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, env.BCRYPT_ROUNDS)
-    await this.repository.update(userId, { passwordHash })
-    await this.revokeAllTokens(userId)
 
-    await this.auditService.record({
-      action: 'USER_PASSWORD_CHANGED',
-      entityType: 'User',
-      entityId: userId,
-      actorId: userId,
-      payload: { changedAt: new Date().toISOString() },
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.update(userId, { passwordHash }, tx)
+      await this.revokeAllTokens(userId, tx)
+
+      await this.auditService.record({
+        action: 'USER_PASSWORD_CHANGED',
+        entityType: 'User',
+        entityId: userId,
+        actorId: userId,
+        payload: { changedAt: new Date().toISOString() },
+      }, tx)
     })
   }
 
-  private async revokeAllTokens(userId: string): Promise<void> {
-    await this.prisma.refreshToken.updateMany({
+  private async revokeAllTokens(userId: string, tx?: Prisma.TransactionClient): Promise<void> {
+    const client = tx ?? this.prisma
+    await client.refreshToken.updateMany({
       where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },
     })

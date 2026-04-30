@@ -40,8 +40,10 @@ export class ScoringRepository {
 
   async createSessions(
     sessions: Prisma.JudgeParticipantSessionCreateManyInput[],
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    await this.prisma.judgeParticipantSession.createMany({
+    const client = tx ?? this.prisma
+    await client.judgeParticipantSession.createMany({
       data: sessions,
       skipDuplicates: true,
     })
@@ -50,8 +52,10 @@ export class ScoringRepository {
   async updateSession(
     id: string,
     data: Prisma.JudgeParticipantSessionUpdateInput,
+    tx?: Prisma.TransactionClient,
   ): Promise<JudgeParticipantSession> {
-    return this.prisma.judgeParticipantSession.update({
+    const client = tx ?? this.prisma
+    return client.judgeParticipantSession.update({
       where: { id },
       data,
     })
@@ -78,8 +82,10 @@ export class ScoringRepository {
 
   async upsertScore(
     data: Prisma.ScoreUncheckedCreateInput,
+    tx?: Prisma.TransactionClient,
   ): Promise<Score> {
-    return this.prisma.score.upsert({
+    const client = tx ?? this.prisma
+    return client.score.upsert({
       where: {
         participantId_judgeId_categoryId: {
           participantId: data.participantId,
@@ -111,8 +117,10 @@ export class ScoringRepository {
     judgeId: string,
     participantId: string,
     finalizedAt: Date,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    await this.prisma.score.updateMany({
+    const client = tx ?? this.prisma
+    await client.score.updateMany({
       where: { judgeId, participantId },
       data: {
         isFinalized: true,

@@ -6,6 +6,7 @@ import { ReportsRepository } from './reports.repository'
 import { AuditService } from '../audit/audit.service'
 import { IStorageService, STORAGE_SERVICE } from '../storage/storage.service.interface'
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
+import { PrismaService } from '../../config/prisma.service'
 
 export interface GenerateReportJobPayload {
   jobId: string
@@ -22,6 +23,7 @@ export class ReportsService {
     private readonly auditService: AuditService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
     @InjectPinoLogger(ReportsService.name) private readonly logger: PinoLogger,
+    private readonly prisma: PrismaService,
   ) {}
 
   async enqueue(eventId: string, managerId: string, type: ReportType) {
@@ -47,7 +49,17 @@ export class ReportsService {
       }
     }
 
-    const job = await this.repository.create({ eventId, type, requestedBy: managerId })
+    const job = await this.prisma.$transaction(async (tx) => {
+      const created = await this.repository.create({ eventId, type, requestedBy: managerId }, tx)
+      await this.auditService.record({
+        action: 'REPORT_GENERATION_QUEUED',
+        entityType: 'ReportJob',
+        entityId: created.id,
+        actorId: managerId,
+        payload: { eventId, type, jobId: created.id, requestedBy: managerId },
+      }, tx)
+      return created
+    })
 
     await this.reportsQueue.add(
       'generate',
@@ -59,14 +71,6 @@ export class ReportsService {
         removeOnFail: { age: 86400 },
       },
     )
-
-    await this.auditService.record({
-      action: 'REPORT_GENERATION_QUEUED',
-      entityType: 'ReportJob',
-      entityId: job.id,
-      actorId: managerId,
-      payload: { eventId, type, jobId: job.id, requestedBy: managerId },
-    })
 
     return { jobId: job.id, status: 'queued' as const, warning: pendingJudgesWarning }
   }

@@ -6,7 +6,7 @@ import { env } from '../../config/env';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { JwtPayload } from './types/jwt-payload.type';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -29,19 +29,21 @@ export class AuthService {
     });
 
     if (!user) {
-      await this.auditService.record({ action: 'LOGIN_FAILED', ipAddress, userAgent, details: { email } });
+      await this.auditService.record({ action: 'LOGIN_FAILED', entityType: 'User', entityId: 'unknown', actorId: undefined, payload: { email }, ipAddress, userAgent });
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      await this.auditService.record({ action: 'LOGIN_FAILED', userId: user.id, ipAddress, userAgent, details: { email } });
+      await this.auditService.record({ action: 'LOGIN_FAILED', entityType: 'User', entityId: user.id, actorId: user.id, payload: { email }, ipAddress, userAgent });
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const { accessToken, refreshToken } = await this.generateTokens(user, ipAddress, userAgent);
-
-    await this.auditService.record({ action: 'LOGIN_SUCCESS', userId: user.id, ipAddress, userAgent });
+    const { accessToken, refreshToken } = await this.prisma.$transaction(async (tx) => {
+      const tokens = await this.generateTokens(user, ipAddress, userAgent, tx);
+      await this.auditService.record({ action: 'LOGIN_SUCCESS', entityType: 'User', entityId: user.id, actorId: user.id, payload: { email: user.email }, ipAddress, userAgent }, tx);
+      return tokens;
+    });
 
     return { accessToken, refreshToken, user };
   }
@@ -100,15 +102,17 @@ export class AuthService {
   async logout(userId: string, refreshToken: string) {
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     
-    await this.prisma.refreshToken.updateMany({
-      where: { tokenHash, userId },
-      data: { revokedAt: new Date() },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.refreshToken.updateMany({
+        where: { tokenHash, userId },
+        data: { revokedAt: new Date() },
+      });
 
-    await this.auditService.record({ action: 'LOGOUT', userId });
+      await this.auditService.record({ action: 'LOGOUT', entityType: 'User', entityId: userId, actorId: userId, payload: {} }, tx);
+    });
   }
 
-  private async generateTokens(user: User, ipAddress?: string, userAgent?: string) {
+  private async generateTokens(user: User, ipAddress?: string, userAgent?: string, tx?: Prisma.TransactionClient) {
     const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -127,7 +131,8 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    await this.prisma.refreshToken.create({
+    const client = tx ?? this.prisma;
+    await client.refreshToken.create({
       data: {
         userId: user.id,
         tokenHash,

@@ -4,6 +4,7 @@ import { JudgesRepository } from '../judges.repository'
 import { EventsRepository } from '../../events/events.repository'
 import { CategoriesRepository } from '../../categories/categories.repository'
 import { AuditService } from '../../audit/audit.service'
+import { PrismaService } from '../../../config/prisma.service'
 import { AppException } from '../../../common/exceptions/app.exception'
 import { UpdateMatrixDto } from '../dto/update-matrix.dto'
 import { ValidateMatrixDto } from '../dto/validate-matrix.dto'
@@ -18,6 +19,7 @@ export class JudgeMatrixService {
     @Inject(EventsRepository) private readonly eventsRepository: EventsRepository,
     @Inject(CategoriesRepository) private readonly categoriesRepository: CategoriesRepository,
     @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {}
 
   private async getEventOrThrow(eventId: string, managerId: string) {
@@ -167,23 +169,26 @@ export class JudgeMatrixService {
       }
     }
 
-    // Persistir atomicamente
-    await this.judgesRepository.replaceJudgeCategoriesAtomically(
-      eventId,
-      dto.cells,
-      cellsToRemove.map((c) => ({ judgeId: c.judgeId, categoryId: c.categoryId })),
-      cellsToAdd,
-    )
+    // Persistir atomicamente com audit
+    await this.prisma.$transaction(async (tx) => {
+      await this.judgesRepository.replaceJudgeCategoriesAtomically(
+        eventId,
+        dto.cells,
+        cellsToRemove.map((c) => ({ judgeId: c.judgeId, categoryId: c.categoryId })),
+        cellsToAdd,
+        tx,
+      )
 
-    await this.auditService.record({
-      action: 'JUDGE_MATRIX_UPDATED',
-      entityType: 'JudgeMatrix',
-      entityId: eventId,
-      actorId: managerId,
-      payload: {
-        added: cellsToAdd,
-        removed: cellsToRemove.map((c) => ({ judgeId: c.judgeId, categoryId: c.categoryId })),
-      },
+      await this.auditService.record({
+        action: 'JUDGE_MATRIX_UPDATED',
+        entityType: 'JudgeMatrix',
+        entityId: eventId,
+        actorId: managerId,
+        payload: {
+          added: cellsToAdd,
+          removed: cellsToRemove.map((c) => ({ judgeId: c.judgeId, categoryId: c.categoryId })),
+        },
+      }, tx)
     })
 
     return this.getMatrix(eventId, managerId)

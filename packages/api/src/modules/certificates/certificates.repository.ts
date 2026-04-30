@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { PrismaService } from '../../config/prisma.service'
+import { Prisma } from '@prisma/client'
 
 export interface CreateCertificateJobInput {
   eventId: string
@@ -19,8 +20,9 @@ export interface UpdateCertificateJobInput {
 export class CertificatesRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async findConfigByEventId(eventId: string) {
-    return this.prisma.certificateConfig.findUnique({
+  async findConfigByEventId(eventId: string, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
+    return client.certificateConfig.findUnique({
       where: { eventId },
       include: { signatures: { orderBy: { displayOrder: 'asc' } } },
     })
@@ -38,8 +40,9 @@ export class CertificatesRepository {
     })
   }
 
-  async upsertConfig(eventId: string, data: { backgroundPath?: string }) {
-    return this.prisma.certificateConfig.upsert({
+  async upsertConfig(eventId: string, data: { backgroundPath?: string }, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
+    return client.certificateConfig.upsert({
       where: { eventId },
       create: { eventId, backgroundPath: data.backgroundPath ?? '' },
       update: data,
@@ -47,8 +50,9 @@ export class CertificatesRepository {
     })
   }
 
-  async updateEventCertificateText(eventId: string, certificateText: string) {
-    return this.prisma.judgingEvent.update({
+  async updateEventCertificateText(eventId: string, certificateText: string, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
+    return client.judgingEvent.update({
       where: { id: eventId },
       data: { certificateText },
       include: { certificateConfig: { include: { signatures: true } } },
@@ -73,16 +77,19 @@ export class CertificatesRepository {
     personRole: string
     imagePath: string
     displayOrder: number
-  }) {
-    return this.prisma.certificateSignature.create({ data })
+  }, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
+    return client.certificateSignature.create({ data })
   }
 
-  async updateSignature(id: string, data: { personName?: string; personRole?: string; displayOrder?: number }) {
-    return this.prisma.certificateSignature.update({ where: { id }, data })
+  async updateSignature(id: string, data: { personName?: string; personRole?: string; displayOrder?: number }, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
+    return client.certificateSignature.update({ where: { id }, data })
   }
 
-  async deleteSignature(id: string) {
-    return this.prisma.certificateSignature.delete({ where: { id } })
+  async deleteSignature(id: string, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
+    return client.certificateSignature.delete({ where: { id } })
   }
 
   async getParticipants(eventId: string) {
@@ -93,9 +100,10 @@ export class CertificatesRepository {
     })
   }
 
-  async createJob(data: CreateCertificateJobInput) {
+  async createJob(data: CreateCertificateJobInput, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
     // Reuse ReportJob model for simplicity, using a special type
-    return this.prisma.reportJob.create({
+    return client.reportJob.create({
       data: {
         eventId: data.eventId,
         type: 'GENERAL' as unknown as import('@prisma/client').ReportType, // Using existing enum; certificates jobs use this table too
@@ -109,8 +117,9 @@ export class CertificatesRepository {
     return this.prisma.reportJob.findUnique({ where: { id } })
   }
 
-  async updateJob(id: string, input: UpdateCertificateJobInput) {
-    return this.prisma.reportJob.update({ where: { id }, data: input as Record<string, unknown> })
+  async updateJob(id: string, input: UpdateCertificateJobInput, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma
+    return client.reportJob.update({ where: { id }, data: input as Record<string, unknown> })
   }
 
   async findLastCompletedJob(eventId: string) {
