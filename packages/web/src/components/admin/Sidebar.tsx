@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Calendar, Users, Settings } from 'lucide-react'
+import { LayoutDashboard, Calendar, Users, Settings, FileSearch } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/events', label: 'Eventos', icon: Calendar },
   { href: '/users', label: 'Usuários', icon: Users },
+  { href: '/audit', label: 'Auditoria', icon: FileSearch },
 ]
 
 export function Sidebar() {
