@@ -6,9 +6,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 18 de 20 |
-| **Fase atual** | 5 — Relatórios e certificados |
-| **Próximo prompt** | P19 — Upload de imagens (background, assinatura) |
+| **Prompts concluídos** | 19 de 20 |
+| **Fase atual** | 6 — Qualidade e produção |
+| **Próximo prompt** | P20 — Testes E2E com Playwright |
 | **Última atualização** | 2026-04-29 |
 
 ---
@@ -52,7 +52,7 @@
 - [x] **P16** — Painel ao vivo público
 - [x] **P17** — Geração de PDF com Puppeteer
 - [x] **P18** — Módulo de certificados
-- [ ] **P19** — Upload de imagens (background, assinatura)
+- [x] **P19** — Auditoria transacional e visualização de logs
 
 ### Fase 6 — Qualidade e produção
 
@@ -84,8 +84,10 @@
 | P16 | 2026-04-29 | feature/p16-painel-ao-vivo | 85%+ | Painel de visualização pública em tempo real; WebSocket sync |
 | P17 | 2026-04-29 | feature/p17-modulo-reports | 80%+ | Módulo reports; Puppeteer PDF generation, BullMQ worker |
 | P18 | 2026-04-29 | feature/p18-modulo-certificates (#18) | 81% API / 81% Web | CRUD config, upload background/3 assinaturas, texto com placeholders, geração lote BullMQ, UI aba Certificados |
+| P19 | 2026-04-29 | feature/p19-auditoria-visualizacao | 100% API / 80% Web | AuditService real com sanitização; persistência transacional em 10 módulos; UI de auditoria com filtros e paginação cursor-based |
 
 
+### 2026-04-29 — Tag v1.0.0 — Release estável
 ### 2026-04-29 — Tag v0.5.0 — Fim da Fase 5 (parcial)
 ### 2026-04-28 — Tag v0.2.0 — Fim da Fase 2
 
