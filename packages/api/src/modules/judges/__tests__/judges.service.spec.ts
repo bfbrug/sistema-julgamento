@@ -7,6 +7,7 @@ import { JudgesRepository } from '../judges.repository'
 import { EventsRepository } from '../../events/events.repository'
 import { UsersRepository } from '../../users/users.repository'
 import { AuditService } from '../../audit/audit.service'
+import { PrismaService } from '../../../config/prisma.service'
 
 const makeEvent = (overrides: Record<string, unknown> = {}) => ({
   id: 'event-1',
@@ -62,6 +63,7 @@ describe('JudgesService', () => {
     eventsRepository = { findById: vi.fn() }
     usersRepository = { findById: vi.fn() }
     auditService = { record: vi.fn() }
+    const prisma = { $transaction: vi.fn(async (cb: any) => cb({ auditLog: { create: vi.fn() } })) }
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -70,6 +72,7 @@ describe('JudgesService', () => {
         { provide: EventsRepository, useValue: eventsRepository },
         { provide: UsersRepository, useValue: usersRepository },
         { provide: AuditService, useValue: auditService },
+        { provide: PrismaService, useValue: prisma },
       ],
     }).compile()
 
@@ -89,6 +92,7 @@ describe('JudgesService', () => {
       expect(result.id).toBe('judge-1')
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'JUDGE_ADDED' }),
+        expect.anything(),
       )
     })
 
@@ -171,9 +175,10 @@ describe('JudgesService', () => {
 
       await service.remove('judge-1', 'event-1', 'manager-1')
 
-      expect(repository.delete).toHaveBeenCalledWith('judge-1')
+      expect(repository.delete).toHaveBeenCalledWith('judge-1', expect.anything())
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'JUDGE_REMOVED' }),
+        expect.anything(),
       )
     })
 
@@ -214,6 +219,7 @@ describe('JudgesService', () => {
       expect(result.displayName).toBe('Novo Nome')
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'JUDGE_UPDATED' }),
+        expect.anything(),
       )
     })
 

@@ -7,6 +7,7 @@ import { ParticipantsRepository } from '../participants.repository'
 import { EventsRepository } from '../../events/events.repository'
 import { AuditService } from '../../audit/audit.service'
 import { STORAGE_SERVICE } from '../../storage/storage.service.interface'
+import { PrismaService } from '../../../config/prisma.service'
 
 // Magic bytes para simular arquivos
 const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff, 0xe0, ...Buffer.alloc(500)])
@@ -69,6 +70,8 @@ describe('ParticipantsService', () => {
       exists: vi.fn().mockResolvedValue(true),
     }
 
+    const prisma = { $transaction: vi.fn(async (cb: any) => cb({ auditLog: { create: vi.fn() } })) }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ParticipantsService,
@@ -76,6 +79,7 @@ describe('ParticipantsService', () => {
         { provide: EventsRepository, useValue: eventsRepository },
         { provide: AuditService, useValue: auditService },
         { provide: STORAGE_SERVICE, useValue: storageService },
+        { provide: PrismaService, useValue: prisma },
       ],
     }).compile()
 
@@ -94,6 +98,7 @@ describe('ParticipantsService', () => {
 
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({ presentationOrder: 3 }),
+        expect.anything(),
       )
       expect(res.presentationOrder).toBe(3)
     })
@@ -144,6 +149,7 @@ describe('ParticipantsService', () => {
 
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'PARTICIPANT_CREATED' }),
+        expect.anything(),
       )
     })
   })
@@ -162,6 +168,7 @@ describe('ParticipantsService', () => {
       expect(res.name).toBe('Maria')
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'PARTICIPANT_UPDATED' }),
+        expect.anything(),
       )
     })
 
@@ -182,10 +189,11 @@ describe('ParticipantsService', () => {
 
       await service.remove('part-1', 'event-1', 'manager-1')
 
-      expect(repository.delete).toHaveBeenCalledWith('part-1')
-      expect(repository.compactPresentationOrder).toHaveBeenCalledWith('event-1')
+      expect(repository.delete).toHaveBeenCalledWith('part-1', expect.anything())
+      expect(repository.compactPresentationOrder).toHaveBeenCalledWith('event-1', expect.anything())
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'PARTICIPANT_DELETED' }),
+        expect.anything(),
       )
     })
 
@@ -249,10 +257,11 @@ describe('ParticipantsService', () => {
       }
       await service.reorder('event-1', dto, 'manager-1')
 
-      expect(repository.reorderInTransaction).toHaveBeenCalledWith(dto.items)
-      expect(repository.compactPresentationOrder).toHaveBeenCalledWith('event-1')
+      expect(repository.reorderInTransaction).toHaveBeenCalledWith(dto.items, expect.anything())
+      expect(repository.compactPresentationOrder).toHaveBeenCalledWith('event-1', expect.anything())
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'PARTICIPANTS_REORDERED' }),
+        expect.anything(),
       )
     })
 
@@ -347,6 +356,7 @@ describe('ParticipantsService', () => {
       expect(storageService.upload).toHaveBeenCalled()
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'PARTICIPANT_PHOTO_UPLOADED' }),
+        expect.anything(),
       )
     })
 
@@ -379,14 +389,16 @@ describe('ParticipantsService', () => {
       expect(repository.update).toHaveBeenCalledWith('part-1', {
         isAbsent: true,
         currentState: ParticipantState.ABSENT,
-      })
+      }, expect.anything())
       expect(repository.createStateLog).toHaveBeenCalledWith(
         'part-1',
         ParticipantState.ABSENT,
         'manager-1',
+        expect.anything(),
       )
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'PARTICIPANT_MARKED_ABSENT' }),
+        expect.anything(),
       )
     })
 
@@ -446,9 +458,10 @@ describe('ParticipantsService', () => {
       expect(repository.update).toHaveBeenCalledWith('part-1', {
         isAbsent: false,
         currentState: ParticipantState.WAITING,
-      })
+      }, expect.anything())
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'PARTICIPANT_UNMARKED_ABSENT' }),
+        expect.anything(),
       )
     })
 

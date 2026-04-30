@@ -7,8 +7,9 @@ import { ListUsersDto } from './dto/list-users.dto'
 export class UsersRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async create(data: Prisma.UserCreateInput): Promise<User> {
-    return this.prisma.user.create({ data })
+  async create(data: Prisma.UserCreateInput, tx?: Prisma.TransactionClient): Promise<User> {
+    const client = tx ?? this.prisma
+    return client.user.create({ data })
   }
 
   async findById(id: string, options?: { includeDeleted?: boolean }): Promise<User | null> {
@@ -66,19 +67,22 @@ export class UsersRepository {
     return { data, total }
   }
 
-  async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
-    return this.prisma.user.update({ where: { id }, data })
+  async update(id: string, data: Prisma.UserUpdateInput, tx?: Prisma.TransactionClient): Promise<User> {
+    const client = tx ?? this.prisma
+    return client.user.update({ where: { id }, data })
   }
 
-  async softDelete(id: string): Promise<User> {
-    return this.prisma.user.update({
+  async softDelete(id: string, tx?: Prisma.TransactionClient): Promise<User> {
+    const client = tx ?? this.prisma
+    return client.user.update({
       where: { id },
       data: { deletedAt: new Date() },
     })
   }
 
-  async restore(id: string): Promise<User> {
-    return this.prisma.user.update({
+  async restore(id: string, tx?: Prisma.TransactionClient): Promise<User> {
+    const client = tx ?? this.prisma
+    return client.user.update({
       where: { id },
       data: { deletedAt: null },
     })

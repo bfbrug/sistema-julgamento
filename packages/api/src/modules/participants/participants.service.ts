@@ -8,6 +8,7 @@ import * as FileType from 'file-type'
 import { ParticipantsRepository, ParticipantWithCounts } from './participants.repository'
 import { EventsRepository } from '../events/events.repository'
 import { AuditService } from '../audit/audit.service'
+import { PrismaService } from '../../config/prisma.service'
 import { AppException } from '../../common/exceptions/app.exception'
 import { CreateParticipantDto } from './dto/create-participant.dto'
 import { UpdateParticipantDto } from './dto/update-participant.dto'
@@ -45,6 +46,7 @@ export class ParticipantsService {
     @Inject(ParticipantsRepository) private readonly repository: ParticipantsRepository,
     @Inject(EventsRepository) private readonly eventsRepository: EventsRepository,
     @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
   ) {}
 
@@ -82,18 +84,22 @@ export class ParticipantsService {
       await this.repository.shiftPresentationOrderUp(eventId, presentationOrder)
     }
 
-    const created = await this.repository.create({
-      name: dto.name,
-      presentationOrder,
-      event: { connect: { id: eventId } },
-    })
+    const created = await this.prisma.$transaction(async (tx) => {
+      const participant = await this.repository.create({
+        name: dto.name,
+        presentationOrder,
+        event: { connect: { id: eventId } },
+      }, tx)
 
-    await this.auditService.record({
-      action: 'PARTICIPANT_CREATED',
-      entityType: 'Participant',
-      entityId: created.id,
-      actorId: managerId,
-      payload: { eventId, name: dto.name, presentationOrder },
+      await this.auditService.record({
+        action: 'PARTICIPANT_CREATED',
+        entityType: 'Participant',
+        entityId: participant.id,
+        actorId: managerId,
+        payload: { eventId, name: dto.name, presentationOrder },
+      }, tx)
+
+      return participant
     })
 
     const withCounts = await this.repository.findById(created.id)
@@ -133,16 +139,18 @@ export class ParticipantsService {
       throw new NotFoundException('Participante não encontrado')
     }
 
-    await this.repository.update(id, {
-      ...(dto.name !== undefined && { name: dto.name }),
-    })
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.update(id, {
+        ...(dto.name !== undefined && { name: dto.name }),
+      }, tx)
 
-    await this.auditService.record({
-      action: 'PARTICIPANT_UPDATED',
-      entityType: 'Participant',
-      entityId: id,
-      actorId: managerId,
-      payload: { before: { name: participant.name }, after: dto },
+      await this.auditService.record({
+        action: 'PARTICIPANT_UPDATED',
+        entityType: 'Participant',
+        entityId: id,
+        actorId: managerId,
+        payload: { before: { name: participant.name }, after: dto },
+      }, tx)
     })
 
     const updated = await this.repository.findById(id)
@@ -172,15 +180,17 @@ export class ParticipantsService {
       await this.storageService.remove(participant.photoPath)
     }
 
-    await this.repository.delete(id)
-    await this.repository.compactPresentationOrder(eventId)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.delete(id, tx)
+      await this.repository.compactPresentationOrder(eventId, tx)
 
-    await this.auditService.record({
-      action: 'PARTICIPANT_DELETED',
-      entityType: 'Participant',
-      entityId: id,
-      actorId: managerId,
-      payload: { eventId, name: participant.name },
+      await this.auditService.record({
+        action: 'PARTICIPANT_DELETED',
+        entityType: 'Participant',
+        entityId: id,
+        actorId: managerId,
+        payload: { eventId, name: participant.name },
+      }, tx)
     })
   }
 
@@ -215,15 +225,17 @@ export class ParticipantsService {
       )
     }
 
-    await this.repository.reorderInTransaction(dto.items)
-    await this.repository.compactPresentationOrder(eventId)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.reorderInTransaction(dto.items, tx)
+      await this.repository.compactPresentationOrder(eventId, tx)
 
-    await this.auditService.record({
-      action: 'PARTICIPANTS_REORDERED',
-      entityType: 'Participant',
-      entityId: eventId,
-      actorId: managerId,
-      payload: { items: dto.items },
+      await this.auditService.record({
+        action: 'PARTICIPANTS_REORDERED',
+        entityType: 'Participant',
+        entityId: eventId,
+        actorId: managerId,
+        payload: { items: dto.items },
+      }, tx)
     })
 
     return this.list(eventId, managerId)
@@ -277,14 +289,16 @@ export class ParticipantsService {
       eventId,
     })
 
-    await this.repository.update(id, { photoPath: uploaded.path })
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.update(id, { photoPath: uploaded.path }, tx)
 
-    await this.auditService.record({
-      action: 'PARTICIPANT_PHOTO_UPLOADED',
-      entityType: 'Participant',
-      entityId: id,
-      actorId: managerId,
-      payload: { eventId, path: uploaded.path, sizeBytes: uploaded.sizeBytes },
+      await this.auditService.record({
+        action: 'PARTICIPANT_PHOTO_UPLOADED',
+        entityType: 'Participant',
+        entityId: id,
+        actorId: managerId,
+        payload: { eventId, path: uploaded.path, sizeBytes: uploaded.sizeBytes },
+      }, tx)
     })
 
     const updated = await this.repository.findById(id)
@@ -302,14 +316,16 @@ export class ParticipantsService {
 
     if (participant.photoPath) {
       await this.storageService.remove(participant.photoPath)
-      await this.repository.update(id, { photoPath: null })
+      await this.prisma.$transaction(async (tx) => {
+        await this.repository.update(id, { photoPath: null }, tx)
 
-      await this.auditService.record({
-        action: 'PARTICIPANT_PHOTO_REMOVED',
-        entityType: 'Participant',
-        entityId: id,
-        actorId: managerId,
-        payload: { eventId, path: participant.photoPath },
+        await this.auditService.record({
+          action: 'PARTICIPANT_PHOTO_REMOVED',
+          entityType: 'Participant',
+          entityId: id,
+          actorId: managerId,
+          payload: { eventId, path: participant.photoPath },
+        }, tx)
       })
     }
 
@@ -334,19 +350,21 @@ export class ParticipantsService {
       throw new NotFoundException('Participante não encontrado')
     }
 
-    await this.repository.update(id, {
-      isAbsent: true,
-      currentState: ParticipantState.ABSENT,
-    })
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.update(id, {
+        isAbsent: true,
+        currentState: ParticipantState.ABSENT,
+      }, tx)
 
-    await this.repository.createStateLog(id, ParticipantState.ABSENT, managerId)
+      await this.repository.createStateLog(id, ParticipantState.ABSENT, managerId, tx)
 
-    await this.auditService.record({
-      action: 'PARTICIPANT_MARKED_ABSENT',
-      entityType: 'Participant',
-      entityId: id,
-      actorId: managerId,
-      payload: { eventId, reason: dto.reason },
+      await this.auditService.record({
+        action: 'PARTICIPANT_MARKED_ABSENT',
+        entityType: 'Participant',
+        entityId: id,
+        actorId: managerId,
+        payload: { eventId, reason: dto.reason },
+      }, tx)
     })
 
     const updated = await this.repository.findById(id)
@@ -378,19 +396,21 @@ export class ParticipantsService {
       throw new NotFoundException('Participante não encontrado')
     }
 
-    await this.repository.update(id, {
-      isAbsent: false,
-      currentState: ParticipantState.WAITING,
-    })
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.update(id, {
+        isAbsent: false,
+        currentState: ParticipantState.WAITING,
+      }, tx)
 
-    await this.repository.createStateLog(id, ParticipantState.WAITING, managerId)
+      await this.repository.createStateLog(id, ParticipantState.WAITING, managerId, tx)
 
-    await this.auditService.record({
-      action: 'PARTICIPANT_UNMARKED_ABSENT',
-      entityType: 'Participant',
-      entityId: id,
-      actorId: managerId,
-      payload: { eventId },
+      await this.auditService.record({
+        action: 'PARTICIPANT_UNMARKED_ABSENT',
+        entityType: 'Participant',
+        entityId: id,
+        actorId: managerId,
+        payload: { eventId },
+      }, tx)
     })
 
     const updated = await this.repository.findById(id)

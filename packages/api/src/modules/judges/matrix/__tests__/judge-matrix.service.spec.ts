@@ -7,6 +7,7 @@ import { JudgesRepository } from '../../judges.repository'
 import { EventsRepository } from '../../../events/events.repository'
 import { CategoriesRepository } from '../../../categories/categories.repository'
 import { AuditService } from '../../../audit/audit.service'
+import { PrismaService } from '../../../../config/prisma.service'
 
 const makeEvent = (overrides: Record<string, unknown> = {}) => ({
   id: 'event-1',
@@ -64,6 +65,7 @@ describe('JudgeMatrixService', () => {
     }
 
     auditService = { record: vi.fn() }
+    const prisma = { $transaction: vi.fn(async (cb: any) => cb({ auditLog: { create: vi.fn() } })) }
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -72,6 +74,7 @@ describe('JudgeMatrixService', () => {
         { provide: EventsRepository, useValue: eventsRepository },
         { provide: CategoriesRepository, useValue: categoriesRepository },
         { provide: AuditService, useValue: auditService },
+        { provide: PrismaService, useValue: prisma },
       ],
     }).compile()
 
@@ -124,6 +127,7 @@ describe('JudgeMatrixService', () => {
       expect(judgesRepository.replaceJudgeCategoriesAtomically).toHaveBeenCalled()
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'JUDGE_MATRIX_UPDATED' }),
+        expect.anything(),
       )
     })
 
@@ -140,10 +144,11 @@ describe('JudgeMatrixService', () => {
       await service.updateMatrix('event-1', dto, 'manager-1')
 
       expect(judgesRepository.replaceJudgeCategoriesAtomically).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.anything(),
+        'event-1',
+        [],
         expect.arrayContaining([{ judgeId: 'judge-1', categoryId: 'cat-1' }]),
-        expect.any(Array),
+        [],
+        expect.anything(),
       )
     })
 

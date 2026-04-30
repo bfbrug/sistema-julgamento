@@ -9,6 +9,7 @@ import { JudgesRepository, JudgeWithRelations } from './judges.repository'
 import { EventsRepository } from '../events/events.repository'
 import { UsersRepository } from '../users/users.repository'
 import { AuditService } from '../audit/audit.service'
+import { PrismaService } from '../../config/prisma.service'
 import { AppException } from '../../common/exceptions/app.exception'
 import { AddJudgeDto } from './dto/add-judge.dto'
 import { UpdateJudgeDto } from './dto/update-judge.dto'
@@ -33,6 +34,7 @@ export class JudgesService {
     @Inject(EventsRepository) private readonly eventsRepository: EventsRepository,
     @Inject(UsersRepository) private readonly usersRepository: UsersRepository,
     @Inject(AuditService) private readonly auditService: AuditService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {}
 
   private async getEventOrThrow(eventId: string, managerId: string) {
@@ -81,34 +83,48 @@ export class JudgesService {
     }
 
     const displayName = dto.displayName ?? user.name
+    const categoryIds = dto.categoryIds
 
     let judge: JudgeWithRelations
-    if (dto.categoryIds && dto.categoryIds.length > 0) {
-      judge = await this.repository.createWithCategories(
-        {
+    if (categoryIds && categoryIds.length > 0) {
+      judge = await this.prisma.$transaction(async (tx) => {
+        const created = await this.repository.createWithCategories(
+          {
+            user: { connect: { id: dto.userId } },
+            displayName,
+            event: { connect: { id: eventId } },
+          },
+          categoryIds,
+          tx,
+        )
+        await this.auditService.record({
+          action: 'JUDGE_ADDED',
+          entityType: 'Judge',
+          entityId: created.id,
+          actorId: managerId,
+          payload: { eventId, userId: dto.userId, displayName, categoryIds: categoryIds },
+        }, tx)
+        return created
+      })
+    } else {
+      const created = await this.prisma.$transaction(async (tx) => {
+        const result = await this.repository.create({
           user: { connect: { id: dto.userId } },
           displayName,
           event: { connect: { id: eventId } },
-        },
-        dto.categoryIds,
-      )
-    } else {
-      const created = await this.repository.create({
-        user: { connect: { id: dto.userId } },
-        displayName,
-        event: { connect: { id: eventId } },
+        }, tx)
+        await this.auditService.record({
+          action: 'JUDGE_ADDED',
+          entityType: 'Judge',
+          entityId: result.id,
+          actorId: managerId,
+          payload: { eventId, userId: dto.userId, displayName, categoryIds: dto.categoryIds ?? [] },
+        }, tx)
+        return result
       })
       const withRelations = await this.repository.findById(created.id)
       judge = withRelations!
     }
-
-    await this.auditService.record({
-      action: 'JUDGE_ADDED',
-      entityType: 'Judge',
-      entityId: judge.id,
-      actorId: managerId,
-      payload: { eventId, userId: dto.userId, displayName, categoryIds: dto.categoryIds ?? [] },
-    })
 
     return toJudgeResponse(judge)
   }
@@ -146,14 +162,16 @@ export class JudgesService {
       updateData.displayName = dto.displayName
     }
 
-    await this.repository.update(id, updateData)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.update(id, updateData, tx)
 
-    await this.auditService.record({
-      action: 'JUDGE_UPDATED',
-      entityType: 'Judge',
-      entityId: id,
-      actorId: managerId,
-      payload: { before: { displayName: judge.displayName }, after: dto },
+      await this.auditService.record({
+        action: 'JUDGE_UPDATED',
+        entityType: 'Judge',
+        entityId: id,
+        actorId: managerId,
+        payload: { before: { displayName: judge.displayName }, after: dto },
+      }, tx)
     })
 
     const updated = await this.repository.findById(id)
@@ -179,14 +197,16 @@ export class JudgesService {
       )
     }
 
-    await this.repository.delete(id)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.delete(id, tx)
 
-    await this.auditService.record({
-      action: 'JUDGE_REMOVED',
-      entityType: 'Judge',
-      entityId: id,
-      actorId: managerId,
-      payload: { eventId, displayName: judge.displayName },
+      await this.auditService.record({
+        action: 'JUDGE_REMOVED',
+        entityType: 'Judge',
+        entityId: id,
+        actorId: managerId,
+        payload: { eventId, displayName: judge.displayName },
+      }, tx)
     })
   }
 }

@@ -18,6 +18,7 @@ import { EventStatus, CalculationRule } from '@prisma/client'
 import { plainToInstance } from 'class-transformer'
 import { ScoringGateway } from '../scoring/scoring.gateway'
 import { PublicLiveGateway } from '../scoring/public-live.gateway'
+import { PrismaService } from '../../config/prisma.service'
 
 const KNOWN_PLACEHOLDERS = ['{{participante}}', '{{evento}}', '{{data}}', '{{local}}', '{{organizador}}']
 
@@ -54,6 +55,7 @@ export class EventsService {
     @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(ScoringGateway) private readonly scoringGateway: ScoringGateway,
     @Inject(PublicLiveGateway) private readonly publicGateway: PublicLiveGateway,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {}
 
   async create(dto: CreateEventDto, managerId: string): Promise<EventResponseDto> {
@@ -61,25 +63,29 @@ export class EventsService {
       throw new BadRequestException('scoreMin deve ser menor que scoreMax')
     }
 
-    const event = await this.repository.create({
-      name: dto.name,
-      eventDate: dto.eventDate,
-      location: dto.location,
-      organizer: dto.organizer,
-      calculationRule: dto.calculationRule,
-      scoreMin: dto.scoreMin,
-      scoreMax: dto.scoreMax,
-      topN: dto.topN,
-      status: EventStatus.DRAFT,
-      manager: { connect: { id: managerId } },
-    })
+    const event = await this.prisma.$transaction(async (tx) => {
+      const created = await this.repository.create({
+        name: dto.name,
+        eventDate: dto.eventDate,
+        location: dto.location,
+        organizer: dto.organizer,
+        calculationRule: dto.calculationRule,
+        scoreMin: dto.scoreMin,
+        scoreMax: dto.scoreMax,
+        topN: dto.topN,
+        status: EventStatus.DRAFT,
+        manager: { connect: { id: managerId } },
+      }, tx)
 
-    await this.auditService.record({
-      action: 'EVENT_CREATED',
-      entityType: 'JudgingEvent',
-      entityId: event.id,
-      actorId: managerId,
-      payload: { name: event.name, calculationRule: event.calculationRule },
+      await this.auditService.record({
+        action: 'EVENT_CREATED',
+        entityType: 'JudgingEvent',
+        entityId: created.id,
+        actorId: managerId,
+        payload: { name: created.name, calculationRule: created.calculationRule },
+      }, tx)
+
+      return created
     })
 
     return toEventResponse(event)
@@ -144,23 +150,27 @@ export class EventsService {
     }
 
     const before = { name: event.name, location: event.location, status: event.status }
-    const updated = await this.repository.update(id, {
-      ...(dto.name !== undefined && { name: dto.name }),
-      ...(dto.eventDate !== undefined && { eventDate: dto.eventDate }),
-      ...(dto.location !== undefined && { location: dto.location }),
-      ...(dto.organizer !== undefined && { organizer: dto.organizer }),
-      ...(dto.calculationRule !== undefined && { calculationRule: dto.calculationRule }),
-      ...(dto.scoreMin !== undefined && { scoreMin: dto.scoreMin }),
-      ...(dto.scoreMax !== undefined && { scoreMax: dto.scoreMax }),
-      ...(dto.topN !== undefined && { topN: dto.topN }),
-    })
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await this.repository.update(id, {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.eventDate !== undefined && { eventDate: dto.eventDate }),
+        ...(dto.location !== undefined && { location: dto.location }),
+        ...(dto.organizer !== undefined && { organizer: dto.organizer }),
+        ...(dto.calculationRule !== undefined && { calculationRule: dto.calculationRule }),
+        ...(dto.scoreMin !== undefined && { scoreMin: dto.scoreMin }),
+        ...(dto.scoreMax !== undefined && { scoreMax: dto.scoreMax }),
+        ...(dto.topN !== undefined && { topN: dto.topN }),
+      }, tx)
 
-    await this.auditService.record({
-      action: 'EVENT_UPDATED',
-      entityType: 'JudgingEvent',
-      entityId: id,
-      actorId: managerId,
-      payload: { before, after: { name: updated.name, location: updated.location } },
+      await this.auditService.record({
+        action: 'EVENT_UPDATED',
+        entityType: 'JudgingEvent',
+        entityId: id,
+        actorId: managerId,
+        payload: { before, after: { name: result.name, location: result.location } },
+      }, tx)
+
+      return result
     })
 
     return toEventResponse(updated)
@@ -174,14 +184,16 @@ export class EventsService {
       throw new BadRequestException('Evento em andamento ou com inscrições abertas não pode ser excluído')
     }
 
-    await this.repository.softDelete(id)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.softDelete(id, tx)
 
-    await this.auditService.record({
-      action: 'EVENT_DELETED',
-      entityType: 'JudgingEvent',
-      entityId: id,
-      actorId: managerId,
-      payload: { status: event.status },
+      await this.auditService.record({
+        action: 'EVENT_DELETED',
+        entityType: 'JudgingEvent',
+        entityId: id,
+        actorId: managerId,
+        payload: { status: event.status },
+      }, tx)
     })
   }
 
@@ -221,7 +233,23 @@ export class EventsService {
       })
     }
 
-    const updated = await this.repository.updateStatus(id, dto.targetStatus)
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await this.repository.updateStatus(id, dto.targetStatus, tx)
+
+      await this.auditService.record({
+        action: 'EVENT_STATUS_CHANGED',
+        entityType: 'JudgingEvent',
+        entityId: id,
+        actorId: managerId,
+        payload: {
+          from: event.status,
+          to: dto.targetStatus,
+          acknowledgeR2Coverage: dto.acknowledgeR2Coverage,
+        },
+      }, tx)
+
+      return result
+    })
 
     if (dto.targetStatus === EventStatus.FINISHED) {
       this.scoringGateway.emitToEvent(id, 'event_state_changed', {
@@ -233,18 +261,6 @@ export class EventsService {
       })
       this.publicGateway.emitToEvent(id, 'public_event_finished', {})
     }
-
-    await this.auditService.record({
-      action: 'EVENT_STATUS_CHANGED',
-      entityType: 'JudgingEvent',
-      entityId: id,
-      actorId: managerId,
-      payload: {
-        from: event.status,
-        to: dto.targetStatus,
-        acknowledgeR2Coverage: dto.acknowledgeR2Coverage,
-      },
-    })
 
     return toEventResponse(updated)
   }
@@ -285,17 +301,19 @@ export class EventsService {
       }
     }
 
-    await this.repository.upsertTiebreaker(id, {
-      firstCategoryId: dto.firstCategoryId ?? null,
-      secondCategoryId: dto.secondCategoryId ?? null,
-    })
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.upsertTiebreaker(id, {
+        firstCategoryId: dto.firstCategoryId ?? null,
+        secondCategoryId: dto.secondCategoryId ?? null,
+      }, tx)
 
-    await this.auditService.record({
-      action: 'EVENT_TIEBREAKER_UPDATED',
-      entityType: 'JudgingEvent',
-      entityId: id,
-      actorId: managerId,
-      payload: dto,
+      await this.auditService.record({
+        action: 'EVENT_TIEBREAKER_UPDATED',
+        entityType: 'JudgingEvent',
+        entityId: id,
+        actorId: managerId,
+        payload: dto,
+      }, tx)
     })
 
     const refreshed = await this.repository.findById(id, managerId)
@@ -310,14 +328,16 @@ export class EventsService {
       throw new BadRequestException('Evento finalizado não pode ser alterado')
     }
 
-    await this.repository.deleteTiebreaker(id)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.deleteTiebreaker(id, tx)
 
-    await this.auditService.record({
-      action: 'EVENT_TIEBREAKER_REMOVED',
-      entityType: 'JudgingEvent',
-      entityId: id,
-      actorId: managerId,
-      payload: {},
+      await this.auditService.record({
+        action: 'EVENT_TIEBREAKER_REMOVED',
+        entityType: 'JudgingEvent',
+        entityId: id,
+        actorId: managerId,
+        payload: {},
+      }, tx)
     })
   }
 
@@ -340,14 +360,18 @@ export class EventsService {
       // warn apenas — placeholder desconhecido será literal no PDF
     }
 
-    const updated = await this.repository.update(id, { certificateText: text })
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await this.repository.update(id, { certificateText: text }, tx)
 
-    await this.auditService.record({
-      action: 'EVENT_CERTIFICATE_TEXT_UPDATED',
-      entityType: 'JudgingEvent',
-      entityId: id,
-      actorId: managerId,
-      payload: { textLength: text.length, unknownPlaceholders: unknown },
+      await this.auditService.record({
+        action: 'EVENT_CERTIFICATE_TEXT_UPDATED',
+        entityType: 'JudgingEvent',
+        entityId: id,
+        actorId: managerId,
+        payload: { textLength: text.length, unknownPlaceholders: unknown },
+      }, tx)
+
+      return result
     })
 
     return toEventResponse(updated)

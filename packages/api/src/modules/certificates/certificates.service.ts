@@ -7,6 +7,7 @@ import { IStorageService, STORAGE_SERVICE } from '../storage/storage.service.int
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import { UpdateCertificateConfigDto } from './dto/update-config.dto'
 import { UpdateSignatureDto } from './dto/update-signature.dto'
+import { PrismaService } from '../../config/prisma.service'
 
 export interface GenerateCertificatesJobPayload {
   jobId: string
@@ -46,6 +47,7 @@ export class CertificatesService {
     private readonly auditService: AuditService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
     @InjectPinoLogger(CertificatesService.name) private readonly logger: PinoLogger,
+    private readonly prisma: PrismaService,
   ) {}
 
   async getConfig(eventId: string, managerId: string) {
@@ -75,14 +77,16 @@ export class CertificatesService {
       }
     }
 
-    const updated = await this.repository.updateEventCertificateText(eventId, dto.certificateText)
-
-    await this.auditService.record({
-      action: 'CERTIFICATE_TEXT_UPDATED',
-      entityType: 'JudgingEvent',
-      entityId: eventId,
-      actorId: managerId,
-      payload: { eventId },
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await this.repository.updateEventCertificateText(eventId, dto.certificateText, tx)
+      await this.auditService.record({
+        action: 'CERTIFICATE_TEXT_UPDATED',
+        entityType: 'JudgingEvent',
+        entityId: eventId,
+        actorId: managerId,
+        payload: { eventId },
+      }, tx)
+      return result
     })
 
     return { certificateText: updated.certificateText, warnings: warnings.length > 0 ? warnings : undefined }
@@ -113,14 +117,15 @@ export class CertificatesService {
       }
     }
 
-    await this.repository.upsertConfig(eventId, { backgroundPath: uploaded.path })
-
-    await this.auditService.record({
-      action: 'CERTIFICATE_BACKGROUND_UPLOADED',
-      entityType: 'CertificateConfig',
-      entityId: event.certificateConfig?.id ?? eventId,
-      actorId: managerId,
-      payload: { eventId, fileSize: buffer.length },
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.upsertConfig(eventId, { backgroundPath: uploaded.path }, tx)
+      await this.auditService.record({
+        action: 'CERTIFICATE_BACKGROUND_UPLOADED',
+        entityType: 'CertificateConfig',
+        entityId: event.certificateConfig?.id ?? eventId,
+        actorId: managerId,
+        payload: { eventId, fileSize: buffer.length },
+      }, tx)
     })
 
     return { path: uploaded.path, publicUrl: uploaded.publicUrl }
@@ -130,19 +135,20 @@ export class CertificatesService {
     const event = await this.repository.findEventWithConfig(eventId, managerId)
     if (!event) throw new NotFoundException('Evento não encontrado')
 
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.upsertConfig(eventId, { backgroundPath: '' }, tx)
+      await this.auditService.record({
+        action: 'CERTIFICATE_BACKGROUND_REMOVED',
+        entityType: 'CertificateConfig',
+        entityId: event.certificateConfig?.id ?? eventId,
+        actorId: managerId,
+        payload: { eventId },
+      }, tx)
+    })
+
     if (event.certificateConfig?.backgroundPath) {
       await this.storageService.remove(event.certificateConfig.backgroundPath)
     }
-
-    await this.repository.upsertConfig(eventId, { backgroundPath: '' })
-
-    await this.auditService.record({
-      action: 'CERTIFICATE_BACKGROUND_REMOVED',
-      entityType: 'CertificateConfig',
-      entityId: event.certificateConfig?.id ?? eventId,
-      actorId: managerId,
-      payload: { eventId },
-    })
   }
 
   async addSignature(
@@ -186,20 +192,22 @@ export class CertificatesService {
       eventId,
     })
 
-    const signature = await this.repository.createSignature({
-      certificateConfigId: configId,
-      personName,
-      personRole,
-      imagePath: uploaded.path,
-      displayOrder,
-    })
-
-    await this.auditService.record({
-      action: 'CERTIFICATE_SIGNATURE_ADDED',
-      entityType: 'CertificateSignature',
-      entityId: signature.id,
-      actorId: managerId,
-      payload: { eventId, signatureId: signature.id, displayOrder },
+    const signature = await this.prisma.$transaction(async (tx) => {
+      const created = await this.repository.createSignature({
+        certificateConfigId: configId,
+        personName,
+        personRole,
+        imagePath: uploaded.path,
+        displayOrder,
+      }, tx)
+      await this.auditService.record({
+        action: 'CERTIFICATE_SIGNATURE_ADDED',
+        entityType: 'CertificateSignature',
+        entityId: created.id,
+        actorId: managerId,
+        payload: { eventId, signatureId: created.id, displayOrder },
+      }, tx)
+      return created
     })
 
     return {
@@ -238,16 +246,18 @@ export class CertificatesService {
     const signature = event.certificateConfig?.signatures.find((s) => s.id === signatureId)
     if (!signature) throw new NotFoundException('Assinatura não encontrada')
 
-    await this.storageService.remove(signature.imagePath)
-    await this.repository.deleteSignature(signatureId)
-
-    await this.auditService.record({
-      action: 'CERTIFICATE_SIGNATURE_REMOVED',
-      entityType: 'CertificateSignature',
-      entityId: signatureId,
-      actorId: managerId,
-      payload: { eventId, signatureId },
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.deleteSignature(signatureId, tx)
+      await this.auditService.record({
+        action: 'CERTIFICATE_SIGNATURE_REMOVED',
+        entityType: 'CertificateSignature',
+        entityId: signatureId,
+        actorId: managerId,
+        payload: { eventId, signatureId },
+      }, tx)
     })
+
+    await this.storageService.remove(signature.imagePath)
   }
 
   async enqueueBatchGeneration(eventId: string, managerId: string) {
@@ -267,7 +277,17 @@ export class CertificatesService {
       throw new UnprocessableEntityException('Nenhum participante cadastrado no evento')
     }
 
-    const job = await this.repository.createJob({ eventId, requestedBy: managerId })
+    const job = await this.prisma.$transaction(async (tx) => {
+      const created = await this.repository.createJob({ eventId, requestedBy: managerId }, tx)
+      await this.auditService.record({
+        action: 'CERTIFICATE_BATCH_QUEUED',
+        entityType: 'ReportJob',
+        entityId: created.id,
+        actorId: managerId,
+        payload: { eventId, jobId: created.id, totalParticipants: participants.length },
+      }, tx)
+      return created
+    })
 
     await this.certificatesQueue.add(
       'generate',
@@ -279,14 +299,6 @@ export class CertificatesService {
         removeOnFail: { age: 86400 },
       },
     )
-
-    await this.auditService.record({
-      action: 'CERTIFICATE_BATCH_QUEUED',
-      entityType: 'ReportJob',
-      entityId: job.id,
-      actorId: managerId,
-      payload: { eventId, jobId: job.id, totalParticipants: participants.length },
-    })
 
     return { jobId: job.id, status: 'queued' as const }
   }

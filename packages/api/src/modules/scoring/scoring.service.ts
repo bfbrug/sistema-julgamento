@@ -92,6 +92,14 @@ export class ScoringService {
           update: {},
         })
       }
+
+      await this.auditService.record({
+        actorId: managerId,
+        action: 'PARTICIPANT_ACTIVATED',
+        entityType: 'PARTICIPANT',
+        entityId: participantId,
+        payload: { eventId },
+      }, tx)
     })
 
     this.gateway.emitToEvent(eventId, WS_EVENTS.PARTICIPANT_ACTIVATED, {
@@ -106,14 +114,6 @@ export class ScoringService {
       name: participant.name,
       photoPath: participant.photoPath,
       presentationOrder: participant.presentationOrder,
-    })
-
-    await this.auditService.record({
-      actorId: managerId,
-      action: 'PARTICIPANT_ACTIVATED',
-      entityType: 'PARTICIPANT',
-      entityId: participantId,
-      payload: { eventId },
     })
   }
 
@@ -148,6 +148,14 @@ export class ScoringService {
         where: { participantId, status: 'NOT_STARTED' },
         data: { status: 'IN_SCORING', startedAt: new Date() },
       })
+
+      await this.auditService.record({
+        actorId: managerId,
+        action: 'SCORING_STARTED',
+        entityType: 'PARTICIPANT',
+        entityId: participantId,
+        payload: { eventId },
+      }, tx)
     })
 
     this.gateway.emitToEvent(eventId, WS_EVENTS.SCORING_STARTED, {
@@ -157,14 +165,6 @@ export class ScoringService {
 
     this.publicGateway.emitToEvent(eventId, 'public_participant_state_changed', {
       state: 'SCORING',
-    })
-
-    await this.auditService.record({
-      actorId: managerId,
-      action: 'SCORING_STARTED',
-      entityType: 'PARTICIPANT',
-      entityId: participantId,
-      payload: { eventId },
     })
   }
 
@@ -189,27 +189,29 @@ export class ScoringService {
       }
     }
 
-    for (const score of dto.scores) {
-      await this.repository.upsertScore({
-        judgeId,
-        participantId,
-        categoryId: score.categoryId,
-        value: score.value,
-      })
-    }
+    await this.prisma.$transaction(async (tx) => {
+      for (const score of dto.scores) {
+        await this.repository.upsertScore({
+          judgeId,
+          participantId,
+          categoryId: score.categoryId,
+          value: score.value,
+        }, tx)
+      }
+
+      await this.auditService.record({
+        actorId: userId,
+        action: 'SCORES_REGISTERED',
+        entityType: 'PARTICIPANT',
+        entityId: participantId,
+        payload: { judgeId, scores: dto.scores },
+      }, tx)
+    })
 
     this.gateway.emitToEvent(eventId, WS_EVENTS.SCORES_UPDATED, {
       eventId,
       participantId,
       judgeId,
-    })
-
-    await this.auditService.record({
-      actorId: userId,
-      action: 'SCORES_REGISTERED',
-      entityType: 'PARTICIPANT',
-      entityId: participantId,
-      payload: { judgeId, scores: dto.scores },
     })
   }
 
@@ -244,6 +246,14 @@ export class ScoringService {
       })
 
       await this.recomputeColetiveState(participantId, userId, tx)
+
+      await this.auditService.record({
+        actorId: userId,
+        action: 'JUDGE_CONFIRMED_SCORES',
+        entityType: 'PARTICIPANT',
+        entityId: participantId,
+        payload: { judgeId },
+      }, tx)
     })
 
     this.gateway.emitToEvent(eventId, WS_EVENTS.JUDGE_CONFIRMED, {
@@ -255,14 +265,6 @@ export class ScoringService {
     })
 
     await this.emitPublicJudgeProgress(eventId, participantId)
-
-    await this.auditService.record({
-      actorId: userId,
-      action: 'JUDGE_CONFIRMED_SCORES',
-      entityType: 'PARTICIPANT',
-      entityId: participantId,
-      payload: { judgeId },
-    })
   }
 
   async reviseScores(eventId: string, participantId: string, judgeId: string, userId: string) {
@@ -286,6 +288,14 @@ export class ScoringService {
       })
 
       await this.recomputeColetiveState(participantId, userId, tx)
+
+      await this.auditService.record({
+        actorId: userId,
+        action: 'JUDGE_REVISED_SCORES',
+        entityType: 'PARTICIPANT',
+        entityId: participantId,
+        payload: { judgeId },
+      }, tx)
     })
 
     this.gateway.emitToEvent(eventId, WS_EVENTS.JUDGE_REVISING, {
@@ -297,14 +307,6 @@ export class ScoringService {
     })
 
     await this.emitPublicJudgeProgress(eventId, participantId)
-
-    await this.auditService.record({
-      actorId: userId,
-      action: 'JUDGE_REVISED_SCORES',
-      entityType: 'PARTICIPANT',
-      entityId: participantId,
-      payload: { judgeId },
-    })
   }
 
   async finalizeScores(eventId: string, participantId: string, judgeId: string, userId: string) {
@@ -348,6 +350,14 @@ export class ScoringService {
           state: 'FINISHED',
         })
       }
+
+      await this.auditService.record({
+        actorId: userId,
+        action: 'JUDGE_FINALIZED_SCORES',
+        entityType: 'PARTICIPANT',
+        entityId: participantId,
+        payload: { judgeId },
+      }, tx)
     }, { isolationLevel: 'Serializable' })
 
     this.gateway.emitToEvent(eventId, WS_EVENTS.JUDGE_FINALIZED, {
@@ -361,14 +371,6 @@ export class ScoringService {
     await this.emitPublicJudgeProgress(eventId, participantId)
 
     this.calculationService.invalidateCache(eventId)
-
-    await this.auditService.record({
-      actorId: userId,
-      action: 'JUDGE_FINALIZED_SCORES',
-      entityType: 'PARTICIPANT',
-      entityId: participantId,
-      payload: { judgeId },
-    })
   }
 
   async markAbsent(eventId: string, participantId: string, managerId: string) {
@@ -384,7 +386,17 @@ export class ScoringService {
       })
     }
 
-    await this.repository.updateParticipantState(participantId, 'ABSENT', managerId)
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.updateParticipantState(participantId, 'ABSENT', managerId, tx)
+
+      await this.auditService.record({
+        actorId: managerId,
+        action: 'PARTICIPANT_MARKED_ABSENT',
+        entityType: 'PARTICIPANT',
+        entityId: participantId,
+        payload: { eventId },
+      }, tx)
+    })
 
     this.gateway.emitToEvent(eventId, WS_EVENTS.PARTICIPANT_ABSENT, {
       eventId,
@@ -393,14 +405,6 @@ export class ScoringService {
 
     this.publicGateway.emitToEvent(eventId, 'public_participant_state_changed', {
       state: 'ABSENT',
-    })
-
-    await this.auditService.record({
-      actorId: managerId,
-      action: 'PARTICIPANT_MARKED_ABSENT',
-      entityType: 'PARTICIPANT',
-      entityId: participantId,
-      payload: { eventId },
     })
   }
 
@@ -456,7 +460,7 @@ export class ScoringService {
           entityType: 'PARTICIPANT',
           entityId: participantId,
           payload: { eventId: participant.eventId },
-        })
+        }, tx)
         return true
       }
     }
