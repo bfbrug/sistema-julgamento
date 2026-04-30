@@ -5,6 +5,10 @@ import { Roles } from '../../common/decorators/roles.decorator'
 import { plainToInstance } from 'class-transformer'
 import { AuditResponseDto } from './dto/audit-response.dto'
 
+interface AuditLogWithActor {
+  actor?: { name?: string }
+}
+
 @Roles('GESTOR')
 @Controller('audit')
 export class AuditController {
@@ -29,7 +33,7 @@ export class AuditController {
           AuditResponseDto,
           {
             ...log,
-            actorName: (log as any).actor?.name ?? undefined,
+            actorName: (log as AuditLogWithActor).actor?.name ?? undefined,
           },
           { excludeExtraneousValues: true },
         ),
@@ -58,7 +62,7 @@ export class AuditController {
           AuditResponseDto,
           {
             ...log,
-            actorName: (log as any).actor?.name ?? undefined,
+            actorName: (log as AuditLogWithActor).actor?.name ?? undefined,
           },
           { excludeExtraneousValues: true },
         ),
@@ -87,7 +91,7 @@ export class AuditController {
           AuditResponseDto,
           {
             ...log,
-            actorName: (log as any).actor?.name ?? undefined,
+            actorName: (log as AuditLogWithActor).actor?.name ?? undefined,
           },
           { excludeExtraneousValues: true },
         ),
@@ -108,7 +112,7 @@ export class AuditController {
       AuditResponseDto,
       {
         ...log,
-        actorName: (log as any).actor?.name ?? undefined,
+        actorName: (log as AuditLogWithActor).actor?.name ?? undefined,
       },
       { excludeExtraneousValues: true },
     )

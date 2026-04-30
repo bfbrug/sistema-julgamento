@@ -2,12 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { AuditService } from '../audit.service'
 import { AuditRepository } from '../audit.repository'
 import { PrismaService } from '../../../config/prisma.service'
-import { PinoLogger } from 'nestjs-pino'
-
+import { Prisma } from '@prisma/client'
 describe('AuditService', () => {
   let service: AuditService
-  let repository: any
-  let prisma: any
+  let repository: Record<string, unknown>
+  let prisma: Record<string, unknown>
 
   beforeEach(async () => {
     repository = {
@@ -53,7 +52,7 @@ describe('AuditService', () => {
 
     it('should pass transaction client when provided', async () => {
       repository.create.mockResolvedValue({ id: 'log-1' })
-      const tx = { auditLog: { create: vi.fn() } } as any
+      const tx = { auditLog: { create: vi.fn() } } as unknown as Prisma.TransactionClient
 
       await service.record({ action: 'TEST', entityType: 'User', entityId: '1' }, tx)
 
