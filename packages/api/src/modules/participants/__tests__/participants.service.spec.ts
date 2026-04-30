@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { NotFoundException } from '@nestjs/common'
+import { NotFoundException, ConflictException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { EventStatus, ParticipantState } from '@prisma/client'
 import { ParticipantsService } from '../participants.service'
@@ -375,6 +375,39 @@ describe('ParticipantsService', () => {
   })
 
   describe('markAbsent', () => {
+    it('lança ConflictException se participante está em estado SCORING', async () => {
+      repository.findById.mockResolvedValue(
+        makeParticipant({ currentState: ParticipantState.SCORING }),
+      )
+      eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.IN_PROGRESS }))
+
+      await expect(
+        service.markAbsent('part-1', 'event-1', { reason: 'Faltou' }, 'manager-1'),
+      ).rejects.toThrow(ConflictException)
+    })
+
+    it('lança ConflictException se participante está em estado PREVIEW', async () => {
+      repository.findById.mockResolvedValue(
+        makeParticipant({ currentState: ParticipantState.PREVIEW }),
+      )
+      eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.IN_PROGRESS }))
+
+      await expect(
+        service.markAbsent('part-1', 'event-1', { reason: 'Faltou' }, 'manager-1'),
+      ).rejects.toThrow(ConflictException)
+    })
+
+    it('lança ConflictException se participante está em estado REVIEW', async () => {
+      repository.findById.mockResolvedValue(
+        makeParticipant({ currentState: ParticipantState.REVIEW }),
+      )
+      eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.IN_PROGRESS }))
+
+      await expect(
+        service.markAbsent('part-1', 'event-1', { reason: 'Faltou' }, 'manager-1'),
+      ).rejects.toThrow(ConflictException)
+    })
+
     it('marca ausente em evento IN_PROGRESS (caso permitido)', async () => {
       eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.IN_PROGRESS }))
       const participant = makeParticipant()

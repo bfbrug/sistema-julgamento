@@ -99,4 +99,46 @@ describe('ParticipantsController', () => {
     expect(res.isAbsent).toBe(false)
     expect(service.unmarkAbsent).toHaveBeenCalledWith('part-1', 'event-1', 'manager-1')
   })
+
+  describe('uploadPhoto', () => {
+    it('chama service.uploadPhoto e retorna resultado', async () => {
+      const mockResult = { id: 'part-1', name: 'Test', photoUrl: 'http://img.com/photo.jpg' }
+      service.uploadPhoto.mockResolvedValue(mockResult)
+
+      const mockRequest = {
+        file: vi.fn().mockResolvedValue({
+          filename: 'photo.jpg',
+          mimetype: 'image/jpeg',
+          toBuffer: vi.fn().mockResolvedValue(Buffer.from('img')),
+        }),
+      }
+
+      const result = await controller.uploadPhoto('event-1', 'part-1', { sub: 'manager-1' } as never, mockRequest as any)
+      expect(result).toEqual(mockResult)
+    })
+
+    it('lança AppException se nenhum arquivo for enviado', async () => {
+      const mockRequest = {
+        file: vi.fn().mockResolvedValue(null),
+      }
+
+      await expect(
+        controller.uploadPhoto('event-1', 'part-1', { sub: 'manager-1' } as never, mockRequest as any),
+      ).rejects.toThrow('Nenhum arquivo enviado')
+    })
+
+    it('lança AppException se arquivo exceder tamanho máximo', async () => {
+      const mockRequest = {
+        file: vi.fn().mockResolvedValue({
+          filename: 'large.jpg',
+          mimetype: 'image/jpeg',
+          toBuffer: vi.fn().mockResolvedValue(Buffer.alloc(3 * 1024 * 1024)), // 3MB
+        }),
+      }
+
+      await expect(
+        controller.uploadPhoto('event-1', 'part-1', { sub: 'manager-1' } as never, mockRequest as any),
+      ).rejects.toThrow('Arquivo excede o tamanho máximo')
+    })
+  })
 })

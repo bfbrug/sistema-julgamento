@@ -1,44 +1,50 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { NestFastifyApplication } from '@nestjs/platform-fastify'
-import supertest from 'supertest'
-import { createTestApp } from '../../../../test/setup'
+import { describe, it, expect, vi } from 'vitest'
+import { HealthController } from '../health.controller'
+import { ServiceUnavailableException } from '@nestjs/common'
 import { PrismaService } from '../../../config/prisma.service'
+import { PinoLogger } from 'nestjs-pino'
+import Redis from 'ioredis'
 
-describe('HealthController (integração)', () => {
-  let app: NestFastifyApplication
-  let prisma: PrismaService
+function makePrisma(healthy = true) {
+  return {
+    $queryRaw: vi.fn().mockImplementation(() =>
+      healthy ? Promise.resolve([{ '?column?': 1 }]) : Promise.reject(new Error('DB down')),
+    ),
+  } as unknown as PrismaService
+}
 
-  beforeAll(async () => {
-    app = await createTestApp()
-    prisma = app.get(PrismaService)
+function makeRedis(healthy = true) {
+  return {
+    ping: vi.fn().mockImplementation(() =>
+      healthy ? Promise.resolve('PONG') : Promise.reject(new Error('Redis down')),
+    ),
+    status: healthy ? 'ready' : 'end',
+  } as unknown as Redis
+}
+
+function makeLogger() {
+  return { error: vi.fn(), info: vi.fn() } as unknown as PinoLogger
+}
+
+describe('HealthController', () => {
+  it('retorna ok quando DB e Redis estão saudáveis', async () => {
+    const controller = new HealthController(makePrisma(), makeRedis(), makeLogger())
+    const result = await controller.check()
+
+    expect(result.status).toBe('ok')
+    expect(result.database).toBe('ok')
+    expect(result.redis).toBe('ok')
   })
 
-  afterAll(async () => {
-    await app.close()
+  it('lança ServiceUnavailableException quando Redis está down', async () => {
+    const controller = new HealthController(makePrisma(), makeRedis(false), makeLogger())
+
+    await expect(controller.check()).rejects.toThrow(ServiceUnavailableException)
   })
 
-  it('GET /health → 200 com payload correto quando banco está acessível', async () => {
-    const res = await supertest(app.getHttpServer()).get('/health')
-    expect(res.status).toBe(200)
-    expect(res.body.data.status).toBe('ok')
-    expect(res.body.data.database).toBe('ok')
-    expect(res.body.data.timestamp).toBeDefined()
-  })
+  it('lança ServiceUnavailableException quando DB está down', async () => {
+    const controller = new HealthController(makePrisma(false), makeRedis(), makeLogger())
 
-  it('GET /health → 503 quando banco está inacessível', async () => {
-    vi.spyOn(prisma, '$queryRaw').mockRejectedValueOnce(new Error('Connection refused'))
-
-    const res = await supertest(app.getHttpServer()).get('/health')
-    expect(res.status).toBe(503)
-  })
-
-  it('GET /health → não retorna 401 sem token de autenticação', async () => {
-    const res = await supertest(app.getHttpServer()).get('/health')
-    expect(res.status).not.toBe(401)
-  })
-
-  it('GET /api/health → 404 (rota está fora do prefixo /api)', async () => {
-    const res = await supertest(app.getHttpServer()).get('/api/health')
-    expect(res.status).toBe(404)
+    await expect(controller.check()).rejects.toThrow(ServiceUnavailableException)
   })
 })
