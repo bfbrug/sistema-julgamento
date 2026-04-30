@@ -5,6 +5,7 @@ import { ValidationPipe } from '@nestjs/common'
 import { Logger } from 'nestjs-pino'
 import multipart from '@fastify/multipart'
 import staticPlugin from '@fastify/static'
+import helmet from '@fastify/helmet'
 import * as path from 'path'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
@@ -18,6 +19,11 @@ async function bootstrap(): Promise<void> {
   )
 
   app.useLogger(app.get(Logger))
+
+  // Helmet — headers de segurança HTTP
+  await app.register(helmet, {
+    contentSecurityPolicy: false, // desabilitado para não conflitar com API REST pura
+  })
 
   // Registra @fastify/multipart para upload de arquivos
   await app.register(multipart, {
