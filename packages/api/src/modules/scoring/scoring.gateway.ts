@@ -13,7 +13,8 @@ import { PrismaService } from '../../config/prisma.service'
 @WebSocketGateway({
   namespace: '/scoring',
   cors: {
-    origin: '*',
+    origin: process.env.CORS_ORIGIN ?? 'http://localhost:3001',
+    credentials: true,
   },
 })
 export class ScoringGateway implements OnGatewayConnection, OnGatewayDisconnect {

@@ -2,6 +2,7 @@ import {
   Injectable,
   Inject,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common'
 import { EventStatus, ParticipantState } from '@prisma/client'
 import * as FileType from 'file-type'
@@ -348,6 +349,15 @@ export class ParticipantsService {
     const participant = await this.repository.findById(id)
     if (!participant || participant.eventId !== eventId) {
       throw new NotFoundException('Participante não encontrado')
+    }
+
+    // Guard: não permitir ausência em participante atualmente em julgamento
+    const ACTIVE_STATES: string[] = ['PREVIEW', 'SCORING', 'REVIEW']
+    if (ACTIVE_STATES.includes(participant.currentState)) {
+      throw new ConflictException({
+        code: 'PARTICIPANT_CURRENTLY_ACTIVE',
+        message: `Participante está em estado ${participant.currentState} e não pode ser marcado como ausente durante o julgamento`,
+      })
     }
 
     await this.prisma.$transaction(async (tx) => {
