@@ -8,14 +8,14 @@
 
 - Total de achados: 11
 - CRITICAL: 0
-- HIGH: 6
-- MEDIUM: 4
-- LOW: 1
+- HIGH: 6 (6 corrigidos ✅)
+- MEDIUM: 4 (em backlog)
+- LOW: 1 (em backlog)
 
 ## Recomendação de release
 
-- [ ] Bloqueio: corrigir HIGH antes de v1.0.1
-- [ ] Backlog: registrar MEDIUM e LOW no roadmap pós-v1.0.1
+- [x] Bloqueio: todos os achados HIGH corrigidos ✅
+- [x] Backlog: MEDIUM e LOW registrados no PROJECT_PROGRESS.md
 
 ---
 
@@ -30,7 +30,7 @@
 - **Impacto:** Integridade do julgamento comprometida — nota finalizada pode ser reaerta sem auditoria.
 - **Reprodução:** `upsertScore` com `judgeId + participantId + categoryId` de score já finalizado.
 - **Recomendação:** Adicionar guard no `upsertScore`: se score existente tem `isFinalized: true`, lançar `ConflictException`.
-- **Status:** [ ] Pendente
+- **Status:** [FIXED] — commit `c33f96a fix(scoring): previne sobrescrita de nota já finalizada (A1)`
 
 #### A2 — Avanço prematuro de participante (concorrência)
 - **Severidade:** OK
@@ -65,7 +65,7 @@
 - **Impacto:** Sessão de julgamento travada; jurados ficam em limbo.
 - **Reprodução:** Ativar participante (PREVIEW) → imediatamente chamar `PATCH /events/:id/participants/:pid/absent`.
 - **Recomendação:** Adicionar guard: se `participant.currentState` é `PREVIEW`, `SCORING` ou `REVIEW`, lançar `ConflictException` com código `PARTICIPANT_CURRENTLY_ACTIVE`.
-- **Status:** [ ] Pendente
+- **Status:** [FIXED] — commit `a101fe6 fix(participants): bloqueia markAbsent em participante ativo em julgamento (A8)`
 
 ---
 
@@ -101,7 +101,7 @@
 - **Localização:** `packages/api/src/modules/scoring/scoring.gateway.ts:14` e `public-live.gateway.ts:13`
 - **Impacto:** Qualquer origem pode conectar ao WebSocket de scoring em produção.
 - **Recomendação:** Substituir por `cors: { origin: process.env.CORS_ORIGIN }`.
-- **Status:** [ ] Pendente
+- **Status:** [FIXED] — commit `fd81ddb fix(scoring): substitui CORS wildcard por CORS_ORIGIN nos gateways WebSocket (B7)`
 
 #### B8 — Rotas administrativas protegidas
 - **Severidade:** OK
@@ -113,7 +113,7 @@
 - **Localização:** `packages/api/src/main.ts`
 - **Impacto:** Clickjacking, MIME sniffing, XSS sem CSP.
 - **Recomendação:** Instalar `@fastify/helmet` e registrar no `main.ts` antes do `enableCors`.
-- **Status:** [ ] Pendente
+- **Status:** [FIXED] — commit `653f8cc fix(api): adiciona @fastify/helmet para headers de segurança HTTP (B9)`
 
 ---
 
@@ -293,7 +293,7 @@
 - **Localização:** `packages/api/src/modules/health/health.controller.ts`
 - **Impacto:** Ops não detecta falha de Redis via health check.
 - **Recomendação:** Adicionar verificação de Redis com `ioredis` client no health controller.
-- **Status:** [ ] Pendente
+- **Status:** [FIXED] — commit `aa6ad4b fix(health): adiciona verificação de Redis ao endpoint /health (H6)`
 
 ---
 
@@ -329,7 +329,7 @@
 - **Localização:** `packages/api/src/modules/participants/` e `packages/web/src/hooks/`
 - **Impacto:** Threshold de cobertura da API não está sendo atingido — `pnpm test:ci` pode falhar.
 - **Recomendação:** Adicionar testes para `participants.controller.ts:88-118` e `participants.repository.ts`.
-- **Status:** [ ] Pendente
+- **Status:** [FIXED] — commit `34b9da6 test(participants): adiciona testes faltantes para cobertura >=80% (J1)` — cobertura: 87.7%
 
 #### J2 — Caminho infeliz em módulos críticos
 - **Severidade:** OK
@@ -338,3 +338,18 @@
 #### J3–J5 — Mutation testing, carga, E2E
 - **Severidade:** LOW/MEDIUM
 - **Descrição:** Sem mutation testing ou testes de carga. E2E com Playwright configurado mas sem testes implementados.
+
+---
+
+## Correções aplicadas
+
+| Achado | Commit | Data |
+|---|---|---|
+| A1 — Guard upsertScore | `c33f96a` fix(scoring): previne sobrescrita de nota já finalizada | 2026-04-30 |
+| A8 — Guard markAbsent | `a101fe6` fix(participants): bloqueia markAbsent em participante ativo | 2026-04-30 |
+| B7 — CORS WebSocket | `fd81ddb` fix(scoring): substitui CORS wildcard por CORS_ORIGIN | 2026-04-30 |
+| B9 — Helmet | `653f8cc` fix(api): adiciona @fastify/helmet para headers de segurança | 2026-04-30 |
+| H6 — Redis health | `aa6ad4b` fix(health): adiciona verificação de Redis ao /health | 2026-04-30 |
+| J1 — Cobertura participants | `34b9da6` test(participants): adiciona testes faltantes para >=80% | 2026-04-30 |
+
+**Todos os achados HIGH foram corrigidos. Sistema aprovado para release v1.0.1.**

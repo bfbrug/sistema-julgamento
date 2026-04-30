@@ -6,10 +6,10 @@
 
 | Campo | Valor |
 |---|---|
-| **Prompts concluídos** | 19 de 20 |
-| **Fase atual** | 6 — Qualidade e produção |
-| **Próximo prompt** | P20 — Testes E2E com Playwright |
-| **Última atualização** | 2026-04-29 |
+| **Prompts concluídos** | 20 de 20 |
+| **Fase atual** | CONCLUÍDO |
+| **Próximo prompt** | — |
+| **Última atualização** | 2026-04-30 |
 
 ---
 
@@ -56,7 +56,7 @@
 
 ### Fase 6 — Qualidade e produção
 
-- [ ] **P20** — Testes E2E com Playwright
+- [x] **P20** — Auditoria final e hardening v1.0.1
 
 
 ---
@@ -85,11 +85,54 @@
 | P17 | 2026-04-29 | feature/p17-modulo-reports | 80%+ | Módulo reports; Puppeteer PDF generation, BullMQ worker |
 | P18 | 2026-04-29 | feature/p18-modulo-certificates (#18) | 81% API / 81% Web | CRUD config, upload background/3 assinaturas, texto com placeholders, geração lote BullMQ, UI aba Certificados |
 | P19 | 2026-04-29 | feature/p19-auditoria-visualizacao | 100% API / 80% Web | AuditService real com sanitização; persistência transacional em 10 módulos; UI de auditoria com filtros e paginação cursor-based |
+| P20 | 2026-04-30 | feature/p20-audit-final | 87.7%+ API | Auditoria 10 categorias (A–J); 6 HIGH corrigidos; 5 MEDIUM + 1 LOW em backlog; release v1.0.1 |
 
 
+### 2026-04-30 — Tag v1.0.1 — Release hardening pós-auditoria
 ### 2026-04-29 — Tag v1.0.0 — Release estável
 ### 2026-04-29 — Tag v0.5.0 — Fim da Fase 5 (parcial)
 ### 2026-04-28 — Tag v0.2.0 — Fim da Fase 2
+
+---
+
+## Auditoria final (P20) — 2026-04-30
+
+**Branch:** `feature/p20-audit-final` | **Relatório:** `docs/audit-report-v1.0.1.md`
+
+| Achados | Quantidade |
+|---|---|
+| CRITICAL | 0 |
+| HIGH | 6 (todos corrigidos ✅) |
+| MEDIUM | 4 (backlog) |
+| LOW | 1 (backlog) |
+
+**Status:** ✅ Aprovado para v1.0.1
+
+## Pendências e dívida técnica (pós-v1.0.1)
+
+> Achados da auditoria P20 classificados como MEDIUM ou LOW. Não bloqueiam produção.
+
+- [ ] A6 — Decimal precision acumulada em médias (MEDIUM)
+- [ ] B4 — Teste E2E para refresh token revogado em cascata (MEDIUM)
+- [ ] B5 — Rate limit por email além de IP em /login (MEDIUM)
+- [ ] B6 — Documentar limitação de access token JWT sem revogação imediata (LOW)
+- [ ] C5 — Guard em judges.service.ts:remove contra notas existentes (MEDIUM)
+- [ ] C8 — Bloquear soft delete de evento IN_PROGRESS (MEDIUM)
+- [ ] D1 — Documentar re-hidratação de estado pós-reconnect no runbook (MEDIUM)
+- [ ] D7 — Documentar comportamento de WebSocket com token expirado (MEDIUM)
+- [ ] E2 — Adicionar índice em AuditLog.createdAt (MEDIUM)
+- [ ] E6 — Rotina de limpeza de uploads órfãos (MEDIUM)
+- [ ] G2 — Enriquecer payload de auditoria com diff antes/depois (MEDIUM)
+- [ ] H1–H4 — Documentar backup/restore no troubleshooting.md (MEDIUM)
+- [ ] I2 — Criar docs/troubleshooting.md (MEDIUM)
+- [ ] I4 — Criar docs/runbook-evento.md (MEDIUM)
+- [ ] J1-web — Cobertura: useLiveScoring (55%), useCertificates (29%), public-api.ts (0%) (MEDIUM)
+- [ ] J4 — Teste de carga simulando evento real (MEDIUM)
+- [ ] J5 — Testes E2E com Playwright (MEDIUM)
+- [ ] D3 — Idempotência de eventos WebSocket no cliente (LOW)
+- [ ] G3 — Propagar requestId aos logs de AuditService (LOW)
+- [ ] I3 — Diagrama de arquitetura visual (LOW)
+- [ ] I5 — Glossário de termos do domínio (LOW)
 
 ---
 
