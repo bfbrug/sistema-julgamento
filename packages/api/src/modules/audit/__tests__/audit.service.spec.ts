@@ -3,9 +3,18 @@ import { AuditService } from '../audit.service'
 import { AuditRepository } from '../audit.repository'
 import { PrismaService } from '../../../config/prisma.service'
 import { Prisma } from '@prisma/client'
+
+type MockFn = ReturnType<typeof vi.fn>
+
 describe('AuditService', () => {
   let service: AuditService
-  let repository: Record<string, unknown>
+  let repository: {
+    create: MockFn
+    findByEntity: MockFn
+    findByActor: MockFn
+    list: MockFn
+    findById: MockFn
+  }
   let prisma: Record<string, unknown>
 
   beforeEach(async () => {
@@ -91,7 +100,7 @@ describe('AuditService', () => {
         },
       })
 
-      const callArg = repository.create.mock.calls[0][0]
+      const callArg = repository.create.mock.calls[0]![0]
       expect(callArg.payload.user.passwordHash).toBe('[REDACTED]')
       expect(callArg.payload.tokens).toBe('[REDACTED]')
       expect(callArg.payload.config.apiKey).toBe('[REDACTED]')
@@ -112,7 +121,7 @@ describe('AuditService', () => {
         ],
       })
 
-      const callArg = repository.create.mock.calls[0][0]
+      const callArg = repository.create.mock.calls[0]![0]
       expect(callArg.payload[0].password).toBe('[REDACTED]')
       expect(callArg.payload[1].password).toBe('[REDACTED]')
       expect(callArg.payload[0].name).toBe('A')
