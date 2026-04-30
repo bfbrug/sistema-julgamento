@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
+import { Injectable, OnModuleDestroy } from '@nestjs/common'
 import puppeteer, { Browser } from 'puppeteer'
 
 export interface PdfOptions {
@@ -8,14 +8,17 @@ export interface PdfOptions {
 }
 
 @Injectable()
-export class PdfService implements OnModuleInit, OnModuleDestroy {
-  private browser!: Browser
+export class PdfService implements OnModuleDestroy {
+  private browser: Browser | undefined
 
-  async onModuleInit(): Promise<void> {
-    this.browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    })
+  private async ensureBrowser(): Promise<Browser> {
+    if (!this.browser) {
+      this.browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      })
+    }
+    return this.browser
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -23,7 +26,8 @@ export class PdfService implements OnModuleInit, OnModuleDestroy {
   }
 
   async render(html: string, options: PdfOptions = {}): Promise<Buffer> {
-    const page = await this.browser.newPage()
+    const browser = await this.ensureBrowser()
+    const page = await browser.newPage()
     try {
       await page.setContent(html, { waitUntil: 'networkidle0' })
       const buffer = await page.pdf({
