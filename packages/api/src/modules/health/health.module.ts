@@ -3,8 +3,7 @@ import { HealthController } from './health.controller'
 import { DatabaseModule } from '../../config/database.module'
 import Redis from 'ioredis'
 import { env } from '../../config/env'
-
-export const REDIS_HEALTH_CLIENT = 'REDIS_HEALTH_CLIENT'
+import { REDIS_HEALTH_CLIENT } from './health.constants'
 
 @Module({
   imports: [DatabaseModule],

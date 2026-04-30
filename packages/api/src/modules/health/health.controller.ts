@@ -4,7 +4,7 @@ import { PrismaService } from '../../config/prisma.service'
 import { Public } from '../../common/decorators/public.decorator'
 import { SkipThrottle } from '@nestjs/throttler'
 import Redis from 'ioredis'
-import { REDIS_HEALTH_CLIENT } from './health.module'
+import { REDIS_HEALTH_CLIENT } from './health.constants'
 
 @SkipThrottle()
 @Controller('health')
