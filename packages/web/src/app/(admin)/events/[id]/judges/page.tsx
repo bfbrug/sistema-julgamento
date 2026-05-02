@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import { useJudges, useAddJudge, useRemoveJudge, useUpdateAssignments } from '@/hooks/useJudges'
 import { useCategories } from '@/hooks/useCategories'
 import { useUsers } from '@/hooks/useUsers'
+import type { UserResponse } from '@judging/shared'
 import { useEvent } from '@/hooks/useEvents'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -22,7 +23,7 @@ export default function EventJudgesPage() {
   const { data: event } = useEvent(eventId)
   const { data: categories } = useCategories(eventId)
   const { data: judges, isLoading: loadingJudges } = useJudges(eventId)
-  const { data: allUsers } = useUsers({ role: UserRole.JURADO, isActive: true })
+  const { data: allUsers, refetch: refetchUsers } = useUsers({ role: UserRole.JURADO, isActive: true })
   
   const { mutate: addJudge } = useAddJudge(eventId)
   const { mutate: removeJudge } = useRemoveJudge(eventId)
@@ -72,7 +73,7 @@ export default function EventJudgesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-secondary-900">Matriz de Atribuições</h3>
-        <Button onClick={() => setShowAddModal(true)}>
+        <Button onClick={() => { setShowAddModal(true); refetchUsers() }}>
           <UserPlus className="mr-2 h-4 w-4" />
           Adicionar Jurado
         </Button>
@@ -181,20 +182,25 @@ export default function EventJudgesPage() {
           <div className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h3 className="text-lg font-bold text-secondary-900 mb-4">Adicionar Jurado</h3>
             <div className="max-h-60 overflow-y-auto space-y-2 mb-6">
-              {allUsers?.filter(u => !judges?.some(j => j.userId === u.id)).map(user => (
-                <button
-                  key={user.id}
-                  className="flex w-full items-center justify-between p-3 rounded hover:bg-secondary-50 border border-secondary-100 transition-colors"
-                  onClick={() => {
-                    addJudge({ userId: user.id })
-                    setShowAddModal(false)
-                  }}
-                >
-                  <span className="font-medium">{user.name}</span>
-                  <span className="text-xs text-secondary-500">{user.email}</span>
-                </button>
-              ))}
-              {allUsers?.length === 0 && <p className="text-center text-secondary-500">Nenhum jurado disponível.</p>}
+              {(() => {
+                const available = allUsers?.filter((u: UserResponse) => !judges?.some(j => j.userId === u.id)) ?? []
+                if (available.length === 0) {
+                  return <p className="text-center text-secondary-500">Nenhum jurado disponível para adicionar.</p>
+                }
+                return available.map((user: UserResponse) => (
+                  <button
+                    key={user.id}
+                    className="flex w-full items-center justify-between p-3 rounded hover:bg-secondary-50 border border-secondary-100 transition-colors"
+                    onClick={() => {
+                      addJudge({ userId: user.id })
+                      setShowAddModal(false)
+                    }}
+                  >
+                    <span className="font-medium">{user.name}</span>
+                    <span className="text-xs text-secondary-500">{user.email}</span>
+                  </button>
+                ))
+              })()}
             </div>
             <div className="flex justify-end">
               <Button variant="ghost" onClick={() => setShowAddModal(false)}>Fechar</Button>
