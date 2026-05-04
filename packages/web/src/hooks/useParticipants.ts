@@ -23,6 +23,9 @@ export function useCreateParticipant(eventId: string) {
       queryClient.invalidateQueries({ queryKey: ['events', eventId, 'participants'] })
       toast.success('Participante cadastrado!')
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao cadastrar participante.')
+    },
   })
 }
 
@@ -35,6 +38,9 @@ export function useUpdateParticipant(eventId: string, participantId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', eventId, 'participants'] })
       toast.success('Participante atualizado!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao atualizar participante.')
     },
   })
 }
@@ -49,6 +55,9 @@ export function useDeleteParticipant(eventId: string) {
       queryClient.invalidateQueries({ queryKey: ['events', eventId, 'participants'] })
       toast.success('Participante excluído!')
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao excluir participante.')
+    },
   })
 }
 
@@ -61,6 +70,9 @@ export function useReorderParticipants(eventId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', eventId, 'participants'] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao reordenar participantes.')
+    },
   })
 }
 
@@ -72,6 +84,9 @@ export function useShuffleParticipants(eventId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', eventId, 'participants'] })
       toast.success('Ordem sorteada aleatoriamente!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao sortear ordem.')
     },
   })
 }

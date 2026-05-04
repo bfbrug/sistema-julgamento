@@ -2,6 +2,8 @@
 
 import { useParams } from 'next/navigation'
 import { useParticipants, useCreateParticipant, useDeleteParticipant, useShuffleParticipants, useReorderParticipants } from '@/hooks/useParticipants'
+import { useEvent } from '@/hooks/useEvents'
+import { EventStatus } from '@judging/shared'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
@@ -27,6 +29,8 @@ import { CSS } from '@dnd-kit/utilities'
 
 export default function EventParticipantsPage() {
   const { id: eventId } = useParams() as { id: string }
+  const { data: event } = useEvent(eventId)
+  const isFinished = event?.status === EventStatus.FINISHED
   const { data: participants, isLoading } = useParticipants(eventId)
   const { mutate: createParticipant, isPending: isCreating } = useCreateParticipant(eventId)
   const { mutate: deleteParticipant } = useDeleteParticipant(eventId)
@@ -69,21 +73,25 @@ export default function EventParticipantsPage() {
         <Card
           header={<h3 className="font-semibold">Cadastrar Participante</h3>}
           body={
-            <form onSubmit={handleAddParticipant} className="space-y-4">
-              <Input
-                id="participant-name"
-                label="Nome do Participante"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Nome completo ou artístico"
-              />
-              <div className="flex justify-end">
-                <Button type="submit" loading={isCreating}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Cadastrar
-                </Button>
-              </div>
-            </form>
+            isFinished ? (
+              <p className="text-sm text-secondary-500">Evento finalizado. Não é possível cadastrar participantes.</p>
+            ) : (
+              <form onSubmit={handleAddParticipant} className="space-y-4">
+                <Input
+                  id="participant-name"
+                  label="Nome do Participante"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Nome completo ou artístico"
+                />
+                <div className="flex justify-end">
+                  <Button type="submit" loading={isCreating}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Cadastrar
+                  </Button>
+                </div>
+              </form>
+            )
           }
         />
 
