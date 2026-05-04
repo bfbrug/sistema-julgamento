@@ -162,7 +162,6 @@ export function ScoringForm({
               const hasValue = val !== undefined && val !== null && !isNaN(val)
               const isTouched = !!touchedFields[cat.id]
               const fieldError = (isTouched && hasValue) ? errors[cat.id]?.message : undefined
-              const pct = hasValue ? ((val - scoreMin) / (scoreMax - scoreMin)) * 100 : 0
 
               return (
                 <div

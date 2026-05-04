@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useParams } from 'next/navigation'
 import { useParticipants, useCreateParticipant, useDeleteParticipant, useShuffleParticipants, useReorderParticipants, useUploadParticipantPhoto } from '@/hooks/useParticipants'
 import { useEvent } from '@/hooks/useEvents'

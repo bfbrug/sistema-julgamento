@@ -4,7 +4,6 @@ import { useParams } from 'next/navigation'
 import { useLiveScoring } from '@/hooks/useLiveScoring'
 import { useTransitionEvent } from '@/hooks/useEvents'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { Users, Trophy, Play, CheckCircle, AlertCircle, Clock, Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -26,7 +25,7 @@ function translateStatus(status: string): string {
 export default function EventLivePage() {
   const router = useRouter()
   const { id: eventId } = useParams() as { id: string }
-  const { liveState, isConnected, activateParticipant, startScoring, markAbsent } = useLiveScoring(eventId)
+  const { liveState, isConnected, activateParticipant, markAbsent } = useLiveScoring(eventId)
   const { mutate: transitionEvent } = useTransitionEvent(eventId)
 
   if (!liveState) return <div className="p-12 text-center">Iniciando conexão...</div>
