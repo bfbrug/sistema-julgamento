@@ -64,7 +64,7 @@ describe('JudgePage', () => {
       judgeCategories: [{ id: 'c1', name: 'Criatividade', displayOrder: 1, currentScore: null }],
     })
     render(<JudgePage />)
-    expect(screen.getByLabelText('Criatividade')).toBeInTheDocument()
+    expect(screen.getByText('Criatividade')).toBeInTheDocument()
   })
 
   it('renderiza EventEndedState em EVENT_ENDED', () => {
