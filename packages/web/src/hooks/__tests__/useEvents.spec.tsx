@@ -41,7 +41,7 @@ describe('useEvents', () => {
   it('useCreateEvent cria evento', async () => {
     vi.mocked(apiClient).mockResolvedValue({ id: '1', name: 'Novo' })
     const { result } = renderHook(() => useCreateEvent(), { wrapper })
-    await result.current.mutateAsync({ name: 'Novo', status: 'DRAFT', eventDate: '2026-01-01', location: 'L', organizer: 'O', calculationRule: 'R1', scoreMin: 0, scoreMax: 10, topN: 3 })
+    await result.current.mutateAsync({ name: 'Novo', eventDate: '2026-01-01', location: 'L', organizer: 'O', calculationRule: 'R1', scoreMin: 0, scoreMax: 10, topN: 3 })
     expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST', path: '/events' }))
   })
 

@@ -43,8 +43,42 @@ export function useLiveScoring(eventId: string) {
 
   const fetchState = useCallback(async () => {
     try {
-      const state = await apiClient<LiveState>({ method: 'GET', path: `/scoring/events/${eventId}/state` })
-      setLiveState(state)
+      const state = await apiClient<any>({ method: 'GET', path: `/events/${eventId}/scoring/state` })
+
+      const judges: JudgeState[] = (state.judges || []).map((j: any) => ({
+        id: j.id,
+        name: j.displayName || j.name || 'Jurado',
+        status: j.status ?? 'NOT_STARTED',
+        progress: j.status === 'FINISHED' ? 1 : j.status === 'IN_REVIEW' ? 0.5 : j.status === 'IN_SCORING' ? 0.25 : 0,
+      }))
+
+      setLiveState((prev: LiveState | null) => {
+        const existingJudges = prev?.judges ?? []
+        const mergedJudges = judges.map((j: JudgeState) => {
+          const existing = existingJudges.find((ej: JudgeState) => ej.id === j.id)
+          return existing ? existing : j
+        })
+
+        return {
+          currentParticipant: state.activeParticipant
+            ? {
+                id: state.activeParticipant.id,
+                name: state.activeParticipant.name,
+                status: state.activeParticipant.currentState,
+                presentationOrder: state.activeParticipant.presentationOrder,
+                photoUrl: state.activeParticipant.photoUrl,
+              }
+            : null,
+          queue: (state.participants || []).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            status: p.currentState,
+            presentationOrder: p.presentationOrder,
+            photoUrl: p.photoUrl,
+          })),
+          judges: mergedJudges,
+        }
+      })
     } catch (error) {
       console.error('Failed to fetch live state', error)
     }
@@ -53,7 +87,7 @@ export function useLiveScoring(eventId: string) {
   useEffect(() => {
     if (!accessToken || !eventId) return
 
-    const socket = io(`${process.env.NEXT_PUBLIC_API_URL}/scoring`, {
+    const socket = io(`${process.env.NEXT_PUBLIC_WS_URL}/scoring`, {
       auth: { token: accessToken },
       query: { eventId },
       transports: ['websocket'],
@@ -85,11 +119,31 @@ export function useLiveScoring(eventId: string) {
       })
     })
 
-    socket.on('judge_status_updated', (payload: { judgeId: string; status: string; progress: number }) => {
+    socket.on('judge_confirmed', (payload: { judgeId: string; judgeDisplayName: string; status: string }) => {
       setLiveState((prev: LiveState | null) => {
         if (!prev) return prev
-        const updatedJudges = prev.judges.map((j: JudgeState) => 
-          j.id === payload.judgeId ? { ...j, status: payload.status, progress: payload.progress } : j
+        const updatedJudges = prev.judges.map((j: JudgeState) =>
+          j.id === payload.judgeId ? { ...j, status: payload.status, progress: 0.5 } : j
+        )
+        return { ...prev, judges: updatedJudges }
+      })
+    })
+
+    socket.on('judge_revising', (payload: { judgeId: string; judgeDisplayName: string; status: string }) => {
+      setLiveState((prev: LiveState | null) => {
+        if (!prev) return prev
+        const updatedJudges = prev.judges.map((j: JudgeState) =>
+          j.id === payload.judgeId ? { ...j, status: payload.status, progress: 0.75 } : j
+        )
+        return { ...prev, judges: updatedJudges }
+      })
+    })
+
+    socket.on('judge_finalized', (payload: { judgeId: string; judgeDisplayName: string; status: string }) => {
+      setLiveState((prev: LiveState | null) => {
+        if (!prev) return prev
+        const updatedJudges = prev.judges.map((j: JudgeState) =>
+          j.id === payload.judgeId ? { ...j, status: 'FINISHED', progress: 1 } : j
         )
         return { ...prev, judges: updatedJudges }
       })
@@ -109,8 +163,7 @@ export function useLiveScoring(eventId: string) {
     try {
       await apiClient({
         method: 'POST',
-        path: `/scoring/events/${eventId}/activate`,
-        body: { participantId },
+        path: `/events/${eventId}/scoring/activate/${participantId}`,
       })
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao ativar participante.')
@@ -121,8 +174,7 @@ export function useLiveScoring(eventId: string) {
     try {
       await apiClient({
         method: 'POST',
-        path: `/scoring/events/${eventId}/absent`,
-        body: { participantId },
+        path: `/events/${eventId}/scoring/mark-absent/${participantId}`,
       })
       fetchState()
     } catch (error) {
@@ -130,10 +182,22 @@ export function useLiveScoring(eventId: string) {
     }
   }
 
+  const startScoring = async (participantId: string) => {
+    try {
+      await apiClient({
+        method: 'POST',
+        path: `/events/${eventId}/scoring/start/${participantId}`,
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao iniciar apresentação.')
+    }
+  }
+
   return {
     isConnected,
     liveState,
     activateParticipant,
+    startScoring,
     markAbsent,
     refresh: fetchState,
   }

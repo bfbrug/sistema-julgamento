@@ -11,7 +11,8 @@ export class PublicApiError extends Error {
 const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
 
 export async function publicApiClient<T>(path: string): Promise<T> {
-  const url = `${baseUrl}${path}`
+  const cleanPath = path.startsWith('/api') ? path.slice(4) : path
+  const url = `${baseUrl}${cleanPath}`
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
   })

@@ -108,7 +108,7 @@ export function useJudgePanel(eventId: string) {
   useEffect(() => {
     if (!accessToken || !eventId) return
 
-    const socket = io(`${process.env['NEXT_PUBLIC_API_URL']}/scoring`, {
+    const socket = io(`${process.env['NEXT_PUBLIC_WS_URL']}/scoring`, {
       auth: { token: accessToken },
       query: { eventId },
       transports: ['websocket'],

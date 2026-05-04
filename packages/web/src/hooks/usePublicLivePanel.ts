@@ -118,7 +118,7 @@ export function usePublicLivePanel(eventId: string): PublicLivePanelState {
   useEffect(() => {
     void fetchInitialState()
 
-    const socket = io(`${process.env['NEXT_PUBLIC_API_URL']}/public-live`, {
+    const socket = io(`${process.env['NEXT_PUBLIC_WS_URL']}/public-live`, {
       query: { eventId },
       transports: ['websocket'],
     })
