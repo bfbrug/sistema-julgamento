@@ -6,7 +6,7 @@ import { STORAGE_SERVICE } from './storage.service.interface'
   providers: [
     {
       provide: STORAGE_SERVICE,
-      useClass: LocalStorageService,
+      useFactory: () => new LocalStorageService(),
     },
   ],
   exports: [STORAGE_SERVICE],

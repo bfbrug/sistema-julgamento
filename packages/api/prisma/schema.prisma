@@ -307,7 +307,6 @@ enum CalculationRule {
 
 enum EventStatus {
   DRAFT
-  REGISTERING
   IN_PROGRESS
   FINISHED
 }
