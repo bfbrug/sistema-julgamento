@@ -22,7 +22,7 @@ export function EventForm({ initialData, onSubmit, isLoading }: EventFormProps) 
   } = useForm<CreateEventDto>({
     resolver: zodResolver(createEventSchema) as Resolver<CreateEventDto>,
     defaultValues: {
-      calculationRule: CalculationRule.R2,
+      calculationRule: CalculationRule.R1,
       scoreMin: 0,
       scoreMax: 10,
       topN: 3,
@@ -34,7 +34,7 @@ export function EventForm({ initialData, onSubmit, isLoading }: EventFormProps) 
   return (
     <Card
       body={
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit((data) => onSubmit({ ...data, eventDate: new Date(data.eventDate).toISOString() }))} className="space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Input
               id="name"
