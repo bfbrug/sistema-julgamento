@@ -13,10 +13,14 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true)
+      return
+    }
     const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true))
-    if (useAuthStore.persist.hasHydrated()) setHydrated(true)
+    if (isAuthenticated) setHydrated(true)
     return unsub
-  }, [])
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (!hydrated) return
