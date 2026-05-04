@@ -9,9 +9,10 @@ import { JwtModule } from '@nestjs/jwt'
 import { ConfigModule } from '@nestjs/config'
 import { WsJwtGuard } from './guards/ws-jwt.guard'
 import { CalculationModule } from '../calculation/calculation.module'
+import { StorageModule } from '../storage/storage.module'
 
 @Module({
-  imports: [AuditModule, JwtModule, ConfigModule, CalculationModule],
+  imports: [AuditModule, JwtModule, ConfigModule, CalculationModule, StorageModule],
   controllers: [ScoringController],
   providers: [
     ScoringService,

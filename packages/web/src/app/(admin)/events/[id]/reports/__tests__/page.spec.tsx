@@ -12,6 +12,10 @@ vi.mock('@/hooks/useReports', () => ({
   useJobPolling: vi.fn(),
 }))
 
+vi.mock('@/hooks/useEvents', () => ({
+  useEvent: vi.fn().mockReturnValue({ data: { name: 'Evento Teste' } }),
+}))
+
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }))
 
 import { useReportJobs, useGenerateReport, useJobPolling } from '@/hooks/useReports'

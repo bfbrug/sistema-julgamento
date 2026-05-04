@@ -1,5 +1,8 @@
 'use client'
 
+import { CheckCircle2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
 interface ScoreSummary {
   categoryName: string
   value: number
@@ -10,42 +13,56 @@ interface FinishedStateProps {
 }
 
 export function FinishedState({ scores }: FinishedStateProps) {
-  return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success-100">
-        <svg
-          className="h-8 w-8 text-success-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-      <h2 className="mb-2 text-2xl font-semibold text-secondary-900">
-        Notas finalizadas com sucesso
-      </h2>
-      <p className="mb-8 text-secondary-500">
-        Aguardando o gestor ativar o próximo participante
-      </p>
+  const avg = scores.length > 0
+    ? scores.reduce((sum, s) => sum + s.value, 0) / scores.length
+    : 0
 
-      {scores.length > 0 && (
-        <div className="w-full max-w-sm rounded-lg border border-secondary-200 bg-white p-4 shadow-sm">
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-secondary-500">
-            Últimas notas registradas
-          </h3>
-          <ul className="space-y-2">
-            {scores.map((s) => (
-              <li key={s.categoryName} className="flex items-center justify-between text-sm">
-                <span className="text-secondary-700">{s.categoryName}</span>
-                <span className="font-semibold text-secondary-900">{s.value.toFixed(1)}</span>
-              </li>
-            ))}
-          </ul>
+  return (
+    <div className="min-h-full bg-slate-50 flex flex-col items-center">
+      <div className="w-full max-w-lg">
+
+        {/* Banner de confirmação */}
+        <div className="bg-white border-b border-slate-200 px-5 py-5 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          </div>
+          <div>
+            <h1 className="text-slate-900 font-bold text-base">Notas finalizadas</h1>
+            <p className="text-slate-500 text-xs mt-0.5">Aguardando próximo participante</p>
+          </div>
         </div>
-      )}
+
+        {/* Resumo das notas */}
+        {scores.length > 0 && (
+          <>
+            <div className="bg-white mt-3 border-y border-slate-200 divide-y divide-slate-100">
+              {scores.map((s, idx) => (
+                <div key={s.categoryName} className="flex items-center px-5 py-3.5">
+                  <span className="text-[10px] font-bold text-slate-400 w-4 flex-shrink-0 tabular-nums">{idx + 1}</span>
+                  <span className="flex-1 text-sm font-semibold text-slate-500 ml-2">{s.categoryName}</span>
+                  <span className="text-lg font-bold text-slate-700 tabular-nums">{s.value.toFixed(1)}</span>
+                </div>
+              ))}
+
+              {/* Média */}
+              <div className="flex items-center px-5 py-3.5 bg-slate-50">
+                <span className="flex-1 text-xs font-bold text-slate-500 uppercase tracking-widest ml-6">Média</span>
+                <span className={cn(
+                  'text-xl font-bold tabular-nums',
+                  avg >= 7 ? 'text-emerald-600' : avg >= 5 ? 'text-amber-600' : 'text-red-500'
+                )}>
+                  {avg.toFixed(1)}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Mensagem de espera */}
+        <div className="px-5 pt-4 text-center">
+          <p className="text-xs text-slate-400 font-medium">Esta página atualizará automaticamente quando o gestor ativar o próximo participante.</p>
+        </div>
+      </div>
     </div>
   )
 }

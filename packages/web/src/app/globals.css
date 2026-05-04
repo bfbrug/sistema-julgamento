@@ -1,6 +1,12 @@
 @import '../styles/tokens.css';
 @import 'tailwindcss';
 
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @theme {
   --color-primary-50: #eef2ff;
   --color-primary-100: #e0e7ff;

@@ -10,9 +10,10 @@ interface DownloadButtonProps {
   eventId: string
   type: ReportType
   lastJob: ReportJob | null | undefined
+  disabled?: boolean
 }
 
-export function DownloadButton({ eventId, type, lastJob }: DownloadButtonProps) {
+export function DownloadButton({ eventId, type, lastJob, disabled = false }: DownloadButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false)
   const hasCompleted = lastJob?.status === 'COMPLETED'
 
@@ -45,7 +46,7 @@ export function DownloadButton({ eventId, type, lastJob }: DownloadButtonProps) 
       <Button
         variant="secondary"
         size="sm"
-        disabled={!hasCompleted || isDownloading}
+        disabled={!hasCompleted || isDownloading || disabled}
         loading={isDownloading}
         onClick={handleDownload}
         className="gap-2"

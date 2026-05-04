@@ -4,7 +4,6 @@ import { useParams } from 'next/navigation'
 import { useLiveScoring } from '@/hooks/useLiveScoring'
 import { useTransitionEvent } from '@/hooks/useEvents'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { Users, Trophy, Play, CheckCircle, AlertCircle, Clock, Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -20,19 +19,20 @@ function translateStatus(status: string): string {
     'SCORING': 'APRESENTAÇÃO',
     'ABSENT': 'AUSENTE',
   }
-  return map[status] || status.toUpperCase()
+  return map[status] || (status ? status.toUpperCase() : '')
 }
 
 export default function EventLivePage() {
   const router = useRouter()
   const { id: eventId } = useParams() as { id: string }
-  const { liveState, isConnected, activateParticipant, startScoring, markAbsent } = useLiveScoring(eventId)
+  const { liveState, isConnected, activateParticipant, markAbsent } = useLiveScoring(eventId)
   const { mutate: transitionEvent } = useTransitionEvent(eventId)
 
   if (!liveState) return <div className="p-12 text-center">Iniciando conexão...</div>
 
-  const { currentParticipant, queue, judges } = liveState
+  const { currentParticipant, queue, judges: rawJudges } = liveState
   const nextInQueue = queue.find((p) => p.status === 'WAITING')
+  const judges = currentParticipant ? rawJudges : rawJudges.map((j) => ({ ...j, status: 'NOT_STARTED', progress: 0 }))
   const allFinished = queue.length > 0 && queue.every((p) => p.status === 'FINISHED' || p.status === 'ABSENT')
 
   const handleFinishEvent = () => {
@@ -66,154 +66,195 @@ export default function EventLivePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Lado Esquerdo: Participante Atual */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card
-            header={<h2 className="text-xl font-bold flex items-center gap-2"><Trophy className="h-5 w-5 text-primary-600" /> Em Destaque</h2>}
-            body={
-              currentParticipant ? (
-                <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
-                  <div className="h-48 w-48 rounded-xl bg-secondary-100 flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
-                    {currentParticipant.photoUrl ? (
-                      <img src={currentParticipant.photoUrl} alt={currentParticipant.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <Users className="h-16 w-16 text-secondary-300" />
-                    )}
-                  </div>
-                  <div className="flex-1 text-center md:text-left space-y-4">
-                    <div>
-                      <span className="inline-block px-2 py-1 rounded bg-primary-100 text-primary-700 text-xs font-bold uppercase tracking-wider mb-2">
-                        {translateStatus(currentParticipant.status)}
-                      </span>
-                      <h3 className="text-4xl font-black text-secondary-900 leading-tight">
-                        {currentParticipant.name}
-                      </h3>
-                      <p className="text-secondary-500 font-medium">Posição na fila: {currentParticipant.presentationOrder}</p>
-                    </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Coluna Esquerda */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
 
-                    <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                      {(currentParticipant.status === 'WAITING' || currentParticipant.status === 'NOT_STARTED') && (
-                        <Button size="lg" className="px-8" onClick={() => activateParticipant(currentParticipant.id)}>
-                          <Play className="mr-2 h-5 w-5" />
-                          Ativar Agora
-                        </Button>
-                      )}
-                      {(currentParticipant.status === 'PREVIEW' || currentParticipant.status === 'IN_PREVIEW') && (
-                        <Button size="lg" className="px-8 bg-primary-600 hover:bg-primary-700" onClick={() => startScoring(currentParticipant.id)}>
-                          <Play className="mr-2 h-5 w-5" />
-                          Iniciar Apresentação
-                        </Button>
-                      )}
-                      {(currentParticipant.status === 'SCORING' || currentParticipant.status === 'IN_SCORING') && (
-                        <div className="flex items-center gap-2 text-warning-600 font-bold">
-                          <Clock className="h-5 w-5 animate-spin" />
-                          Jurados avaliando...
-                        </div>
-                      )}
-                      {currentParticipant.status === 'FINISHED' && nextInQueue && (
-                        <Button size="lg" variant="secondary" className="px-8" onClick={() => activateParticipant(nextInQueue.id)}>
-                          Próximo Participante
-                        </Button>
-                      )}
-                      {(currentParticipant.status === 'WAITING' || currentParticipant.status === 'NOT_STARTED') && (
-                        <Button size="lg" variant="ghost" className="text-danger-600" onClick={() => markAbsent(currentParticipant.id)}>
-                          Marcar Ausente
-                        </Button>
-                      )}
-                    </div>
+          {/* ── EM DESTAQUE ── */}
+          {(() => {
+            const subject = currentParticipant ?? (nextInQueue ? { ...nextInQueue, status: 'NEXT' } : null)
+            const isNext = !currentParticipant && !!nextInQueue
+            const isScoring = subject && (subject.status === 'SCORING' || subject.status === 'IN_SCORING')
+            const isPreview = subject && (subject.status === 'PREVIEW' || subject.status === 'IN_PREVIEW')
+            const isFinished = subject?.status === 'FINISHED'
+
+            return (
+              <div className="rounded-xl border border-secondary-200 bg-white shadow-sm overflow-hidden">
+                {/* topo */}
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-secondary-100 bg-secondary-50/50">
+                  <div className="flex items-center gap-1.5 text-secondary-500">
+                    <Trophy className="h-3.5 w-3.5 text-primary-500" />
+                    <span className="text-xs font-semibold uppercase tracking-widest">Em Destaque</span>
                   </div>
-                </div>
-              ) : (
-                <div className="py-20 text-center space-y-4">
-                  <div className="mx-auto h-16 w-16 bg-secondary-50 rounded-full flex items-center justify-center">
-                    <Trophy className="h-8 w-8 text-secondary-300" />
-                  </div>
-                  <p className="text-secondary-500">Nenhum participante ativo no momento.</p>
-                  {nextInQueue && (
-                    <Button onClick={() => activateParticipant(nextInQueue.id)}>
-                      Ativar Primeiro Participante
-                    </Button>
+                  {subject && (
+                    <span className={cn(
+                      'flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full',
+                      isScoring ? 'bg-amber-100 text-amber-700' :
+                      isPreview ? 'bg-primary-100 text-primary-700' :
+                      isFinished ? 'bg-emerald-100 text-emerald-700' :
+                      isNext ? 'bg-secondary-100 text-secondary-600' :
+                      'bg-secondary-100 text-secondary-600'
+                    )}>
+                      {isScoring && <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />}
+                      {isNext ? 'Próximo' : translateStatus(subject.status)}
+                    </span>
                   )}
                 </div>
-              )
-            }
-          />
 
-          {/* Grid de Jurados */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-secondary-900 flex items-center gap-2">
-              <Users className="h-5 w-5" /> Status dos Jurados
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {judges.map((judge) => (
-                <Card
-                  key={judge.id}
-                  className={cn(
-                    'border-l-4 transition-all',
-                    judge.status === 'FINISHED' ? 'border-l-success-500' :
-                    judge.status === 'SCORING' ? 'border-l-warning-500 animate-pulse' :
-                    'border-l-secondary-300'
-                  )}
-                  body={
-                    <div className="flex flex-col gap-2">
-                      <div className="flex justify-between items-start">
-                        <span className="font-bold text-secondary-900">{judge.name}</span>
-                        {judge.status === 'FINISHED' ? (
-                          <CheckCircle className="h-4 w-4 text-success-500" />
-                        ) : (
-                          <div className="h-4 w-4 rounded-full border-2 border-primary-500 border-t-transparent animate-spin" />
+                {subject ? (
+                  <div className="flex items-center gap-5 p-4">
+                    {/* Foto quadrada fixa */}
+                    <div className="h-20 w-20 flex-shrink-0 rounded-lg overflow-hidden bg-secondary-100 border border-secondary-200">
+                      {subject.photoUrl
+                        ? <img src={subject.photoUrl} alt={subject.name} className="h-full w-full object-cover object-top" />
+                        : <div className="h-full w-full flex items-center justify-center"><Users className="h-8 w-8 text-secondary-300" /></div>
+                      }
+                    </div>
+
+                    {/* Texto + ação */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-lg font-bold text-secondary-900 truncate leading-tight">{subject.name}</h3>
+                        <span className="text-xs text-secondary-400 font-medium flex-shrink-0">#{subject.presentationOrder}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {(subject.status === 'WAITING' || subject.status === 'NOT_STARTED') && (<>
+                          <Button size="sm" onClick={() => activateParticipant(subject.id)}>
+                            <Play className="mr-1 h-3 w-3" /> Ativar
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-danger-600 text-xs" onClick={() => markAbsent(subject.id)}>
+                            Marcar Ausente
+                          </Button>
+                        </>)}
+                        {isNext && (
+                          <Button size="sm" onClick={() => activateParticipant(subject.id)}>
+                            <Play className="mr-1 h-3 w-3" /> Ativar Participante
+                          </Button>
+                        )}
+                        {isPreview && (
+                          <span className="flex items-center gap-1.5 text-xs text-primary-600 font-medium">
+                            <Clock className="h-3.5 w-3.5 animate-spin" /> Iniciando avaliação...
+                          </span>
+                        )}
+                        {isScoring && (
+                          <span className="flex items-center gap-1.5 text-xs text-amber-600 font-medium">
+                            <Clock className="h-3.5 w-3.5 animate-spin" /> Jurados avaliando...
+                          </span>
+                        )}
+                        {isFinished && nextInQueue && (
+                          <Button size="sm" variant="secondary" onClick={() => activateParticipant(nextInQueue.id)}>
+                            Próximo Participante
+                          </Button>
                         )}
                       </div>
-                      <div className="text-xs text-secondary-500 font-medium uppercase">{translateStatus(judge.status)}</div>
-                      
-                      <div className="w-full bg-secondary-100 h-1.5 rounded-full mt-1">
-                        <div 
-                          className="bg-primary-600 h-full rounded-full transition-all duration-500" 
-                          style={{ width: `${(judge.progress || 0) * 100}%` }}
-                        />
-                      </div>
                     </div>
-                  }
-                />
-              ))}
+                  </div>
+                ) : (
+                  <div className="py-8 flex flex-col items-center gap-2 text-secondary-300">
+                    <Trophy className="h-7 w-7" />
+                    <p className="text-xs text-secondary-400">Nenhum participante ativo.</p>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* ── JURADOS ── */}
+          <div className="rounded-xl border border-secondary-200 bg-white shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-secondary-100 bg-secondary-50/50">
+              <div className="flex items-center gap-1.5 text-secondary-500">
+                <Users className="h-3.5 w-3.5" />
+                <span className="text-xs font-semibold uppercase tracking-widest">Jurados</span>
+              </div>
+              <span className="text-xs text-secondary-400 font-medium">
+                {judges.filter(j => j.status === 'FINISHED').length}/{judges.length} finalizados
+              </span>
+            </div>
+            <div className={cn(
+              'grid gap-px bg-secondary-100',
+              judges.length <= 3 ? 'grid-cols-3' :
+              judges.length <= 4 ? 'grid-cols-4' :
+              judges.length <= 6 ? 'grid-cols-3' :
+              'grid-cols-4'
+            )}>
+              {judges.map((judge) => {
+                const done = judge.status === 'FINISHED'
+                const active = judge.status === 'IN_SCORING' || judge.status === 'SCORING'
+                const review = judge.status === 'IN_REVIEW'
+                return (
+                  <div key={judge.id} className={cn(
+                    'flex flex-col items-center justify-center gap-1.5 py-3 px-2 bg-white transition-colors',
+                    done ? 'bg-emerald-50' : active ? 'bg-amber-50' : review ? 'bg-primary-50' : ''
+                  )}>
+                    <div className={cn(
+                      'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0',
+                      done ? 'bg-emerald-100 text-emerald-700' :
+                      active ? 'bg-amber-100 text-amber-700' :
+                      review ? 'bg-primary-100 text-primary-700' :
+                      'bg-secondary-100 text-secondary-500'
+                    )}>
+                      {judge.name?.charAt(0).toUpperCase()}
+                    </div>
+                    <p className="text-xs font-semibold text-secondary-800 text-center truncate w-full px-1 leading-tight">{judge.name}</p>
+                    <div className="flex items-center gap-1">
+                      {done
+                        ? <CheckCircle className="h-3 w-3 text-emerald-500" />
+                        : active || review
+                          ? <div className="h-3 w-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+                          : null
+                      }
+                      <p className={cn(
+                        'text-[10px] font-semibold uppercase tracking-wide',
+                        done ? 'text-emerald-600' :
+                        active ? 'text-amber-600' :
+                        review ? 'text-primary-600' :
+                        'text-secondary-400'
+                      )}>{translateStatus(judge.status)}</p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
 
-        {/* Lado Direito: Fila */}
-        <div className="space-y-4">
-          <h3 className="font-bold text-secondary-900 flex items-center gap-2">
-            <Clock className="h-5 w-5" /> Fila de Espera
-          </h3>
-          <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
-            {queue.map((p) => (
-              <div
-                key={p.id}
-                className={cn(
-                  'flex items-center gap-3 p-3 rounded-lg border transition-all',
-                  p.id === currentParticipant?.id ? 'bg-primary-50 border-primary-200 ring-2 ring-primary-100' : 'bg-white border-secondary-100'
-                )}
-              >
-                <div className={cn(
-                  'h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs',
-                  p.status === 'FINISHED' ? 'bg-success-100 text-success-700' :
-                  p.status === 'SCORING' ? 'bg-warning-100 text-warning-700' :
-                  p.id === currentParticipant?.id ? 'bg-primary-600 text-white' :
-                  'bg-secondary-100 text-secondary-500'
+        {/* ── FILA DE ESPERA ── */}
+        <div className="rounded-xl border border-secondary-200 bg-white shadow-sm overflow-hidden flex flex-col">
+          <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-secondary-100 bg-secondary-50/50">
+            <Clock className="h-3.5 w-3.5 text-secondary-400" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-secondary-500">Fila de Espera</span>
+          </div>
+          <div className="flex-1 overflow-y-auto divide-y divide-secondary-100" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+            {[...queue].sort((a, b) => {
+              const done = (s: string) => s === 'FINISHED' || s === 'ABSENT'
+              if (done(a.status) && !done(b.status)) return 1
+              if (!done(a.status) && done(b.status)) return -1
+              return a.presentationOrder - b.presentationOrder
+            }).map((p) => {
+              const isCurrent = p.id === currentParticipant?.id
+              const done = p.status === 'FINISHED' || p.status === 'ABSENT'
+              return (
+                <div key={p.id} className={cn(
+                  'flex items-center gap-3 px-4 py-2.5 transition-colors',
+                  isCurrent ? 'bg-primary-50' : done ? 'opacity-50' : 'hover:bg-secondary-50'
                 )}>
-                  {p.presentationOrder}
+                  <div className="h-8 w-8 rounded-full flex-shrink-0 overflow-hidden border border-secondary-200 bg-secondary-100 flex items-center justify-center text-xs font-bold text-secondary-500">
+                    {p.photoUrl
+                      ? <img src={p.photoUrl} alt={p.name} className="h-full w-full object-cover object-top" />
+                      : p.presentationOrder
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={cn('text-sm font-semibold truncate leading-tight', isCurrent ? 'text-primary-800' : done ? 'text-secondary-400' : 'text-secondary-800')}>{p.name}</p>
+                    <p className={cn('text-[10px] font-medium uppercase tracking-wide', isCurrent ? 'text-primary-500' : done ? 'text-secondary-400' : 'text-secondary-400')}>{translateStatus(p.status)}</p>
+                  </div>
+                  {p.status === 'FINISHED' && <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />}
+                  {p.status === 'ABSENT' && <AlertCircle className="h-3.5 w-3.5 text-danger-400 flex-shrink-0" />}
+                  {isCurrent && !done && <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse flex-shrink-0" />}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className={cn('text-sm font-bold truncate', p.id === currentParticipant?.id ? 'text-primary-900' : 'text-secondary-700')}>
-                    {p.name}
-                  </p>
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-secondary-400">{translateStatus(p.status)}</p>
-                </div>
-                {p.status === 'FINISHED' && <CheckCircle className="h-4 w-4 text-success-500" />}
-                {p.status === 'ABSENT' && <AlertCircle className="h-4 w-4 text-danger-500" />}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>

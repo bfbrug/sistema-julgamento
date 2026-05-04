@@ -39,6 +39,8 @@ export interface JudgeEventInfo {
   status: EventStatus
   scoreMin: number
   scoreMax: number
+  totalParticipants: number
+  totalEvaluated: number
 }
 
 export interface JudgeStateResponse {
@@ -55,7 +57,6 @@ export function useJudgePanel(eventId: string) {
   const [eventInfo, setEventInfo] = useState<JudgeEventInfo | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'reconnecting' | 'disconnected'>('reconnecting')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [totalEvaluated, setTotalEvaluated] = useState(0)
 
   const resolveLocalState = useCallback(
     (state: JudgeStateResponse): JudgePanelState => {
@@ -69,6 +70,9 @@ export function useJudgePanel(eventId: string) {
         case 'IN_SCORING':
           return 'SCORING'
         case 'NOT_STARTED':
+          // Participant already in SCORING state on server but session not yet updated
+          if (state.activeParticipant.currentState === 'SCORING') return 'SCORING'
+          return 'PREVIEW'
         default:
           return 'PREVIEW'
       }
@@ -77,6 +81,8 @@ export function useJudgePanel(eventId: string) {
   )
 
   const isTerminalState = useCallback((state: JudgePanelState) => state === 'EVENT_ENDED', [])
+
+  const fetchStateRef = useRef<() => Promise<void>>(async () => {})
 
   const fetchState = useCallback(async () => {
     try {
@@ -106,6 +112,10 @@ export function useJudgePanel(eventId: string) {
   }, [eventId, resolveLocalState])
 
   useEffect(() => {
+    fetchStateRef.current = fetchState
+  }, [fetchState])
+
+  useEffect(() => {
     if (!accessToken || !eventId) return
 
     const socket = io(`${process.env['NEXT_PUBLIC_WS_URL']}/scoring`, {
@@ -118,7 +128,7 @@ export function useJudgePanel(eventId: string) {
 
     socket.on('connect', () => {
       setConnectionStatus('connected')
-      fetchState()
+      fetchStateRef.current()
     })
 
     socket.on('disconnect', () => {
@@ -130,7 +140,7 @@ export function useJudgePanel(eventId: string) {
     })
 
     const handleAnyEvent = () => {
-      fetchState()
+      fetchStateRef.current()
     }
 
     socket.on('participant_activated', handleAnyEvent)
@@ -141,7 +151,7 @@ export function useJudgePanel(eventId: string) {
     socket.on('judge_finalized', handleAnyEvent)
     socket.on('participant_finished', handleAnyEvent)
     socket.on('participant_absent', (payload: { participantId?: string }) => {
-      if (currentParticipant && payload.participantId === currentParticipant.id) {
+      if (payload.participantId) {
         toast.info('Participante marcado como ausente')
       }
       handleAnyEvent()
@@ -156,7 +166,7 @@ export function useJudgePanel(eventId: string) {
     return () => {
       socket.disconnect()
     }
-  }, [eventId, accessToken, fetchState, currentParticipant])
+  }, [eventId, accessToken])
 
   // Polling fallback
   useEffect(() => {
@@ -226,7 +236,6 @@ export function useJudgePanel(eventId: string) {
         path: `/events/${eventId}/scoring/finalize/${currentParticipant.id}`,
       })
       clearDraft(currentParticipant.id)
-      setTotalEvaluated((prev) => prev + 1)
       setCurrentState('FINISHED')
       await fetchState()
     } catch (error) {
@@ -259,7 +268,7 @@ export function useJudgePanel(eventId: string) {
     ),
     connectionStatus,
     isSubmitting,
-    totalEvaluated,
+    totalEvaluated: eventInfo?.totalEvaluated ?? 0,
     openScoringForm,
     submitScores,
     editScores,

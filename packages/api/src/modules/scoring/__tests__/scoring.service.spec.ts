@@ -7,6 +7,7 @@ import { ScoringGateway } from '../scoring.gateway'
 import { PublicLiveGateway } from '../public-live.gateway'
 import { ConflictException, UnprocessableEntityException } from '@nestjs/common'
 import { CalculationService } from '../../calculation/calculation.service'
+import { STORAGE_SERVICE } from '../../storage/storage.service.interface'
 
 describe('ScoringService', () => {
   let service: ScoringService
@@ -96,8 +97,9 @@ describe('ScoringService', () => {
         { provide: ScoringGateway, useValue: mockGateway },
         { provide: PublicLiveGateway, useValue: mockPublicGateway },
         { provide: CalculationService, useValue: { invalidateCache: vi.fn() } },
-      ],
-    }).compile()
+        { provide: STORAGE_SERVICE, useValue: { upload: vi.fn(), remove: vi.fn(), getPublicUrl: vi.fn(), exists: vi.fn() } },
+        ],
+        }).compile()
 
     service = module.get<ScoringService>(ScoringService)
     repository = module.get<ScoringRepository>(ScoringRepository)
