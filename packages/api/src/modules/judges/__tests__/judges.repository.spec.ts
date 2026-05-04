@@ -84,7 +84,7 @@ describe('JudgesRepository', () => {
     const result = await repository.findByEventId('event-1')
     expect(result).toHaveLength(1)
     expect(mockPrisma.judge.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { eventId: 'event-1' } }),
+      expect.objectContaining({ where: { eventId: 'event-1', user: { deletedAt: null } } }),
     )
   })
 

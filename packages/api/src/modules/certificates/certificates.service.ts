@@ -42,12 +42,12 @@ function escapeHtml(unsafe: string): string {
 @Injectable()
 export class CertificatesService {
   constructor(
-    private readonly repository: CertificatesRepository,
+    @Inject(CertificatesRepository) private readonly repository: CertificatesRepository,
     @InjectQueue('certificates') private readonly certificatesQueue: Queue,
-    private readonly auditService: AuditService,
+    @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
     @InjectPinoLogger(CertificatesService.name) private readonly logger: PinoLogger,
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {}
 
   async getConfig(eventId: string, managerId: string) {

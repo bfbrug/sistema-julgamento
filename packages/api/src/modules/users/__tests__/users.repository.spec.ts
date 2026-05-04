@@ -83,6 +83,28 @@ describe('UsersRepository', () => {
     })
   })
 
+  it('should normalize string isActive=true to boolean', async () => {
+    prisma.user.findMany.mockResolvedValue([])
+    prisma.user.count.mockResolvedValue(0)
+    await repository.list({ isActive: 'true' as unknown as boolean })
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { isActive: true },
+      }),
+    )
+  })
+
+  it('should normalize string isActive=false to boolean', async () => {
+    prisma.user.findMany.mockResolvedValue([])
+    prisma.user.count.mockResolvedValue(0)
+    await repository.list({ isActive: 'false' as unknown as boolean })
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { isActive: false },
+      }),
+    )
+  })
+
   it('should list users with default filters', async () => {
     prisma.user.findMany.mockResolvedValue([])
     prisma.user.count.mockResolvedValue(0)

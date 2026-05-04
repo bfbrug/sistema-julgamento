@@ -57,7 +57,7 @@ export class JudgesRepository {
 
   async findByEventId(eventId: string): Promise<JudgeWithRelations[]> {
     return this.prisma.judge.findMany({
-      where: { eventId },
+      where: { eventId, user: { deletedAt: null } },
       include: {
         user: { select: { id: true, email: true, name: true } },
         judgeCategories: {
@@ -94,7 +94,7 @@ export class JudgesRepository {
 
   async findJudgeCategoriesByEventId(eventId: string): Promise<JudgeCategory[]> {
     return this.prisma.judgeCategory.findMany({
-      where: { judge: { eventId } },
+      where: { judge: { eventId, user: { deletedAt: null } } },
     })
   }
 

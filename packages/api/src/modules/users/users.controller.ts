@@ -4,6 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { UpdateMeDto } from './dto/update-me.dto'
 import { ChangePasswordDto } from './dto/change-password.dto'
+import { ResetPasswordDto } from './dto/reset-password.dto'
 import { ListUsersDto } from './dto/list-users.dto'
 import { Roles } from '../../common/decorators/roles.decorator'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
@@ -63,6 +64,13 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     await this.usersService.softDelete(id, user.sub)
+  }
+
+  @Roles('GESTOR')
+  @Post(':id/reset-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async resetPassword(@Param('id') id: string, @Body() dto: ResetPasswordDto, @CurrentUser() user: JwtPayload) {
+    await this.usersService.adminResetPassword(id, dto.newPassword, user.sub)
   }
 
   @Roles('GESTOR')
