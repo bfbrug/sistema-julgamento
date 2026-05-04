@@ -1,14 +1,14 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { useParticipants, useCreateParticipant, useDeleteParticipant, useShuffleParticipants, useReorderParticipants } from '@/hooks/useParticipants'
+import { useParticipants, useCreateParticipant, useDeleteParticipant, useShuffleParticipants, useReorderParticipants, useUploadParticipantPhoto } from '@/hooks/useParticipants'
 import { useEvent } from '@/hooks/useEvents'
 import { EventStatus } from '@judging/shared'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { Trash2, GripVertical, Plus, Shuffle, Upload } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useState, useRef, type FormEvent } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -130,7 +130,9 @@ export default function EventParticipantsPage() {
                     key={participant.id}
                     participant={participant}
                     index={index}
+                    eventId={eventId}
                     onDelete={() => deleteParticipant(participant.id)}
+                    isFinished={isFinished}
                   />
                 ))}
               </div>
@@ -145,14 +147,30 @@ export default function EventParticipantsPage() {
 interface ParticipantItem {
   id: string
   name: string
+  photoUrl?: string | null
 }
 
-function SortableParticipantItem({ participant, index, onDelete }: { participant: ParticipantItem; index: number; onDelete: () => void }) {
+function SortableParticipantItem({ participant, index, eventId, onDelete, isFinished }: {
+  participant: ParticipantItem
+  index: number
+  eventId: string
+  onDelete: () => void
+  isFinished: boolean
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: participant.id })
+  const { mutate: uploadPhoto, isPending: isUploading } = useUploadParticipantPhoto(eventId)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    uploadPhoto({ participantId: participant.id, file })
+    e.target.value = ''
   }
 
   return (
@@ -164,10 +182,14 @@ function SortableParticipantItem({ participant, index, onDelete }: { participant
       <button {...attributes} {...listeners} className="cursor-grab text-secondary-300 hover:text-secondary-500">
         <GripVertical className="h-5 w-5" />
       </button>
-      
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-100 text-secondary-600 font-bold text-sm">
-        {index + 1}
-      </div>
+
+      {participant.photoUrl ? (
+        <img src={participant.photoUrl} alt={participant.name} className="h-10 w-10 rounded-full object-cover" />
+      ) : (
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-100 text-secondary-600 font-bold text-sm">
+          {index + 1}
+        </div>
+      )}
 
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-secondary-900 truncate">{participant.name}</p>
@@ -175,14 +197,32 @@ function SortableParticipantItem({ participant, index, onDelete }: { participant
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" title="Upload de foto">
-          <Upload className="h-4 w-4" />
-        </Button>
+        {!isFinished && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              title="Upload de foto"
+              loading={isUploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4" />
+            </Button>
+          </>
+        )}
         <Button
           variant="ghost"
           size="sm"
           className="text-danger-600 hover:text-danger-700 hover:bg-danger-50"
           onClick={onDelete}
+          disabled={isFinished}
         >
           <Trash2 className="h-4 w-4" />
         </Button>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api'
+import { apiClient, apiUpload } from '@/lib/api'
 import type { ParticipantResponse, CreateParticipantDto, UpdateParticipantDto } from '@judging/shared'
 import { toast } from 'sonner'
 
@@ -72,6 +72,25 @@ export function useReorderParticipants(eventId: string) {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao reordenar participantes.')
+    },
+  })
+}
+
+export function useUploadParticipantPhoto(eventId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ participantId, file }: { participantId: string; file: File }) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      return apiUpload<ParticipantResponse>(`/events/${eventId}/participants/${participantId}/photo`, formData)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', eventId, 'participants'] })
+      toast.success('Foto enviada!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao enviar foto.')
     },
   })
 }

@@ -180,3 +180,26 @@ export async function apiClient<T, B = unknown>({
   return responseBody as T
 }
 
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
+  const { accessToken } = useAuthStore.getState()
+
+  const res = await fetch(`${baseUrl}${path}`, {
+    method: 'POST',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    body: formData,
+  })
+
+  const responseBody = (await res.json()) as ApiResponseBody<T>
+
+  if (!res.ok) {
+    if (isApiError(responseBody)) {
+      throw new ApiError(responseBody.error, res.status, responseBody.code)
+    }
+    throw new ApiError(`HTTP ${res.status}`, res.status)
+  }
+
+  if (isApiSuccess<T>(responseBody)) return responseBody.data
+  return responseBody as T
+}
+
