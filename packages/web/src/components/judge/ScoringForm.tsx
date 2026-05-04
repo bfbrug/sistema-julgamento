@@ -208,24 +208,27 @@ export function ScoringForm({
                     <div className="relative">
                       <input
                         id={cat.id}
+                        aria-label={cat.name}
                         type="number"
                         step="0.1"
                         min={scoreMin}
                         max={scoreMax}
-                        {...register(cat.id, { valueAsNumber: true })}
+                        {...register(cat.id, { 
+                          valueAsNumber: true,
+                          onChange: (e) => {
+                            const raw = e.target.value
+                            const match = raw.match(/^-?\d*\.?\d{0,1}$/)
+                            if (!match) {
+                              e.target.value = raw.slice(0, -1)
+                            }
+                          }
+                        })}
                         onKeyDown={(e) => {
                           // bloqueia segunda casa decimal
                           const current = String(e.currentTarget.value)
                           const decimalIdx = current.indexOf('.')
                           if (decimalIdx !== -1 && current.length - decimalIdx > 1 && /[0-9]/.test(e.key) && e.currentTarget.selectionStart! > decimalIdx) {
                             e.preventDefault()
-                          }
-                        }}
-                        onChange={(e) => {
-                          const raw = e.target.value
-                          const match = raw.match(/^-?\d*\.?\d{0,1}$/)
-                          if (!match) {
-                            e.target.value = raw.slice(0, -1)
                           }
                         }}
                         className={cn(

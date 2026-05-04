@@ -8,9 +8,12 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/judge/event-1',
 }))
 
-vi.mock('@/stores/auth.store', () => ({
-  useAuthStore: vi.fn(),
-}))
+vi.mock('@/stores/auth.store', () => {
+  const mockUseAuthStore = Object.assign(vi.fn(), {
+    persist: { hasHydrated: vi.fn().mockReturnValue(true) },
+  })
+  return { useAuthStore: mockUseAuthStore }
+})
 
 import { useAuthStore } from '@/stores/auth.store'
 
