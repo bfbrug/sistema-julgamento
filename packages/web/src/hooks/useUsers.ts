@@ -14,12 +14,11 @@ export function useUsers(filters?: { role?: string; excludeRole?: string; isActi
   return useQuery({
     queryKey: ['users', filters],
     queryFn: async () => {
-      const res = await apiClient<UserResponse[]>({ method: 'GET', path: `/users?${queryParams.toString()}` })
-      // Defensive: API may return paginated object { data: [...], meta: {...} }
-      if (res && typeof res === 'object' && 'data' in res && Array.isArray((res as any).data)) {
-        return (res as any).data as UserResponse[]
+      const res = await apiClient<UserResponse[] | { data: UserResponse[] }>({ method: 'GET', path: `/users?${queryParams.toString()}` })
+      if (res && !Array.isArray(res) && 'data' in res) {
+        return res.data
       }
-      return res
+      return res as UserResponse[]
     },
   })
 }

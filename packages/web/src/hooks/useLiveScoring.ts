@@ -43,9 +43,13 @@ export function useLiveScoring(eventId: string) {
 
   const fetchState = useCallback(async () => {
     try {
-      const state = await apiClient<any>({ method: 'GET', path: `/events/${eventId}/scoring/state` })
+      const state = await apiClient<{
+        judges: Array<{ id: string; displayName?: string; name?: string; status?: string }>
+        activeParticipant: { id: string; name: string; currentState: string; presentationOrder: number; photoUrl?: string } | null
+        participants: Array<{ id: string; name: string; currentState: string; presentationOrder: number; photoUrl?: string }>
+      }>({ method: 'GET', path: `/events/${eventId}/scoring/state` })
 
-      const judges: JudgeState[] = (state.judges || []).map((j: any) => ({
+      const judges: JudgeState[] = (state.judges || []).map((j) => ({
         id: j.id,
         name: j.displayName || j.name || 'Jurado',
         status: j.status ?? 'NOT_STARTED',
@@ -69,7 +73,7 @@ export function useLiveScoring(eventId: string) {
                 photoUrl: state.activeParticipant.photoUrl,
               }
             : null,
-          queue: (state.participants || []).map((p: any) => ({
+          queue: (state.participants || []).map((p) => ({
             id: p.id,
             name: p.name,
             status: p.currentState,

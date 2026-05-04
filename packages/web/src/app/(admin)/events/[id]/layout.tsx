@@ -1,10 +1,10 @@
 'use client'
 
 import { useParams, usePathname } from 'next/navigation'
-import { useEvent, useUpdateEvent, useTransitionEvent } from '@/hooks/useEvents'
+import { useEvent, useTransitionEvent } from '@/hooks/useEvents'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Play, Settings, List, Users, Trophy, Award, FileSearch, BarChart3, Eye, Monitor } from 'lucide-react'
+import { ArrowLeft, Play, Settings, List, Users, Trophy, Award, FileSearch, BarChart3, Monitor } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { EventStatus } from '@judging/shared'
@@ -15,7 +15,6 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
   const { id } = useParams() as { id: string }
   const pathname = usePathname()
   const { data: event, isLoading } = useEvent(id)
-  const { mutate: updateEvent } = useUpdateEvent(id)
   const { mutate: transitionEvent } = useTransitionEvent(id)
 
   if (isLoading) return <div className="animate-pulse space-y-4">
@@ -35,10 +34,6 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
     { href: `/events/${id}/audit`, label: 'Auditoria', icon: FileSearch },
     { href: `/events/${id}/edit`, label: 'Configurações', icon: Settings },
   ]
-
-  const handleStatusChange = (newStatus: EventStatus) => {
-    updateEvent({ status: newStatus })
-  }
 
   return (
     <div className="space-y-6">
