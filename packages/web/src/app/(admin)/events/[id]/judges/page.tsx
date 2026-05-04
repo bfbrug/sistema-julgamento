@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { UserRole, CalculationRule, type JudgeWithCategories as JudgeResponse } from '@judging/shared'
 import { Trash2, UserPlus, Info } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -23,7 +23,7 @@ export default function EventJudgesPage() {
   const { data: event } = useEvent(eventId)
   const { data: categories } = useCategories(eventId)
   const { data: judges, isLoading: loadingJudges } = useJudges(eventId)
-  const { data: allUsers, refetch: refetchUsers } = useUsers({ role: UserRole.JURADO, isActive: true })
+  const { data: allUsers, refetch: refetchUsers, isLoading: loadingUsers } = useUsers({ role: UserRole.JURADO, isActive: true })
   
   const { mutate: addJudge } = useAddJudge(eventId)
   const { mutate: removeJudge } = useRemoveJudge(eventId)
@@ -31,14 +31,16 @@ export default function EventJudgesPage() {
 
   const [assignments, setAssignments] = useState<Record<string, string[]>>({}) // judgeId -> categoryIds[]
   const [showAddModal, setShowAddModal] = useState(false)
+  const hasInitializedAssignments = useRef(false)
 
   useEffect(() => {
-    if (judges) {
+    if (judges && !hasInitializedAssignments.current) {
       const initial: Record<string, string[]> = {}
       judges.forEach((j: JudgeResponse) => {
         initial[j.id] = j.categories.map((c) => c.id)
       })
       setAssignments(initial)
+      hasInitializedAssignments.current = true
     }
   }, [judges])
 
@@ -183,6 +185,9 @@ export default function EventJudgesPage() {
             <h3 className="text-lg font-bold text-secondary-900 mb-4">Adicionar Jurado</h3>
             <div className="max-h-60 overflow-y-auto space-y-2 mb-6">
               {(() => {
+                if (loadingUsers) {
+                  return <p className="text-center text-secondary-500">Carregando jurados...</p>
+                }
                 const available = allUsers?.filter((u: UserResponse) => !judges?.some(j => j.userId === u.id)) ?? []
                 if (available.length === 0) {
                   return <p className="text-center text-secondary-500">Nenhum jurado disponível para adicionar.</p>

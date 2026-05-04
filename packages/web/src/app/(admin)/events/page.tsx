@@ -5,13 +5,14 @@ import { PageHeader } from '@/components/admin/PageHeader'
 import { DataTable } from '@/components/admin/DataTable'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
-import { Plus, Edit, Trash2, Play } from 'lucide-react'
+import { Plus, Edit, Trash2, Play, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { EventStatus } from '@judging/shared'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { eventStatusLabels } from '@/lib/event-status'
 
 import type { JudgingEvent } from '@judging/shared'
 type EventRow = JudgingEvent
@@ -22,7 +23,14 @@ export default function EventsPage() {
   const [eventToDelete, setEventToDelete] = useState<string | null>(null)
 
   const columns = [
-    { header: 'Nome', accessor: 'name' as const },
+    { 
+      header: 'Nome', 
+      accessor: (event: EventRow) => (
+        <Link href={`/events/${event.id}`} className="font-medium text-secondary-900 hover:text-primary-600 transition-colors">
+          {event.name}
+        </Link>
+      )
+    },
     { 
       header: 'Data', 
       accessor: (event: EventRow) => format(new Date(event.eventDate), "dd 'de' MMMM, yyyy", { locale: ptBR })
@@ -34,7 +42,7 @@ export default function EventsPage() {
           'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
           statusColors[event.status as EventStatus]
         )}>
-          {event.status}
+          {eventStatusLabels[event.status as EventStatus]}
         </span>
       )
     },
@@ -48,6 +56,13 @@ export default function EventsPage() {
               <Play className="h-4 w-4" />
             </Button>
           </Link>
+          {event.status === EventStatus.FINISHED && (
+            <Link href={`/events/${event.id}/reports`}>
+              <Button size="sm" variant="ghost" title="Resultados" className="text-success-600 hover:text-success-700 hover:bg-success-50">
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+            </Link>
+          )}
           <Link href={`/events/${event.id}/edit`}>
             <Button size="sm" variant="ghost" title="Editar">
               <Edit className="h-4 w-4" />
@@ -109,7 +124,6 @@ export default function EventsPage() {
 
 const statusColors: Record<EventStatus, string> = {
   [EventStatus.DRAFT]: 'bg-secondary-100 text-secondary-700',
-  [EventStatus.REGISTERING]: 'bg-primary-100 text-primary-700',
   [EventStatus.IN_PROGRESS]: 'bg-warning-100 text-warning-700',
   [EventStatus.FINISHED]: 'bg-success-100 text-success-700',
 }
