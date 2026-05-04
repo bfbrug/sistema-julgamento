@@ -8,6 +8,7 @@ import { Calendar, Users, Trophy, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { EventStatus } from '@judging/shared'
 import { cn } from '@/lib/utils'
+import { eventStatusLabels } from '@/lib/event-status'
 
 
 export default function DashboardPage() {
@@ -16,8 +17,8 @@ export default function DashboardPage() {
 
   const stats = [
     { label: 'Eventos Ativos', value: events?.filter(e => e.status === EventStatus.IN_PROGRESS).length || 0, icon: Calendar, color: 'text-primary-600' },
+    { label: 'Eventos em Rascunho', value: events?.filter(e => e.status === EventStatus.DRAFT).length || 0, icon: Users, color: 'text-success-600' },
     { label: 'Total de Eventos', value: events?.length || 0, icon: Trophy, color: 'text-warning-600' },
-    { label: 'Próximos Eventos', value: events?.filter(e => e.status === EventStatus.REGISTERING).length || 0, icon: Users, color: 'text-success-600' },
   ]
 
   return (
@@ -73,7 +74,7 @@ export default function DashboardPage() {
                         event.status === EventStatus.FINISHED ? 'bg-success-100 text-success-700' :
                         'bg-secondary-100 text-secondary-700'
                       )}>
-                        {event.status}
+                        {eventStatusLabels[event.status]}
                       </span>
                       <ChevronRight className="h-4 w-4 text-secondary-300" />
                     </div>
