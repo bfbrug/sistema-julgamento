@@ -108,9 +108,17 @@ export function useLiveScoring(eventId: string) {
       setIsConnected(false)
     })
 
-    socket.on('participant_activated', (payload: ParticipantState) => {
-      setLiveState((prev: LiveState | null) => prev ? { ...prev, currentParticipant: payload } : prev)
-      toast.info(`Participante ${payload.name} ativado!`)
+    socket.on('participant_activated', (payload: { participantName: string }) => {
+      toast.info(`Participante ${payload.participantName} ativado!`)
+      fetchState()
+    })
+
+    socket.on('scoring_started', () => {
+      setLiveState((prev) => prev ? {
+        ...prev,
+        judges: prev.judges.map((j) => ({ ...j, status: 'IN_SCORING', progress: 0.1 }))
+      } : prev)
+      fetchState()
     })
 
     socket.on('participant_state_changed', (payload: { status: string }) => {
@@ -170,7 +178,19 @@ export function useLiveScoring(eventId: string) {
         path: `/events/${eventId}/scoring/activate/${participantId}`,
       })
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao ativar participante.')
+      const msg = error instanceof Error ? error.message : ''
+      if (!msg.includes('PARTICIPANT_ALREADY_ACTIVE') && !msg.includes('já existe')) {
+        toast.error(msg || 'Erro ao ativar participante.')
+        return
+      }
+    }
+    try {
+      await apiClient({
+        method: 'POST',
+        path: `/events/${eventId}/scoring/start/${participantId}`,
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao iniciar apresentação.')
     }
   }
 
