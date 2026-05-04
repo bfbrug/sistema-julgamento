@@ -129,6 +129,7 @@ export class EventsService {
                 secondCategory: true,
               },
             },
+            _count: { select: { categories: true, judges: true, participants: true } },
           },
         },
       },
