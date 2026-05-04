@@ -550,6 +550,20 @@ export class ScoringService {
 
     const totalJudges = await this.repository.getActiveJudgesCount(eventId)
 
+    const targetParticipant = activeParticipant || state.participants.slice().reverse().find((p) => p.currentState === 'FINISHED')
+
+    const judges = state.judges.map((j) => {
+      const session = targetParticipant
+        ? j.sessions.find((s) => s.participantId === targetParticipant.id)
+        : undefined
+      return {
+        id: j.id,
+        displayName: j.displayName,
+        name: j.user?.name,
+        status: session?.status ?? 'NOT_STARTED',
+      }
+    })
+
     return {
       event: { id: state.id, name: state.name, status: state.status },
       activeParticipant: activeParticipant
@@ -575,6 +589,7 @@ export class ScoringService {
       pendingNext: pendingNext
         ? { id: pendingNext.id, name: pendingNext.name, presentationOrder: pendingNext.presentationOrder }
         : null,
+      judges,
     }
   }
 }
