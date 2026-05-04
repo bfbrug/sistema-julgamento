@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { Download } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { apiClient } from '@/lib/api'
 import type { ReportJob, ReportType } from '@judging/shared'
 
 interface DownloadButtonProps {
@@ -11,13 +13,31 @@ interface DownloadButtonProps {
 }
 
 export function DownloadButton({ eventId, type, lastJob }: DownloadButtonProps) {
+  const [isDownloading, setIsDownloading] = useState(false)
   const hasCompleted = lastJob?.status === 'COMPLETED'
-  const apiBase = process.env['NEXT_PUBLIC_API_URL'] ?? ''
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!hasCompleted) return
-    const url = `${apiBase}/events/${eventId}/reports/${type.toLowerCase()}/download`
-    window.open(url, '_blank')
+    setIsDownloading(true)
+    try {
+      const blob = await apiClient<Blob>({
+        method: 'GET',
+        path: `/events/${eventId}/reports/${type.toLowerCase()}/download`,
+        responseType: 'blob',
+      })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${type.toLowerCase()}-${eventId}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      alert('Erro ao baixar o relatório. Tente gerar novamente.')
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   return (
@@ -25,7 +45,8 @@ export function DownloadButton({ eventId, type, lastJob }: DownloadButtonProps) 
       <Button
         variant="secondary"
         size="sm"
-        disabled={!hasCompleted}
+        disabled={!hasCompleted || isDownloading}
+        loading={isDownloading}
         onClick={handleDownload}
         className="gap-2"
       >
