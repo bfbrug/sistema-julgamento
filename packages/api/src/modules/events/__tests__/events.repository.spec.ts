@@ -84,9 +84,9 @@ describe('EventsRepository', () => {
   })
 
   it('updateStatus atualiza status', async () => {
-    prisma.judgingEvent.update.mockResolvedValue({ id: 'e-1', status: EventStatus.REGISTERING })
-    const res = await repository.updateStatus('e-1', EventStatus.REGISTERING)
-    expect(res.status).toBe(EventStatus.REGISTERING)
+    prisma.judgingEvent.update.mockResolvedValue({ id: 'e-1', status: EventStatus.IN_PROGRESS })
+    const res = await repository.updateStatus('e-1', EventStatus.IN_PROGRESS)
+    expect(res.status).toBe(EventStatus.IN_PROGRESS)
   })
 
   it('categoryBelongsToEvent retorna true quando count > 0', async () => {

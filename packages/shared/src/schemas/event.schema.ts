@@ -13,7 +13,6 @@ export const eventBaseSchema = z.object({
   scoreMin: z.number().min(0).max(100),
   scoreMax: z.number().min(0).max(100),
   topN: z.number().int().min(1).max(1000),
-  status: eventStatusSchema.default(EventStatus.DRAFT),
 })
 
 export const createEventSchema = eventBaseSchema.refine((data) => data.scoreMin < data.scoreMax, {
@@ -21,5 +20,12 @@ export const createEventSchema = eventBaseSchema.refine((data) => data.scoreMin 
   path: ['scoreMax'],
 })
 
-export const updateEventSchema = eventBaseSchema.partial()
+export const updateEventSchema = eventBaseSchema.partial().extend({
+  status: eventStatusSchema.optional(),
+})
+
+export const transitionEventSchema = z.object({
+  targetStatus: eventStatusSchema,
+  acknowledgeR2Coverage: z.boolean().optional(),
+})
 

@@ -45,6 +45,10 @@ describe('useJudges', () => {
     vi.mocked(apiClient).mockResolvedValue({})
     const { result } = renderHook(() => useUpdateAssignments('e1'), { wrapper })
     await result.current.mutateAsync([{ judgeId: 'j1', categoryId: 'c1' }])
-    expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST', path: '/events/e1/judges/assignments' }))
+    expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ 
+      method: 'PUT', 
+      path: '/events/e1/judge-matrix',
+      body: { cells: [{ judgeId: 'j1', categoryId: 'c1' }] }
+    }))
   })
 })

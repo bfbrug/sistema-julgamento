@@ -196,6 +196,24 @@ export class UsersService {
     })
   }
 
+  async adminResetPassword(targetId: string, newPassword: string, actorId: string): Promise<void> {
+    await this.findById(targetId)
+    const passwordHash = await bcrypt.hash(newPassword, env.BCRYPT_ROUNDS)
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.repository.update(targetId, { passwordHash }, tx)
+      await this.revokeAllTokens(targetId, tx)
+
+      await this.auditService.record({
+        action: 'USER_PASSWORD_CHANGED',
+        entityType: 'User',
+        entityId: targetId,
+        actorId,
+        payload: { resetByAdmin: true, changedAt: new Date().toISOString() },
+      }, tx)
+    })
+  }
+
   private async revokeAllTokens(userId: string, tx?: Prisma.TransactionClient): Promise<void> {
     const client = tx ?? this.prisma
     await client.refreshToken.updateMany({

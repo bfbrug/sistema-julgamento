@@ -41,7 +41,7 @@ export default function LivePanelPage() {
     )
   }
 
-  if (status === 'DRAFT' || status === 'REGISTERING') {
+  if (status === 'DRAFT') {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-neutral-950 text-white">
         <h1 className="mb-4 text-5xl font-bold">{eventInfo.name}</h1>

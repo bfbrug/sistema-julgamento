@@ -21,8 +21,7 @@ export interface TransitionValidationResult {
 }
 
 const ALLOWED_TRANSITIONS: Map<EventStatus, EventStatus[]> = new Map([
-  [EventStatus.DRAFT, [EventStatus.REGISTERING]],
-  [EventStatus.REGISTERING, [EventStatus.DRAFT, EventStatus.IN_PROGRESS]],
+  [EventStatus.DRAFT, [EventStatus.IN_PROGRESS]],
   [EventStatus.IN_PROGRESS, [EventStatus.FINISHED]],
   [EventStatus.FINISHED, []],
 ])
@@ -51,28 +50,25 @@ export class EventStateMachine {
       }
     }
 
-    if (from === EventStatus.DRAFT && to === EventStatus.REGISTERING) {
+    if (from === EventStatus.DRAFT && to === EventStatus.IN_PROGRESS) {
       if (ctx.categoryCount < 1) {
         errors.push({
           code: 'NO_CATEGORIES',
-          message: 'O evento deve ter ao menos uma categoria para abrir inscrições',
+          message: 'O evento deve ter ao menos uma categoria para iniciar o julgamento',
         })
       }
       if (ctx.judgeCount < 1) {
         errors.push({
           code: 'NO_JUDGES',
-          message: 'O evento deve ter ao menos um jurado para abrir inscrições',
+          message: 'O evento deve ter ao menos um jurado para iniciar o julgamento',
         })
       }
       if (ctx.participantCount < 1) {
         errors.push({
           code: 'NO_PARTICIPANTS',
-          message: 'O evento deve ter ao menos um participante para abrir inscrições',
+          message: 'O evento deve ter ao menos um participante para iniciar o julgamento',
         })
       }
-    }
-
-    if (from === EventStatus.REGISTERING && to === EventStatus.IN_PROGRESS) {
       if (ctx.calculationRule === CalculationRule.R2 && ctx.categoriesWithFewJudges.length > 0) {
         if (!ctx.acknowledgeR2Coverage) {
           errors.push({

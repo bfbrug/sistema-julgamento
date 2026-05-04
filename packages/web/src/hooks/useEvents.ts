@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api'
-import type { EventResponse, CreateEventDto, UpdateEventDto } from '@judging/shared'
+import type { EventResponse, CreateEventDto, UpdateEventDto, TransitionEventDto } from '@judging/shared'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -58,6 +58,27 @@ export function useDeleteEvent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] })
       toast.success('Evento excluído com sucesso!')
+    },
+  })
+}
+
+export function useMyJudgeEvents() {
+  return useQuery({
+    queryKey: ['my-judge-events'],
+    queryFn: () => apiClient<EventResponse[]>({ method: 'GET', path: '/events/my-events' }),
+  })
+}
+
+export function useTransitionEvent(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: TransitionEventDto) =>
+      apiClient<EventResponse, TransitionEventDto>({ method: 'POST', path: `/events/${id}/transition`, body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', id] })
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      toast.success('Status do evento atualizado com sucesso!')
     },
   })
 }

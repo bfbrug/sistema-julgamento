@@ -1,20 +1,21 @@
 'use client'
 
 import { useParams, usePathname } from 'next/navigation'
-import { useEvent, useUpdateEvent } from '@/hooks/useEvents'
+import { useEvent, useTransitionEvent } from '@/hooks/useEvents'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Play, Settings, List, Users, Trophy, Award, FileSearch } from 'lucide-react'
+import { ArrowLeft, Play, Settings, List, Users, Trophy, Award, FileSearch, BarChart3, Monitor } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { EventStatus } from '@judging/shared'
 import { cn } from '@/lib/utils'
+import { eventStatusLabels } from '@/lib/event-status'
 
 export default function EventDetailLayout({ children }: { children: ReactNode }) {
   const { id } = useParams() as { id: string }
   const pathname = usePathname()
   const { data: event, isLoading } = useEvent(id)
-  const { mutate: updateEvent } = useUpdateEvent(id)
+  const { mutate: transitionEvent } = useTransitionEvent(id)
 
   if (isLoading) return <div className="animate-pulse space-y-4">
     <div className="h-8 w-1/4 bg-secondary-200 rounded" />
@@ -28,14 +29,11 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
     { href: `/events/${id}`, label: 'Categorias', icon: List, exact: true },
     { href: `/events/${id}/judges`, label: 'Jurados', icon: Users },
     { href: `/events/${id}/participants`, label: 'Participantes', icon: Trophy },
+    { href: `/events/${id}/reports`, label: 'Relatórios', icon: BarChart3 },
     { href: `/events/${id}/certificates`, label: 'Certificados', icon: Award },
     { href: `/events/${id}/audit`, label: 'Auditoria', icon: FileSearch },
     { href: `/events/${id}/edit`, label: 'Configurações', icon: Settings },
   ]
-
-  const handleStatusChange = (newStatus: EventStatus) => {
-    updateEvent({ status: newStatus })
-  }
 
   return (
     <div className="space-y-6">
@@ -50,26 +48,45 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
 
       <PageHeader
         title={event.name}
-        description={`${event.location} • ${new Date(event.eventDate).toLocaleDateString('pt-BR')}`}
+        description={`${event.location} • ${new Date(event.eventDate).toLocaleDateString('pt-BR')} • ${eventStatusLabels[event.status]}`}
         action={
           <div className="flex gap-2">
             {event.status === EventStatus.DRAFT && (
-              <Button variant="secondary" onClick={() => handleStatusChange(EventStatus.REGISTERING)}>
-                Abrir Inscrições
-              </Button>
-            )}
-            {event.status === EventStatus.REGISTERING && (
-              <Button onClick={() => handleStatusChange(EventStatus.IN_PROGRESS)}>
+              <Button onClick={() => transitionEvent({ targetStatus: EventStatus.IN_PROGRESS })}>
                 Iniciar Julgamento
               </Button>
             )}
             {event.status === EventStatus.IN_PROGRESS && (
-              <Link href={`/events/${id}/live`}>
-                <Button className="bg-warning-600 hover:bg-warning-700">
-                  <Play className="mr-2 h-4 w-4 fill-current" />
-                  Painel Ao Vivo
-                </Button>
-              </Link>
+              <>
+                <Link href={`/events/${id}/live`}>
+                  <Button className="bg-warning-600 hover:bg-warning-700">
+                    <Play className="mr-2 h-4 w-4 fill-current" />
+                    Painel Ao Vivo
+                  </Button>
+                </Link>
+                <Link href={`/live/${id}`} target="_blank">
+                  <Button variant="secondary">
+                    <Monitor className="mr-2 h-4 w-4" />
+                    Painel Público
+                  </Button>
+                </Link>
+              </>
+            )}
+            {event.status === EventStatus.FINISHED && (
+              <>
+                <Link href={`/events/${id}/reports`}>
+                  <Button className="bg-success-600 hover:bg-success-700">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Relatórios
+                  </Button>
+                </Link>
+                <Link href={`/live/${id}`} target="_blank">
+                  <Button variant="secondary">
+                    <Monitor className="mr-2 h-4 w-4" />
+                    Ranking Público
+                  </Button>
+                </Link>
+              </>
             )}
           </div>
         }

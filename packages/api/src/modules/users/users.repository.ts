@@ -28,8 +28,15 @@ export class UsersRepository {
     return this.prisma.user.findFirst({ where })
   }
 
+  private normalizeBoolean(value: unknown): boolean | undefined {
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'string') return value === 'true'
+    if (typeof value === 'number') return value === 1
+    return undefined
+  }
+
   async list(filters: ListUsersDto): Promise<{ data: User[]; total: number }> {
-    const { page = 1, pageSize = 20, search, role, isActive, includeDeleted } = filters
+    const { page = 1, pageSize = 20, search, role, isActive, includeDeleted, excludeRole } = filters
     const skip = (page - 1) * pageSize
     const take = pageSize
 
@@ -46,11 +53,17 @@ export class UsersRepository {
       where.role = role
     }
 
-    if (isActive !== undefined) {
-      where.isActive = isActive
+    if (excludeRole) {
+      where.NOT = { role: excludeRole }
     }
 
-    if (includeDeleted) {
+    const normalizedIsActive = this.normalizeBoolean(isActive)
+    if (normalizedIsActive !== undefined) {
+      where.isActive = normalizedIsActive
+    }
+
+    const normalizedIncludeDeleted = this.normalizeBoolean(includeDeleted)
+    if (normalizedIncludeDeleted) {
       where.deletedAt = undefined // Bypass middleware
     }
 

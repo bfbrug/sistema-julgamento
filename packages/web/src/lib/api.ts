@@ -20,6 +20,7 @@ interface ApiClientOptions<B> {
   path: string
   body?: B
   headers?: Record<string, string>
+  responseType?: 'json' | 'blob'
 }
 
 function isApiError(body: unknown): body is SharedApiError {
@@ -81,6 +82,7 @@ export async function apiClient<T, B = unknown>({
   path,
   body,
   headers: customHeaders,
+  responseType = 'json',
 }: ApiClientOptions<B>): Promise<T> {
   const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
   const url = `${baseUrl}${path}`
@@ -88,8 +90,10 @@ export async function apiClient<T, B = unknown>({
   const getHeaders = () => {
     const { accessToken } = useAuthStore.getState()
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       ...customHeaders,
+    }
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json'
     }
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`
@@ -142,6 +146,22 @@ export async function apiClient<T, B = unknown>({
 
   if (res.status === 403) {
     toast.error('Sem permissão para realizar esta ação.')
+  }
+
+  const contentLength = res.headers.get('content-length')
+  const hasBody = res.status !== 204 && contentLength !== '0'
+
+  if (!hasBody) {
+    if (!res.ok) throw new ApiError(`HTTP ${res.status}`, res.status)
+    return undefined as T
+  }
+
+  if (responseType === 'blob') {
+    if (!res.ok) {
+      const text = await res.text()
+      throw new ApiError(text || `HTTP ${res.status}`, res.status)
+    }
+    return (await res.blob()) as unknown as T
   }
 
   const responseBody = (await res.json()) as ApiResponseBody<T>

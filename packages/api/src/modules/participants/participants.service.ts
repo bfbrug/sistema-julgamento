@@ -392,7 +392,7 @@ export class ParticipantsService {
       throw new AppException('Evento finalizado não pode ser alterado', 400, 'EVENT_FINISHED')
     }
 
-    // Apenas em DRAFT ou REGISTERING (não em IN_PROGRESS)
+    // Não permitido em IN_PROGRESS
     if (event.status === EventStatus.IN_PROGRESS) {
       throw new AppException(
         'Não é possível desmarcar ausência durante o evento em andamento',

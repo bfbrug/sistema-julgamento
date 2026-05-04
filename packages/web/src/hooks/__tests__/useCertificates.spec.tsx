@@ -7,9 +7,11 @@ import {
   useUpdateCertificateText,
   useGenerateCertificates,
 } from '../useCertificates'
+import { apiClient } from '@/lib/api'
 
-const mockFetch = vi.fn()
-global.fetch = mockFetch
+vi.mock('@/lib/api', () => ({
+  apiClient: vi.fn(),
+}))
 
 function wrapper({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -21,14 +23,10 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: v
 describe('useCertificates', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFetch.mockReset()
   })
 
   it('useCertificateConfig busca config', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: { eventId: 'e1', backgroundPath: 'bg.png', certificateText: 'texto', signatures: [] } }),
-    })
+    vi.mocked(apiClient).mockResolvedValueOnce({ eventId: 'e1', backgroundPath: 'bg.png', certificateText: 'texto', signatures: [] })
 
     const { result } = renderHook(() => useCertificateConfig('e1'), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -36,10 +34,7 @@ describe('useCertificates', () => {
   })
 
   it('useUpdateCertificateText muta texto', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: { certificateText: 'novo' } }),
-    })
+    vi.mocked(apiClient).mockResolvedValueOnce({ certificateText: 'novo' })
 
     const { result } = renderHook(() => useUpdateCertificateText('e1'), { wrapper })
     result.current.mutate({ certificateText: 'novo' })
@@ -48,10 +43,7 @@ describe('useCertificates', () => {
   })
 
   it('useGenerateCertificates enfileira job', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: { jobId: 'j1', status: 'queued' } }),
-    })
+    vi.mocked(apiClient).mockResolvedValueOnce({ jobId: 'j1', status: 'queued' })
 
     const { result } = renderHook(() => useGenerateCertificates('e1'), { wrapper })
     result.current.mutate()

@@ -8,4 +8,9 @@ coverage/
 .next/
 *.log
 .DS_Store
+
+# temp/debug scripts
+test-ws.ts
+test-ws.html
+tmp-*.ts
 uploads/

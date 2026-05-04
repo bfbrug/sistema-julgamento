@@ -39,6 +39,12 @@ export class EventsController {
     return this.eventsService.list(query, user.sub)
   }
 
+  @Roles('GESTOR', 'JURADO')
+  @Get('my-events')
+  async findMyEvents(@CurrentUser() user: JwtPayload) {
+    return this.eventsService.findMyEvents(user.sub)
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.eventsService.findById(id, user.sub)

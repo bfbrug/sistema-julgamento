@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 describe('Database Seed', () => {
   beforeAll(async () => {
     // Ensure test database has the latest schema
-    execSync('npx prisma db push --accept-data-loss', { cwd: __dirname + '/..' });
+    execSync('npx prisma db push --force-reset --accept-data-loss', { cwd: __dirname + '/..' });
   }, 60000);
 
   it('should run seed successfully and be idempotent', async () => {
@@ -33,6 +33,7 @@ describe('Database Seed', () => {
     }
   }, 60000); // 60s timeout
 });
+
 
 
 

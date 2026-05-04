@@ -8,8 +8,6 @@ import staticPlugin from '@fastify/static'
 import helmet from '@fastify/helmet'
 import * as path from 'path'
 import { AppModule } from './app.module'
-import { HttpExceptionFilter } from './common/filters/http-exception.filter'
-import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { env } from './config/env'
 
 async function bootstrap(): Promise<void> {
@@ -52,12 +50,10 @@ async function bootstrap(): Promise<void> {
     }),
   )
 
-  app.useGlobalFilters(app.get(HttpExceptionFilter))
-  app.useGlobalInterceptors(app.get(ResponseInterceptor))
-
   app.enableCors({
     origin: env.CORS_ORIGIN,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
   })
 
   await app.listen(env.PORT, '0.0.0.0')

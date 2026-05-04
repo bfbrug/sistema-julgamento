@@ -39,8 +39,14 @@ function LoginForm() {
       setSession(response)
       toast.success(`Bem-vindo, ${response.user.name}!`)
 
-      const next = searchParams.get('next') || '/dashboard'
-      router.push(next)
+      const next = searchParams.get('next')
+      if (next) {
+        router.push(next)
+      } else if (response.user.role === 'JURADO') {
+        router.push('/judge')
+      } else {
+        router.push('/dashboard')
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Credenciais inválidas.')
     } finally {

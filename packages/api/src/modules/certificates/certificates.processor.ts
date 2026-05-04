@@ -20,10 +20,10 @@ export class CertificatesProcessor extends WorkerHost {
   private readonly templatesDir = path.join(__dirname, 'templates')
 
   constructor(
-    private readonly pdfService: PdfService,
-    private readonly certificatesService: CertificatesService,
-    private readonly repository: CertificatesRepository,
-    private readonly auditService: AuditService,
+    @Inject(PdfService) private readonly pdfService: PdfService,
+    @Inject(CertificatesService) private readonly certificatesService: CertificatesService,
+    @Inject(CertificatesRepository) private readonly repository: CertificatesRepository,
+    @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
     @InjectPinoLogger(CertificatesProcessor.name) private readonly logger: PinoLogger,
   ) {
