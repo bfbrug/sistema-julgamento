@@ -60,7 +60,7 @@ describe('JudgePage', () => {
         myCategoriesToScore: [{ id: 'c1', name: 'Criatividade', displayOrder: 1, currentScore: null }],
         mySessionStatus: 'IN_SCORING',
       },
-      eventInfo: { id: 'e1', name: 'Evento', status: 'IN_PROGRESS', scoreMin: 0, scoreMax: 10 },
+      eventInfo: { id: 'e1', name: 'Evento', status: 'IN_PROGRESS', scoreMin: 0, scoreMax: 10, totalParticipants: 0, totalEvaluated: 0 },
       judgeCategories: [{ id: 'c1', name: 'Criatividade', displayOrder: 1, currentScore: null }],
     })
     render(<JudgePage />)
@@ -71,7 +71,7 @@ describe('JudgePage', () => {
     vi.mocked(useJudgePanel).mockReturnValue({
       ...baseReturn,
       currentState: 'EVENT_ENDED',
-      eventInfo: { id: 'e1', name: 'Evento Final', status: 'FINISHED', scoreMin: 0, scoreMax: 10 },
+      eventInfo: { id: 'e1', name: 'Evento Final', status: 'FINISHED', scoreMin: 0, scoreMax: 10, totalParticipants: 0, totalEvaluated: 0 },
     })
     render(<JudgePage />)
     expect(screen.getByText('Evento encerrado. Obrigado pela sua participação!')).toBeInTheDocument()
