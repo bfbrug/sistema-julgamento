@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
+import { useEffect } from 'react'
 import { useJudgePanel } from '@/hooks/useJudgePanel'
 import { WaitingState } from '@/components/judge/WaitingState'
 import { PreviewState } from '@/components/judge/PreviewState'
@@ -30,6 +31,12 @@ export default function JudgePage() {
     retryConnection,
   } = useJudgePanel(eventId)
 
+  useEffect(() => {
+    if (currentState === 'PREVIEW' && currentParticipant?.mySessionStatus === 'IN_SCORING') {
+      openScoringForm()
+    }
+  }, [currentState, currentParticipant?.mySessionStatus, openScoringForm])
+
   if (currentState === 'CONNECTING') {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -47,7 +54,7 @@ export default function JudgePage() {
     )
   }
 
-  const totalParticipants = eventInfo ? 0 : 0 // backend does not provide total; keep placeholder
+  const totalParticipants = eventInfo?.totalParticipants ?? 0
 
   return (
     <div className="relative">
@@ -62,7 +69,7 @@ export default function JudgePage() {
           participantName={currentParticipant.name}
           photoUrl={currentParticipant.photoUrl}
           presentationOrder={currentParticipant.presentationOrder}
-          totalParticipants={totalParticipants || currentParticipant.presentationOrder}
+          totalParticipants={totalParticipants}
           categories={judgeCategories}
           canStartScoring={currentParticipant.mySessionStatus === 'IN_SCORING'}
           onStartScoring={openScoringForm}
@@ -74,20 +81,13 @@ export default function JudgePage() {
           participantName={currentParticipant.name}
           photoUrl={currentParticipant.photoUrl}
           presentationOrder={currentParticipant.presentationOrder}
-          totalParticipants={totalParticipants || currentParticipant.presentationOrder}
+          totalParticipants={totalParticipants}
           categories={judgeCategories}
           scoreMin={eventInfo.scoreMin}
           scoreMax={eventInfo.scoreMax}
           initialValues={currentScores}
           onSubmit={submitScores}
-          onCancel={() => {
-            if (currentParticipant.mySessionStatus === 'NOT_STARTED') {
-              // Cannot cancel back to preview if scoring hasn't started globally
-              // But locally we allow it; the server state remains IN_SCORING if manager started
-            }
-            // Re-fetch to restore correct state
-            window.location.reload()
-          }}
+          onCancel={() => window.location.reload()}
           isSubmitting={isSubmitting}
           draftKey={`draft:scoring:${currentParticipant.id}`}
         />
