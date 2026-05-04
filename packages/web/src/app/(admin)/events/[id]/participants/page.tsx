@@ -184,7 +184,7 @@ function SortableParticipantItem({ participant, index, eventId, onDelete, isFini
       </button>
 
       {participant.photoUrl ? (
-        <img src={participant.photoUrl} alt={participant.name} className="h-10 w-10 rounded-full object-cover" />
+        <img src={participant.photoUrl} alt={participant.name} className="h-10 w-10 shrink-0 rounded-full object-cover" />
       ) : (
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-100 text-secondary-600 font-bold text-sm">
           {index + 1}
