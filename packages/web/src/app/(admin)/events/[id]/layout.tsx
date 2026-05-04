@@ -65,7 +65,7 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
                   </Button>
                 </Link>
                 <Link href={`/live/${id}`} target="_blank">
-                  <Button variant="outline">
+                  <Button variant="secondary">
                     <Monitor className="mr-2 h-4 w-4" />
                     Painel Público
                   </Button>
@@ -81,7 +81,7 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
                   </Button>
                 </Link>
                 <Link href={`/live/${id}`} target="_blank">
-                  <Button variant="outline">
+                  <Button variant="secondary">
                     <Monitor className="mr-2 h-4 w-4" />
                     Ranking Público
                   </Button>
