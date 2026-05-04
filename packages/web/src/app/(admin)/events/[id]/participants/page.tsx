@@ -102,7 +102,7 @@ export default function EventParticipantsPage() {
               <p className="text-sm text-secondary-500">
                 Sorteie a ordem de apresentação de todos os participantes cadastrados de uma só vez.
               </p>
-              <Button variant="secondary" onClick={() => shuffleParticipants()} className="w-full">
+              <Button variant="secondary" onClick={() => shuffleParticipants()} className="w-full" disabled={isFinished}>
                 <Shuffle className="mr-2 h-4 w-4" />
                 Sortear Ordem Aleatória
               </Button>
