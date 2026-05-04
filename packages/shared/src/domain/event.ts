@@ -23,3 +23,8 @@ export interface EventSummary {
   eventDate: string
   status: EventStatus
 }
+
+export interface TransitionEventDto {
+  targetStatus: EventStatus
+  acknowledgeR2Coverage?: boolean
+}

@@ -115,6 +115,29 @@ export class EventsService {
     }
   }
 
+  async findMyEvents(judgeUserId: string): Promise<EventResponseDto[]> {
+    const judges = await this.prisma.judge.findMany({
+      where: { userId: judgeUserId },
+      include: {
+        event: {
+          include: {
+            manager: { select: { id: true, name: true, email: true } },
+            categories: { orderBy: { displayOrder: 'asc' } },
+            tiebreakerConfig: {
+              include: {
+                firstCategory: true,
+                secondCategory: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return judges.map((j) => toEventResponse(j.event))
+  }
+
   async update(id: string, dto: UpdateEventDto, managerId: string): Promise<EventResponseDto> {
     const event = await this.repository.findById(id, managerId)
     if (!event) throw new NotFoundException('Evento não encontrado')
@@ -180,8 +203,8 @@ export class EventsService {
     const event = await this.repository.findById(id, managerId)
     if (!event) throw new NotFoundException('Evento não encontrado')
 
-    if (event.status === EventStatus.IN_PROGRESS || event.status === EventStatus.REGISTERING) {
-      throw new BadRequestException('Evento em andamento ou com inscrições abertas não pode ser excluído')
+    if (event.status === EventStatus.IN_PROGRESS) {
+      throw new BadRequestException('Evento em andamento não pode ser excluído')
     }
 
     await this.prisma.$transaction(async (tx) => {
