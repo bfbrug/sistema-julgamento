@@ -5,113 +5,140 @@
   <style>
     @page { size: A4 landscape; margin: 0; }
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; }
+    body { margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
     .certificate {
       width: 297mm;
       height: 210mm;
       page-break-after: always;
       position: relative;
-      background-image: url('{{backgroundUrl}}');
-      background-size: cover;
-      background-position: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       text-align: center;
-      padding: 20mm;
     }
 
     .certificate:last-child {
       page-break-after: auto;
     }
 
-    .title {
-      font-size: 28pt;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 12mm;
-      color: #1a1a2e;
+    .bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
     }
 
-    .name {
-      font-size: 36pt;
-      font-weight: bold;
-      margin-bottom: 10mm;
-      color: #1a1a2e;
+    .content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding: 42mm 28mm 20mm;
     }
 
     .text {
-      font-size: 16pt;
-      line-height: 1.6;
-      max-width: 220mm;
-      margin-bottom: 14mm;
+      font-size: 18pt;
+      line-height: 1.7;
+      max-width: 210mm;
       color: #1a1a2e;
+      margin-bottom: 18mm;
     }
 
     .signatures {
       display: flex;
       justify-content: center;
       gap: 20mm;
-      margin-top: auto;
-      margin-bottom: 8mm;
+      width: 100%;
     }
 
     .signature {
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-width: 50mm;
+      width: 70mm;
     }
 
-    .signature img {
-      max-height: 20mm;
-      max-width: 50mm;
+    .signature-img-wrap {
+      height: 20mm;
+      width: 70mm;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      margin-bottom: 0;
+      position: relative;
+      z-index: 2;
+      overflow: hidden;
+    }
+
+    .signature-img-wrap img {
+      width: 70mm;
+      height: 20mm;
       object-fit: contain;
-      margin-bottom: 3mm;
+      object-position: center bottom;
+      display: block;
+    }
+
+    .signature-line {
+      width: 70mm;
+      border-top: 1.5px solid #1a1a2e;
+      position: relative;
+      z-index: 1;
     }
 
     .signature-name {
-      font-size: 12pt;
+      font-size: 11pt;
       font-weight: bold;
-      border-top: 1px solid #1a1a2e;
       padding-top: 2mm;
-      width: 100%;
+      width: 70mm;
+      text-align: center;
+      color: #1a1a2e;
     }
 
     .signature-role {
-      font-size: 10pt;
+      font-size: 9pt;
       color: #444;
+      text-align: center;
     }
 
     .verification {
       position: absolute;
-      bottom: 5mm;
-      right: 5mm;
-      font-size: 8pt;
+      bottom: 6mm;
+      right: 8mm;
+      font-size: 7pt;
       color: #666;
       text-align: right;
       line-height: 1.4;
+      z-index: 2;
     }
   </style>
 </head>
 <body>
   {{#each participants}}
     <div class="certificate">
-      <div class="title">CERTIFICADO DE PARTICIPAÇÃO</div>
-      <div class="name">{{this.name}}</div>
-      <div class="text">{{{this.processedText}}}</div>
+      <img class="bg" src="{{../backgroundUrl}}" />
+      <div class="content">
+        <div class="text"><span>{{{this.processedText}}}</span></div>
 
-      <div class="signatures">
-        {{#each ../signatures}}
-          <div class="signature">
-            <img src="{{this.imageUrl}}" />
-            <div class="signature-name">{{this.personName}}</div>
-            <div class="signature-role">{{this.personRole}}</div>
-          </div>
-        {{/each}}
+        <div class="signatures">
+          {{#each ../signatures}}
+            <div class="signature">
+              <div class="signature-img-wrap">
+                <img src="{{this.imageUrl}}" />
+              </div>
+              <div class="signature-line"></div>
+              <div class="signature-name">{{this.personName}}</div>
+              <div class="signature-role">{{this.personRole}}</div>
+            </div>
+          {{/each}}
+        </div>
       </div>
 
       <div class="verification">
