@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient, apiUpload } from '@/lib/api'
 import type {
@@ -140,6 +140,7 @@ export function useCertificateJobPolling(eventId: string, jobId: string | null) 
   const [job, setJob] = useState<ReportJob | null>(null)
   const [isPolling, setIsPolling] = useState(false)
   const queryClient = useQueryClient()
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const poll = useCallback(async () => {
     if (!jobId) return
@@ -150,12 +151,20 @@ export function useCertificateJobPolling(eventId: string, jobId: string | null) 
       })
       setJob(result)
       if (result.status === 'COMPLETED' || result.status === 'FAILED') {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current)
+          intervalRef.current = null
+        }
         setIsPolling(false)
         queryClient.invalidateQueries({ queryKey: ['certificates', 'jobs', eventId] })
         if (result.status === 'FAILED') toast.error(`Geração falhou: ${result.error ?? 'erro desconhecido'}`)
         else toast.success('Certificados gerados com sucesso!')
       }
     } catch {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
       setIsPolling(false)
     }
   }, [jobId, eventId, queryClient])
@@ -163,8 +172,13 @@ export function useCertificateJobPolling(eventId: string, jobId: string | null) 
   useEffect(() => {
     if (!jobId) return
     setIsPolling(true)
-    const interval = setInterval(poll, 2000)
-    return () => clearInterval(interval)
+    intervalRef.current = setInterval(poll, 2000)
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
   }, [jobId, poll])
 
   return { job, isPolling }
