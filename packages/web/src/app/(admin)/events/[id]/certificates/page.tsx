@@ -1,10 +1,6 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
-
-import { Button } from '@/components/ui/Button'
 import { CertificateTextEditor } from '@/components/admin/certificates/CertificateTextEditor'
 import { BackgroundUploader } from '@/components/admin/certificates/BackgroundUploader'
 import { SignatureManager } from '@/components/admin/certificates/SignatureManager'
@@ -26,23 +22,11 @@ export default function CertificatesPage() {
 
   return (
     <>
-      <div className="mb-8 flex items-center gap-4">
-        <Link href={`/events/${eventId}`}>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-10 w-10 shrink-0 rounded-full border-secondary-200 text-secondary-500 hover:text-secondary-900 hover:bg-secondary-50 hover:shadow-sm transition-all"
-            title="Voltar para o evento"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-secondary-900">Certificados</h1>
-          <p className="text-sm text-secondary-500 mt-1">
-            Configure o layout, assinaturas e gere os certificados em PDF.
-          </p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-secondary-900">Certificados</h1>
+        <p className="text-sm text-secondary-500 mt-1">
+          Configure o layout, assinaturas e gere os certificados em PDF.
+        </p>
       </div>
 
       {isLoading ? (

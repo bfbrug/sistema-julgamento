@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api'
+import { apiClient, apiUpload } from '@/lib/api'
 import type {
   CertificateConfig,
   UpdateCertificateConfigRequest,
@@ -47,18 +47,7 @@ export function useUploadBackground(eventId: string) {
     mutationFn: async (file: File) => {
       const formData = new FormData()
       formData.append('file', file)
-      const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
-      const token = JSON.parse(sessionStorage.getItem('auth-store') ?? '{}').state?.accessToken
-      const res = await fetch(`${baseUrl}/events/${eventId}/certificates/background`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error ?? 'Erro no upload')
-      }
-      return res.json() as Promise<UploadBackgroundResponse>
+      return apiUpload<UploadBackgroundResponse>(`/events/${eventId}/certificates/background`, formData)
     },
     onSuccess: () => {
       toast.success('Background enviado')
@@ -90,18 +79,7 @@ export function useAddSignature(eventId: string) {
       formData.append('personName', payload.personName)
       formData.append('personRole', payload.personRole)
       formData.append('displayOrder', String(payload.displayOrder))
-      const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
-      const token = JSON.parse(sessionStorage.getItem('auth-store') ?? '{}').state?.accessToken
-      const res = await fetch(`${baseUrl}/events/${eventId}/certificates/signatures`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error ?? 'Erro no upload')
-      }
-      return res.json() as Promise<AddSignatureResponse>
+      return apiUpload<AddSignatureResponse>(`/events/${eventId}/certificates/signatures`, formData)
     },
     onSuccess: () => {
       toast.success('Assinatura adicionada')
