@@ -151,6 +151,7 @@ function EmptySlot({ position, onAdd, isPending }: EmptySlotProps) {
 
   const handleSave = () => {
     if (!file || !personName) return
+    if (preview) URL.revokeObjectURL(preview)
     onAdd({ file, personName, personRole, displayOrder: position })
     setIsOpen(false)
     setFile(null)
@@ -160,6 +161,7 @@ function EmptySlot({ position, onAdd, isPending }: EmptySlotProps) {
   }
 
   const handleCancel = () => {
+    if (preview) URL.revokeObjectURL(preview)
     setIsOpen(false)
     setFile(null)
     setPreview(null)
@@ -260,7 +262,7 @@ export function SignatureManager({ eventId, signatures }: SignatureManagerProps)
 
   const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
 
-  const sensors = useSensors(useSensor(PointerSensor))
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   const sigMap = Object.fromEntries(signatures.map((s) => [s.id, s]))
 
