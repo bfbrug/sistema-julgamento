@@ -4,145 +4,337 @@ import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { useAddSignature, useRemoveSignature, useUpdateSignature } from '@/hooks/useCertificates'
 import type { CertificateSignature } from '@judging/shared'
-import { Plus, Trash2, Edit2, Save, X } from 'lucide-react'
+import { GripVertical, Trash2, Edit2, Save, X, Upload } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface SignatureManagerProps {
   eventId: string
   signatures: CertificateSignature[]
 }
 
-export function SignatureManager({ eventId, signatures }: SignatureManagerProps) {
-  const [isAdding, setIsAdding] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState({ personName: '', personRole: '', displayOrder: 1 as 1 | 2 | 3, file: null as File | null })
+interface SortableCardProps {
+  sig: CertificateSignature
+  position: number
+  baseUrl: string
+  onRemove: (id: string) => void
+  onStartEdit: (sig: CertificateSignature) => void
+  editingId: string | null
+  editForm: { personName: string; personRole: string }
+  onEditChange: (field: 'personName' | 'personRole', value: string) => void
+  onSaveEdit: (id: string) => void
+  onCancelEdit: () => void
+  isSaving: boolean
+}
+
+function SortableCard({
+  sig,
+  position,
+  baseUrl,
+  onRemove,
+  onStartEdit,
+  editingId,
+  editForm,
+  onEditChange,
+  onSaveEdit,
+  onCancelEdit,
+  isSaving,
+}: SortableCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: sig.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const isEditing = editingId === sig.id
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative bg-white rounded-xl border-2 p-4 flex flex-col items-center gap-2 ${isDragging ? 'border-primary-500 shadow-lg' : 'border-secondary-200'}`}
+    >
+      <div className="absolute top-2 left-2 bg-primary-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+        {position}
+      </div>
+
+      <div
+        className="absolute top-2 right-2 text-secondary-300 cursor-grab active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </div>
+
+      {isEditing ? (
+        <div className="w-full space-y-2 mt-4">
+          <input
+            value={editForm.personName}
+            onChange={(e) => onEditChange('personName', e.target.value)}
+            className="w-full rounded border border-secondary-300 px-2 py-1 text-sm"
+            placeholder="Nome"
+          />
+          <input
+            value={editForm.personRole}
+            onChange={(e) => onEditChange('personRole', e.target.value)}
+            className="w-full rounded border border-secondary-300 px-2 py-1 text-sm"
+            placeholder="Cargo"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => onSaveEdit(sig.id)} loading={isSaving}>
+              <Save className="h-3 w-3 mr-1" /> Salvar
+            </Button>
+            <Button size="sm" variant="ghost" onClick={onCancelEdit}>
+              <X className="h-3 w-3 mr-1" /> Cancelar
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="mt-4 bg-secondary-50 border border-secondary-100 rounded-lg w-full flex items-center justify-center h-16 overflow-hidden">
+            <img
+              src={`${baseUrl}/uploads/${sig.imagePath}`}
+              alt={sig.personName}
+              className="h-full object-contain"
+            />
+          </div>
+          <p className="text-sm font-semibold text-secondary-900 text-center">{sig.personName}</p>
+          <p className="text-xs text-secondary-500 text-center">{sig.personRole}</p>
+          <div className="flex gap-2 mt-1">
+            <Button variant="ghost" size="sm" onClick={() => onStartEdit(sig)}>
+              <Edit2 className="h-3 w-3 mr-1" /> Editar
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onRemove(sig.id)}>
+              <Trash2 className="h-3 w-3 mr-1 text-danger-500" /> Remover
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+interface EmptySlotProps {
+  position: number
+  onAdd: (payload: { file: File; personName: string; personRole: string; displayOrder: number }) => void
+  isPending: boolean
+}
+
+function EmptySlot({ position, onAdd, isPending }: EmptySlotProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [personName, setPersonName] = useState('')
+  const [personRole, setPersonRole] = useState('')
+  const [dragOver, setDragOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const { mutate: add, isPending: isAddingSig } = useAddSignature(eventId)
-  const { mutate: remove, isPending: isRemoving } = useRemoveSignature(eventId)
+  const handleFile = (f: File) => {
+    setFile(f)
+    setPreview(URL.createObjectURL(f))
+  }
+
+  const handleSave = () => {
+    if (!file || !personName) return
+    onAdd({ file, personName, personRole, displayOrder: position })
+    setIsOpen(false)
+    setFile(null)
+    setPreview(null)
+    setPersonName('')
+    setPersonRole('')
+  }
+
+  const handleCancel = () => {
+    setIsOpen(false)
+    setFile(null)
+    setPreview(null)
+    setPersonName('')
+    setPersonRole('')
+  }
+
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="relative bg-white rounded-xl border-2 border-dashed border-secondary-200 p-4 flex flex-col items-center justify-center gap-2 min-h-[180px] hover:border-primary-400 hover:bg-primary-50 transition-colors"
+      >
+        <div className="absolute top-2 left-2 bg-secondary-200 text-secondary-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+          {position}
+        </div>
+        <Upload className="h-6 w-6 text-secondary-300" />
+        <span className="text-sm text-secondary-400">+ Adicionar assinatura</span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="relative bg-white rounded-xl border-2 border-primary-400 p-4 flex flex-col gap-2 min-h-[180px]">
+      <div className="absolute top-2 left-2 bg-primary-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+        {position}
+      </div>
+
+      <div className="mt-4">
+        {preview ? (
+          <div
+            className="bg-secondary-50 border border-secondary-200 rounded-lg h-16 flex items-center justify-center overflow-hidden cursor-pointer"
+            onClick={() => inputRef.current?.click()}
+          >
+            <img src={preview} alt="preview" className="h-full object-contain" />
+          </div>
+        ) : (
+          <div
+            onClick={() => inputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault()
+              setDragOver(false)
+              const f = e.dataTransfer.files[0]
+              if (f) handleFile(f)
+            }}
+            className={`border-2 border-dashed rounded-lg h-16 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors ${dragOver ? 'border-primary-500 bg-primary-50' : 'border-secondary-300'}`}
+          >
+            <Upload className="h-4 w-4 text-secondary-400" />
+            <span className="text-xs text-secondary-400">Clique ou arraste</span>
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+        />
+      </div>
+
+      <input
+        value={personName}
+        onChange={(e) => setPersonName(e.target.value)}
+        className="w-full rounded border border-secondary-300 px-2 py-1 text-sm"
+        placeholder="Nome de quem assina"
+      />
+      <input
+        value={personRole}
+        onChange={(e) => setPersonRole(e.target.value)}
+        className="w-full rounded border border-secondary-300 px-2 py-1 text-sm"
+        placeholder="Cargo"
+      />
+
+      <div className="flex gap-2">
+        <Button size="sm" onClick={handleSave} loading={isPending} disabled={!file || !personName}>
+          Salvar
+        </Button>
+        <Button size="sm" variant="ghost" onClick={handleCancel}>
+          Cancelar
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+export function SignatureManager({ eventId, signatures }: SignatureManagerProps) {
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ personName: '', personRole: '' })
+  const [orderedIds, setOrderedIds] = useState<string[]>(() =>
+    [...signatures].sort((a, b) => a.displayOrder - b.displayOrder).map((s) => s.id)
+  )
+
+  const { mutate: add, isPending: isAdding } = useAddSignature(eventId)
+  const { mutate: remove } = useRemoveSignature(eventId)
   const { mutate: update, isPending: isUpdating } = useUpdateSignature(eventId)
 
-  const handleAdd = () => {
-    if (!form.file || !form.personName || !form.personRole) return
-    add(
-      { file: form.file, personName: form.personName, personRole: form.personRole, displayOrder: form.displayOrder },
-      { onSuccess: () => { setIsAdding(false); setForm({ personName: '', personRole: '', displayOrder: 1, file: null }) } }
-    )
+  const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
+
+  const sensors = useSensors(useSensor(PointerSensor))
+
+  const sigMap = Object.fromEntries(signatures.map((s) => [s.id, s]))
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = orderedIds.indexOf(active.id as string)
+    const newIndex = orderedIds.indexOf(over.id as string)
+    const newOrder = arrayMove(orderedIds, oldIndex, newIndex)
+    setOrderedIds(newOrder)
+
+    newOrder.forEach((id, index) => {
+      const newDisplayOrder = (index + 1) as 1 | 2 | 3
+      if (sigMap[id]?.displayOrder !== newDisplayOrder) {
+        update({ id, data: { personName: sigMap[id].personName, personRole: sigMap[id].personRole, displayOrder: newDisplayOrder } })
+      }
+    })
   }
 
   const startEdit = (sig: CertificateSignature) => {
     setEditingId(sig.id)
-    setForm({ personName: sig.personName, personRole: sig.personRole, displayOrder: sig.displayOrder, file: null })
+    setEditForm({ personName: sig.personName, personRole: sig.personRole })
   }
 
-  const handleUpdate = (id: string) => {
-    update({ id, data: { personName: form.personName, personRole: form.personRole, displayOrder: form.displayOrder } }, {
+  const handleSaveEdit = (id: string) => {
+    const sig = sigMap[id]
+    update({ id, data: { personName: editForm.personName, personRole: editForm.personRole, displayOrder: sig.displayOrder } }, {
       onSuccess: () => setEditingId(null),
     })
   }
 
-  const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
+  const positions: (CertificateSignature | null)[] = [1, 2, 3].map(
+    (pos) => signatures.find((s) => s.displayOrder === pos) ?? null
+  )
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {signatures.map((sig) => (
-          <div key={sig.id} className="rounded-lg border border-secondary-200 p-3 space-y-2">
-            {editingId === sig.id ? (
-              <>
-                <input
-                  value={form.personName}
-                  onChange={(e) => setForm((f) => ({ ...f, personName: e.target.value }))}
-                  className="w-full rounded border border-secondary-300 px-2 py-1 text-sm"
-                  placeholder="Nome"
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={orderedIds} strategy={rectSortingStrategy}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {positions.map((sig, index) => {
+            const position = (index + 1) as 1 | 2 | 3
+            if (sig) {
+              return (
+                <SortableCard
+                  key={sig.id}
+                  sig={sig}
+                  position={position}
+                  baseUrl={baseUrl}
+                  onRemove={remove}
+                  onStartEdit={startEdit}
+                  editingId={editingId}
+                  editForm={editForm}
+                  onEditChange={(field, value) => setEditForm((f) => ({ ...f, [field]: value }))}
+                  onSaveEdit={handleSaveEdit}
+                  onCancelEdit={() => setEditingId(null)}
+                  isSaving={isUpdating}
                 />
-                <input
-                  value={form.personRole}
-                  onChange={(e) => setForm((f) => ({ ...f, personRole: e.target.value }))}
-                  className="w-full rounded border border-secondary-300 px-2 py-1 text-sm"
-                  placeholder="Cargo"
+              )
+            }
+            if (signatures.length < 3) {
+              return (
+                <EmptySlot
+                  key={`empty-${position}`}
+                  position={position}
+                  onAdd={add}
+                  isPending={isAdding}
                 />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleUpdate(sig.id)} loading={isUpdating}>
-                    <Save className="h-3 w-3 mr-1" /> Salvar
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                    <X className="h-3 w-3 mr-1" /> Cancelar
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={`${baseUrl}/uploads/${sig.imagePath}`}
-                    alt={sig.personName}
-                    className="h-12 w-12 object-contain rounded border border-secondary-100"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-secondary-900 truncate">{sig.personName}</p>
-                    <p className="text-xs text-secondary-500 truncate">{sig.personRole}</p>
-                    <p className="text-xs text-secondary-400">Ordem: {sig.displayOrder}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => startEdit(sig)}>
-                    <Edit2 className="h-3 w-3 mr-1" /> Editar
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => remove(sig.id)} loading={isRemoving}>
-                    <Trash2 className="h-3 w-3 mr-1 text-danger-500" /> Remover
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {isAdding && (
-        <div className="rounded-lg border border-secondary-200 p-4 space-y-3">
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/jpeg,image/png"
-            onChange={(e) => setForm((f) => ({ ...f, file: e.target.files?.[0] ?? null }))}
-          />
-          <input
-            value={form.personName}
-            onChange={(e) => setForm((f) => ({ ...f, personName: e.target.value }))}
-            className="w-full rounded border border-secondary-300 px-2 py-1 text-sm"
-            placeholder="Nome de quem assina"
-          />
-          <input
-            value={form.personRole}
-            onChange={(e) => setForm((f) => ({ ...f, personRole: e.target.value }))}
-            className="w-full rounded border border-secondary-300 px-2 py-1 text-sm"
-            placeholder="Cargo"
-          />
-          <select
-            value={form.displayOrder}
-            onChange={(e) => setForm((f) => ({ ...f, displayOrder: parseInt(e.target.value, 10) as 1 | 2 | 3 }))}
-            className="w-full rounded border border-secondary-300 px-2 py-1 text-sm"
-          >
-            <option value={1}>Posição 1</option>
-            <option value={2}>Posição 2</option>
-            <option value={3}>Posição 3</option>
-          </select>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleAdd} loading={isAddingSig} disabled={!form.file || !form.personName}>
-              Adicionar
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setIsAdding(false)}>
-              Cancelar
-            </Button>
-          </div>
+              )
+            }
+            return null
+          })}
         </div>
-      )}
-
-      {!isAdding && signatures.length < 3 && (
-        <Button variant="secondary" size="sm" onClick={() => setIsAdding(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Adicionar assinatura
-        </Button>
-      )}
-    </div>
+      </SortableContext>
+    </DndContext>
   )
 }
