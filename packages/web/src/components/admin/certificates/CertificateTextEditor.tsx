@@ -25,7 +25,9 @@ export function CertificateTextEditor({ eventId, initialText }: CertificateTextE
   const { mutate: save, isPending } = useUpdateCertificateText(eventId)
 
   useEffect(() => {
-    setText(initialText || DEFAULT_TEXT)
+    if (initialText) {
+      setText(initialText)
+    }
   }, [initialText])
 
   const insertPlaceholder = (placeholder: string) => {
