@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { PageHeader } from '@/components/admin/PageHeader'
+
 import { Button } from '@/components/ui/Button'
 import { CertificateTextEditor } from '@/components/admin/certificates/CertificateTextEditor'
 import { BackgroundUploader } from '@/components/admin/certificates/BackgroundUploader'
@@ -26,19 +26,24 @@ export default function CertificatesPage() {
 
   return (
     <>
-      <div className="mb-4">
+      <div className="mb-8 flex items-center gap-4">
         <Link href={`/events/${eventId}`}>
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-10 w-10 shrink-0 rounded-full border-secondary-200 text-secondary-500 hover:text-secondary-900 hover:bg-secondary-50 hover:shadow-sm transition-all"
+            title="Voltar para o evento"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-secondary-900">Certificados</h1>
+          <p className="text-sm text-secondary-500 mt-1">
+            Configure o layout, assinaturas e gere os certificados em PDF.
+          </p>
+        </div>
       </div>
-
-      <PageHeader
-        title="Certificados"
-        description="Configure o layout, assinaturas e gere os certificados em PDF."
-      />
 
       {isLoading ? (
         <div className="animate-pulse space-y-4">
