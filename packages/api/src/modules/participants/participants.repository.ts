@@ -86,30 +86,23 @@ export class ParticipantsRepository {
   }
 
   async compactPresentationOrder(eventId: string, tx?: Prisma.TransactionClient): Promise<void> {
-    const client = tx ?? this.prisma
-    const participants = await client.participant.findMany({
-      where: { eventId },
-      orderBy: { presentationOrder: 'asc' },
-      select: { id: true },
-    })
+    const run = async (client: Prisma.TransactionClient) => {
+      const participants = await client.participant.findMany({
+        where: { eventId },
+        orderBy: { presentationOrder: 'asc' },
+        select: { id: true },
+      })
+      for (let i = 0; i < participants.length; i++) {
+        await client.participant.update({
+          where: { id: participants[i].id },
+          data: { presentationOrder: i + 1 },
+        })
+      }
+    }
     if (tx) {
-      await Promise.all(
-        participants.map((p, index) =>
-          tx.participant.update({
-            where: { id: p.id },
-            data: { presentationOrder: index + 1 },
-          }),
-        ),
-      )
+      await run(tx)
     } else {
-      await this.prisma.$transaction(
-        participants.map((p, index) =>
-          this.prisma.participant.update({
-            where: { id: p.id },
-            data: { presentationOrder: index + 1 },
-          }),
-        ),
-      )
+      await this.prisma.$transaction((client) => run(client))
     }
   }
 
@@ -117,18 +110,19 @@ export class ParticipantsRepository {
     items: Array<{ id: string; presentationOrder: number }>,
     tx?: Prisma.TransactionClient,
   ): Promise<void> {
+    const run = async (client: Prisma.TransactionClient) => {
+      const offset = 100000
+      for (const { id, presentationOrder } of items) {
+        await client.participant.update({ where: { id }, data: { presentationOrder: presentationOrder + offset } })
+      }
+      for (const { id, presentationOrder } of items) {
+        await client.participant.update({ where: { id }, data: { presentationOrder } })
+      }
+    }
     if (tx) {
-      await Promise.all(
-        items.map(({ id, presentationOrder }) =>
-          tx.participant.update({ where: { id }, data: { presentationOrder } }),
-        ),
-      )
+      await run(tx)
     } else {
-      await this.prisma.$transaction(
-        items.map(({ id, presentationOrder }) =>
-          this.prisma.participant.update({ where: { id }, data: { presentationOrder } }),
-        ),
-      )
+      await this.prisma.$transaction((client) => run(client))
     }
   }
 
