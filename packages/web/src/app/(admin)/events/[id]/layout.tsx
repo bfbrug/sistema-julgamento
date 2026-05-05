@@ -8,7 +8,7 @@ import { ArrowLeft, Play, Settings, List, Users, Trophy, Award, FileSearch, BarC
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { EventStatus } from '@judging/shared'
-import { cn } from '@/lib/utils'
+import { cn, formatEventDate } from '@/lib/utils'
 import { eventStatusLabels } from '@/lib/event-status'
 
 export default function EventDetailLayout({ children }: { children: ReactNode }) {
@@ -48,7 +48,7 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
 
       <PageHeader
         title={event.name}
-        description={`${event.location} • ${new Date(event.eventDate).toLocaleDateString('pt-BR')} • ${eventStatusLabels[event.status]}`}
+        description={`${event.location} • ${formatEventDate(event.eventDate)} • ${eventStatusLabels[event.status]}`}
         action={
           <div className="flex gap-2">
             {event.status === EventStatus.DRAFT && (

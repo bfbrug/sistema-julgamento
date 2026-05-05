@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Play, Calendar, MapPin, Loader2 } from 'lucide-react'
 import { eventStatusLabels } from '@/lib/event-status'
+import { formatEventDate } from '@/lib/utils'
 
 export default function JudgeEventsPage() {
   const router = useRouter()
@@ -81,7 +82,7 @@ function EventCard({ event, onClick }: { event: { id: string; name: string; even
         <div className="flex items-center gap-4 text-sm text-secondary-500">
           <span className="flex items-center gap-1">
             <Calendar className="h-3.5 w-3.5" />
-            {new Date(event.eventDate).toLocaleDateString('pt-BR')}
+            {formatEventDate(event.eventDate)}
           </span>
           <span className="flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" />

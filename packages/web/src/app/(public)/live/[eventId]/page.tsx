@@ -8,6 +8,7 @@ import { JudgesProgress } from '@/components/live-panel/JudgesProgress'
 import { UpcomingQueue } from '@/components/live-panel/UpcomingQueue'
 import { EventFinishedView } from '@/components/live-panel/EventFinishedView'
 import { ConnectionIndicator } from '@/components/live-panel/ConnectionIndicator'
+import { formatEventDate } from '@/lib/utils'
 
 export default function LivePanelPage() {
   const params = useParams()
@@ -49,7 +50,7 @@ export default function LivePanelPage() {
           Evento configurado, aguardando início do julgamento
         </p>
         <div className="mt-6 text-lg text-neutral-500">
-          <p>{new Date(eventInfo.eventDate).toLocaleDateString('pt-BR')}</p>
+          <p>{formatEventDate(eventInfo.eventDate)}</p>
           <p>{eventInfo.location}</p>
           <p>{eventInfo.organizer}</p>
         </div>

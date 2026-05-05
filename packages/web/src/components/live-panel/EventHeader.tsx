@@ -1,4 +1,5 @@
 import { Calendar, MapPin, Building2 } from 'lucide-react'
+import { formatEventDate } from '@/lib/utils'
 
 interface EventHeaderProps {
   name: string
@@ -9,18 +10,6 @@ interface EventHeaderProps {
   totalCount: number
 }
 
-function formatDate(dateString: string): string {
-  try {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-  } catch {
-    return dateString
-  }
-}
 
 export function EventHeader({
   name,
@@ -37,7 +26,7 @@ export function EventHeader({
         <div className="flex items-center gap-4 text-base text-neutral-400">
           <span className="flex items-center gap-1.5">
             <Calendar className="h-4 w-4" aria-hidden="true" />
-            {formatDate(eventDate)}
+            {formatEventDate(eventDate)}
           </span>
           <span className="flex items-center gap-1.5">
             <MapPin className="h-4 w-4" aria-hidden="true" />
