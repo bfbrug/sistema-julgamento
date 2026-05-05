@@ -277,8 +277,9 @@ export function SignatureManager({ eventId, signatures }: SignatureManagerProps)
 
     newOrder.forEach((id, index) => {
       const newDisplayOrder = (index + 1) as 1 | 2 | 3
-      if (sigMap[id]?.displayOrder !== newDisplayOrder) {
-        update({ id, data: { personName: sigMap[id].personName, personRole: sigMap[id].personRole, displayOrder: newDisplayOrder } })
+      const sig = sigMap[id]
+      if (sig && sig.displayOrder !== newDisplayOrder) {
+        update({ id, data: { personName: sig.personName, personRole: sig.personRole, displayOrder: newDisplayOrder } })
       }
     })
   }
@@ -290,6 +291,7 @@ export function SignatureManager({ eventId, signatures }: SignatureManagerProps)
 
   const handleSaveEdit = (id: string) => {
     const sig = sigMap[id]
+    if (!sig) return
     update({ id, data: { personName: editForm.personName, personRole: editForm.personRole, displayOrder: sig.displayOrder } }, {
       onSuccess: () => setEditingId(null),
     })

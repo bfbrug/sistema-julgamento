@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatEventDate(dateStr: string, style: 'short' | 'long' = 'short'): string {
-  const [year, month, day] = dateStr.split('T')[0].split('-').map(Number)
+  const [year = 0, month = 1, day = 1] = (dateStr.split('T')[0] || '').split('-').map(Number)
   const d = new Date(year, month - 1, day)
   if (style === 'long') {
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
