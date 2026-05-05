@@ -29,7 +29,6 @@ interface SignatureManagerProps {
 interface SortableCardProps {
   sig: CertificateSignature
   position: number
-  baseUrl: string
   onRemove: (id: string) => void
   onStartEdit: (sig: CertificateSignature) => void
   editingId: string | null
@@ -43,7 +42,6 @@ interface SortableCardProps {
 function SortableCard({
   sig,
   position,
-  baseUrl,
   onRemove,
   onStartEdit,
   editingId,
@@ -108,7 +106,7 @@ function SortableCard({
         <>
           <div className="mt-4 bg-secondary-50 border border-secondary-100 rounded-lg w-full flex items-center justify-center h-16 overflow-hidden">
             <img
-              src={`${baseUrl}/uploads/${sig.imagePath}`}
+              src={`/uploads/${sig.imagePath}`}
               alt={sig.personName}
               className="h-full object-contain"
             />
@@ -260,7 +258,6 @@ export function SignatureManager({ eventId, signatures }: SignatureManagerProps)
   const { mutate: remove } = useRemoveSignature(eventId)
   const { mutate: update, isPending: isUpdating } = useUpdateSignature(eventId)
 
-  const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
@@ -313,7 +310,6 @@ export function SignatureManager({ eventId, signatures }: SignatureManagerProps)
                   key={sig.id}
                   sig={sig}
                   position={position}
-                  baseUrl={baseUrl}
                   onRemove={remove}
                   onStartEdit={startEdit}
                   editingId={editingId}

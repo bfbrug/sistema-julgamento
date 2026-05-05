@@ -17,8 +17,7 @@ export default function CertificatesPage() {
 
   const isLoading = isLoadingConfig || isLoadingEvent || isLoadingParticipants
 
-  const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
-  const backgroundUrl = config?.backgroundPath ? `${baseUrl}/uploads/${config.backgroundPath}` : null
+  const backgroundUrl = config?.backgroundPath ? `/uploads/${config.backgroundPath}` : null
 
   return (
     <>
