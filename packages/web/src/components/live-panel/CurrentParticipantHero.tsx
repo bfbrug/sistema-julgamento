@@ -94,7 +94,7 @@ export function CurrentParticipantHero({
           <h2
             className="font-black leading-none"
             style={{
-              fontFamily: "'Playfair Display', 'Georgia', serif",
+              fontFamily: "'DM Sans', 'Inter', sans-serif",
               fontSize: 'clamp(3rem, 6vw, 5.5rem)',
               color: '#1a1208',
               maxWidth: '700px',

@@ -35,7 +35,7 @@ export default function LivePanelPage() {
       >
         <h1
           className="mb-4 text-4xl font-black"
-          style={{ fontFamily: "'Playfair Display','Georgia',serif", color: '#1a1208' }}
+          style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#1a1208' }}
         >
           {error?.includes('404') || error?.includes('não encontrado')
             ? 'Evento não encontrado ou ainda não iniciou'
@@ -59,7 +59,7 @@ export default function LivePanelPage() {
         </div>
         <h1
           className="mb-4 text-6xl font-black text-center"
-          style={{ fontFamily: "'Playfair Display','Georgia',serif", color: '#1a1208', maxWidth: '900px' }}
+          style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#1a1208', maxWidth: '900px' }}
         >
           {eventInfo.name}
         </h1>
@@ -130,7 +130,7 @@ export default function LivePanelPage() {
           </div>
           <h2
             className="text-6xl font-black"
-            style={{ fontFamily: "'Playfair Display','Georgia',serif", color: '#1a1208' }}
+            style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#1a1208' }}
           >
             Aguardando próximo participante
           </h2>

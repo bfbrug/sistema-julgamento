@@ -35,7 +35,7 @@ export function EventFinishedView({ eventName, ranking }: EventFinishedViewProps
         <h2
           className="text-6xl font-black tracking-tight"
           style={{
-            fontFamily: "'Playfair Display', 'Georgia', serif",
+            fontFamily: "'DM Sans', 'Inter', sans-serif",
             color: '#1a1208',
             letterSpacing: '-0.02em',
           }}
@@ -55,7 +55,7 @@ export function EventFinishedView({ eventName, ranking }: EventFinishedViewProps
         <Star className="h-4 w-4" style={{ color: '#c9a227' }} aria-hidden="true" />
         <p
           className="text-2xl font-semibold"
-          style={{ fontFamily: "'Playfair Display', 'Georgia', serif", color: '#6b5a2d' }}
+          style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#6b5a2d' }}
         >
           {eventName}
         </p>
@@ -90,14 +90,14 @@ export function EventFinishedView({ eventName, ranking }: EventFinishedViewProps
                     className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-black shadow-md ${
                       medal ? `${medal.bg} ${medal.text}` : 'bg-stone-200 text-stone-500'
                     }`}
-                    style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}
+                    style={{ fontFamily: "'DM Sans', 'Inter', sans-serif" }}
                   >
                     {item.position}º
                   </span>
                   <span
                     className="text-2xl font-bold"
                     style={{
-                      fontFamily: "'Playfair Display', 'Georgia', serif",
+                      fontFamily: "'DM Sans', 'Inter', sans-serif",
                       color: '#1a1208',
                     }}
                   >
@@ -108,7 +108,7 @@ export function EventFinishedView({ eventName, ranking }: EventFinishedViewProps
                   className="text-3xl font-black tabular-nums"
                   style={{
                     color: isTop3 ? '#c9a227' : '#6b5a2d',
-                    fontFamily: "'Playfair Display', 'Georgia', serif",
+                    fontFamily: "'DM Sans', 'Inter', sans-serif",
                   }}
                 >
                   {item.finalScore.toFixed(2)}

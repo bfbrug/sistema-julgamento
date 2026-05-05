@@ -25,7 +25,7 @@ export function JudgesProgress({ finished, total }: JudgesProgressProps) {
         <span
           className="text-7xl font-black tabular-nums leading-none"
           style={{
-            fontFamily: "'Playfair Display', 'Georgia', serif",
+            fontFamily: "'DM Sans', 'Inter', sans-serif",
             color: '#1a1208',
           }}
         >

@@ -31,7 +31,7 @@ export function UpcomingQueue({ participants }: UpcomingQueueProps) {
                 style={{
                   background: 'linear-gradient(135deg, #c9a227, #f0d060)',
                   color: '#1a1208',
-                  fontFamily: "'Playfair Display', 'Georgia', serif",
+                  fontFamily: "'DM Sans', 'Inter', sans-serif",
                 }}
               >
                 {p.presentationOrder}
@@ -40,7 +40,7 @@ export function UpcomingQueue({ participants }: UpcomingQueueProps) {
                 className="truncate text-xl font-semibold"
                 style={{
                   color: '#2d2010',
-                  fontFamily: "'Playfair Display', 'Georgia', serif",
+                  fontFamily: "'DM Sans', 'Inter', sans-serif",
                 }}
               >
                 {p.name}
