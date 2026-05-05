@@ -22,8 +22,7 @@ export default function CertificatesPage() {
   return (
     <>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-secondary-900">Certificados</h1>
-        <p className="text-sm text-secondary-500 mt-1">
+        <p className="text-sm text-secondary-500">
           Configure o layout, assinaturas e gere os certificados em PDF.
         </p>
       </div>

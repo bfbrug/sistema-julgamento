@@ -41,7 +41,7 @@ export function CertificateTextEditor({ eventId, initialText }: CertificateTextE
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-secondary-700">Texto do certificado</label>
+        <label className="text-sm text-secondary-500">Use os botões abaixo para inserir variáveis no texto.</label>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
