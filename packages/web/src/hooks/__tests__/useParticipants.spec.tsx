@@ -52,7 +52,11 @@ describe('useParticipants', () => {
     vi.mocked(apiClient).mockResolvedValue({})
     const { result } = renderHook(() => useReorderParticipants('e1'), { wrapper })
     await result.current.mutateAsync(['p2', 'p1'])
-    expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST', path: '/events/e1/participants/reorder' }))
+    expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({
+      method: 'PATCH',
+      path: '/events/e1/participants/reorder',
+      body: { items: [{ id: 'p2', presentationOrder: 1 }, { id: 'p1', presentationOrder: 2 }] },
+    }))
   })
 
   it('useShuffleParticipants embaralha', async () => {
