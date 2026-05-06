@@ -23,6 +23,7 @@ export default function JudgesPage() {
 
   const columns = [
     { header: 'Nome', accessor: 'name' as const },
+    { header: 'Username', accessor: 'username' as const },
     { header: 'E-mail', accessor: 'email' as const },
     { 
       header: 'Status', 
