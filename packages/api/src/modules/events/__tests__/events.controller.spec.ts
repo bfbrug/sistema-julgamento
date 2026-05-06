@@ -26,7 +26,7 @@ describe('EventsController', () => {
       findById: vi.fn().mockResolvedValue(mockEvent),
       update: vi.fn().mockResolvedValue(mockEvent),
       softDelete: vi.fn().mockResolvedValue(undefined),
-      transition: vi.fn().mockResolvedValue({ ...mockEvent, status: EventStatus.REGISTERING }),
+      transition: vi.fn().mockResolvedValue({ ...mockEvent, status: EventStatus.IN_PROGRESS }),
       updateTiebreaker: vi.fn().mockResolvedValue(mockEvent),
       removeTiebreaker: vi.fn().mockResolvedValue(undefined),
       updateCertificateText: vi.fn().mockResolvedValue(mockEvent),
@@ -72,10 +72,10 @@ describe('EventsController', () => {
   it('transition: chama service.transition e retorna novo status', async () => {
     const res = await controller.transition(
       'event-1',
-      { targetStatus: EventStatus.REGISTERING },
+      { targetStatus: EventStatus.IN_PROGRESS },
       { sub: 'manager-1' } as never,
     )
-    expect(res.status).toBe(EventStatus.REGISTERING)
+    expect(res.status).toBe(EventStatus.IN_PROGRESS)
     expect(service.transition).toHaveBeenCalled()
   })
 

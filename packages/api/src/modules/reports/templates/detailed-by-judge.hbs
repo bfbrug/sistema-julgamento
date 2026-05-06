@@ -1,27 +1,53 @@
 {{> header}}
+  <style>
+    .judge-block { margin-bottom: 36px; }
+    .judge-title { font-size: 14px; font-weight: 700; color: #1a1a2e; border-bottom: 2px solid #1a1a2e; padding-bottom: 5px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .participant-block { margin-bottom: 16px; }
+    .participant-name { font-size: 12px; font-weight: 700; color: #333; background: #f0f0f8; padding: 5px 10px; border-left: 3px solid #1a1a2e; margin-bottom: 0; }
+    .score-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .score-table th { background: #2d2d4e; color: #fff; padding: 6px 10px; font-size: 10px; font-weight: 600; text-align: left; }
+    .score-table th.score { text-align: right; width: 80px; }
+    .score-table td { padding: 5px 10px; border-bottom: 1px solid #ebebf0; font-size: 11px; color: #333; }
+    .score-table td.score { text-align: right; font-weight: 600; width: 80px; }
+    .score-table tr:nth-child(even) td { background: #f9f9fc; }
+    .average-row td { background: #eef2ff !important; border-top: 2px solid #6366f1; color: #3730a3; font-size: 12px; }
+    .average-row td.score { font-size: 13px; font-weight: 800; }
+  </style>
+
   <h1>{{event.name}}</h1>
   <p class="event-meta">{{event.eventDate}} &bull; {{event.location}} &bull; {{event.organizer}}</p>
   <h2>Notas Detalhadas por Jurado</h2>
   <div class="warning-box">Identidade dos jurados anonimizada. As notas individuais são confidenciais.</div>
+
   {{#each judgeEntries}}
-  <div class="section-title">{{this.judgeAlias}}</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Participante</th>
-        <th>Categoria</th>
-        <th class="score">Nota</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#each this.scores}}
-      <tr>
-        <td>{{this.participantName}}</td>
-        <td>{{this.categoryName}}</td>
-        <td class="score">{{this.value}}</td>
-      </tr>
-      {{/each}}
-    </tbody>
-  </table>
+  <div class="judge-block">
+    <div class="judge-title">{{this.judgeAlias}}</div>
+
+    {{#each this.participants}}
+    <div class="participant-block">
+      <div class="participant-name">{{this.participantName}}</div>
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th>Categoria</th>
+            <th class="score">Nota</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each this.categories}}
+          <tr>
+            <td>{{this.categoryName}}</td>
+            <td class="score">{{this.value}}</td>
+          </tr>
+          {{/each}}
+          <tr class="average-row">
+            <td>Média</td>
+            <td class="score">{{this.average}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {{/each}}
+  </div>
   {{/each}}
 {{> footer}}

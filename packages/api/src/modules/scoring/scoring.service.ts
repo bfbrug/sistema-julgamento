@@ -9,6 +9,7 @@ import { WS_EVENTS } from '@judging/shared'
 import { ScoringGateway } from './scoring.gateway'
 import { PublicLiveGateway } from './public-live.gateway'
 import { CalculationService } from '../calculation/calculation.service'
+import { IStorageService, STORAGE_SERVICE } from '../storage/storage.service.interface'
 
 @Injectable()
 export class ScoringService {
@@ -19,6 +20,7 @@ export class ScoringService {
     @Inject(ScoringGateway) private readonly gateway: ScoringGateway,
     @Inject(PublicLiveGateway) private readonly publicGateway: PublicLiveGateway,
     @Inject(CalculationService) private readonly calculationService: CalculationService,
+    @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
   ) {}
 
   async activateParticipant(eventId: string, participantId: string, managerId: string) {
@@ -487,7 +489,12 @@ export class ScoringService {
       throw new NotFoundException('Evento não encontrado')
     }
 
-    const activeParticipant = await this.repository.findActiveParticipant(eventId)
+    const [totalParticipants, totalEvaluated, activeParticipant] = await Promise.all([
+      this.prisma.participant.count({ where: { eventId } }),
+      this.prisma.judgeParticipantSession.count({ where: { judgeId, status: 'FINISHED', participant: { eventId } } }),
+      this.repository.findActiveParticipant(eventId),
+    ])
+
     if (!activeParticipant) {
       return {
         event: {
@@ -496,6 +503,8 @@ export class ScoringService {
           status: event.status,
           scoreMin: Number(event.scoreMin),
           scoreMax: Number(event.scoreMax),
+          totalParticipants,
+          totalEvaluated,
         },
         activeParticipant: null,
         message: 'Aguardando próximo participante',
@@ -523,11 +532,13 @@ export class ScoringService {
         status: event.status,
         scoreMin: Number(event.scoreMin),
         scoreMax: Number(event.scoreMax),
+        totalParticipants,
+        totalEvaluated,
       },
       activeParticipant: {
         id: activeParticipant.id,
         name: activeParticipant.name,
-        photoUrl: activeParticipant.photoPath,
+        photoUrl: activeParticipant.photoPath ? await this.storageService.getPublicUrl(activeParticipant.photoPath) : null,
         presentationOrder: activeParticipant.presentationOrder,
         currentState: activeParticipant.currentState,
         myCategoriesToScore: categoriesWithScore,
@@ -550,20 +561,36 @@ export class ScoringService {
 
     const totalJudges = await this.repository.getActiveJudgesCount(eventId)
 
+    const targetParticipant = activeParticipant || state.participants.slice().reverse().find((p) => p.currentState === 'FINISHED')
+
+    const judges = state.judges.map((j) => {
+      const session = targetParticipant
+        ? j.sessions.find((s) => s.participantId === targetParticipant.id)
+        : undefined
+      return {
+        id: j.id,
+        displayName: j.displayName,
+        name: j.user?.name,
+        status: session?.status ?? 'NOT_STARTED',
+      }
+    })
+
     return {
       event: { id: state.id, name: state.name, status: state.status },
       activeParticipant: activeParticipant
         ? {
             ...activeParticipant,
+            photoUrl: activeParticipant.photoPath ? await this.storageService.getPublicUrl(activeParticipant.photoPath) : null,
             sessionsProgress: {
               finished: activeParticipant.sessions.filter((s) => s.status === 'FINISHED').length,
               total: totalJudges,
             },
           }
         : null,
-      participants: state.participants.map((p) => ({
+      participants: await Promise.all(state.participants.map(async (p) => ({
         id: p.id,
         name: p.name,
+        photoUrl: p.photoPath ? await this.storageService.getPublicUrl(p.photoPath) : null,
         presentationOrder: p.presentationOrder,
         currentState: p.currentState,
         isAbsent: p.isAbsent,
@@ -571,10 +598,11 @@ export class ScoringService {
           finished: p.sessions.filter((s) => s.status === 'FINISHED').length,
           total: totalJudges,
         },
-      })),
+      }))),
       pendingNext: pendingNext
         ? { id: pendingNext.id, name: pendingNext.name, presentationOrder: pendingNext.presentationOrder }
         : null,
+      judges,
     }
   }
 }

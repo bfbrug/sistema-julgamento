@@ -25,12 +25,16 @@ export class ListUsersDto {
   role?: UserRole
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ value }) => value === 'true' || value === true, { toClassOnly: true })
   @IsBoolean()
   isActive?: boolean
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ value }) => value === 'true' || value === true, { toClassOnly: true })
   @IsBoolean()
   includeDeleted?: boolean = false
+
+  @IsOptional()
+  @IsEnum(UserRole)
+  excludeRole?: UserRole
 }

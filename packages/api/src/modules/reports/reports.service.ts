@@ -18,19 +18,19 @@ export interface GenerateReportJobPayload {
 @Injectable()
 export class ReportsService {
   constructor(
-    private readonly repository: ReportsRepository,
+    @Inject(ReportsRepository) private readonly repository: ReportsRepository,
     @InjectQueue('reports') private readonly reportsQueue: Queue,
-    private readonly auditService: AuditService,
+    @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
     @InjectPinoLogger(ReportsService.name) private readonly logger: PinoLogger,
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {}
 
   async enqueue(eventId: string, managerId: string, type: ReportType) {
     const event = await this.repository.getEventStatus(eventId, managerId)
     if (!event) throw new NotFoundException('Evento não encontrado')
 
-    if (event.status === EventStatus.DRAFT || event.status === EventStatus.REGISTERING) {
+    if (event.status === EventStatus.DRAFT) {
       throw new UnprocessableEntityException(
         'Relatórios só podem ser gerados para eventos em andamento ou finalizados',
       )

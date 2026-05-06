@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Calendar, Users, Settings, FileSearch } from 'lucide-react'
+import { LayoutDashboard, Calendar, Users, Settings, FileSearch, Gavel } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -13,6 +13,7 @@ function cn(...inputs: ClassValue[]) {
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/events', label: 'Eventos', icon: Calendar },
+  { href: '/judges', label: 'Jurados', icon: Gavel },
   { href: '/users', label: 'Usuários', icon: Users },
   { href: '/audit', label: 'Auditoria', icon: FileSearch },
 ]

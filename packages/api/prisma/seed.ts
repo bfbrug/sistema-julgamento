@@ -14,6 +14,7 @@ export async function main() {
       passwordHash,
       name: 'Administrador',
       role: 'GESTOR',
+      username: 'admin',
     },
   });
 
@@ -25,6 +26,7 @@ export async function main() {
       passwordHash,
       name: 'Jurado Um',
       role: 'JURADO',
+      username: 'jurado1',
     },
   });
 
@@ -36,6 +38,7 @@ export async function main() {
       passwordHash,
       name: 'Jurado Dois',
       role: 'JURADO',
+      username: 'jurado2',
     },
   });
 
@@ -47,13 +50,14 @@ export async function main() {
       passwordHash,
       name: 'Jurado Três',
       role: 'JURADO',
+      username: 'jurado3',
     },
   });
 
   const evento = await prisma.judgingEvent.upsert({
     where: { id: 'evento-teste-123' },
     update: {
-      status: 'REGISTERING',
+      status: 'DRAFT',
     },
     create: {
       id: 'evento-teste-123',
@@ -66,7 +70,7 @@ export async function main() {
       scoreMin: 5.0,
       scoreMax: 10.0,
       topN: 10,
-      status: 'REGISTERING',
+      status: 'DRAFT',
     },
   });
 

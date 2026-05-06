@@ -1,5 +1,5 @@
 import { createEventSchema } from '../schemas/event.schema'
-import { CalculationRule, EventStatus } from '../enums'
+import { CalculationRule } from '../enums'
 
 describe('event.schema', () => {
   it('accepts valid event', () => {
@@ -12,7 +12,6 @@ describe('event.schema', () => {
       scoreMin: 5,
       scoreMax: 10,
       topN: 10,
-      status: EventStatus.DRAFT,
     }
     expect(createEventSchema.parse(payload)).toEqual(payload)
   })

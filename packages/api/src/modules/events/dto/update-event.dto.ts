@@ -11,7 +11,7 @@ import {
   IsOptional,
 } from 'class-validator'
 import { Type } from 'class-transformer'
-import { CalculationRule } from '@prisma/client'
+import { CalculationRule, EventStatus } from '@prisma/client'
 
 export class UpdateEventDto {
   @IsOptional()
@@ -58,4 +58,8 @@ export class UpdateEventDto {
   @Min(1)
   @Max(1000)
   topN?: number
+
+  @IsOptional()
+  @IsEnum(EventStatus)
+  status?: EventStatus
 }

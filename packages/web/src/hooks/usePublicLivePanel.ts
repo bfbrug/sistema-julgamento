@@ -118,7 +118,7 @@ export function usePublicLivePanel(eventId: string): PublicLivePanelState {
   useEffect(() => {
     void fetchInitialState()
 
-    const socket = io(`${process.env['NEXT_PUBLIC_API_URL']}/public-live`, {
+    const socket = io(`${process.env['NEXT_PUBLIC_WS_URL']}/public-live`, {
       query: { eventId },
       transports: ['websocket'],
     })
@@ -148,7 +148,8 @@ export function usePublicLivePanel(eventId: string): PublicLivePanelState {
 
     socket.on('public_participant_activated', (payload: PublicParticipant) => {
       setCurrentParticipant(payload)
-      setJudgesProgress({ finished: 0, total: judgesProgress.total })
+      setJudgesProgress((prev) => ({ finished: 0, total: prev.total }))
+      setUpcomingParticipants((prev) => prev.filter((p) => p.presentationOrder !== payload.presentationOrder))
     })
 
     socket.on('public_participant_state_changed', (payload: { state: string }) => {

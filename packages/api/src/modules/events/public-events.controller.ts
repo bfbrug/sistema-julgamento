@@ -1,11 +1,11 @@
-import { Controller, Get, Param } from '@nestjs/common'
+import { Controller, Get, Param, Inject } from '@nestjs/common'
 import { Public } from '../../common/decorators/public.decorator'
 import { PublicEventsService } from './public-events.service'
 
 @Public()
 @Controller('public/events')
 export class PublicEventsController {
-  constructor(private readonly publicEventsService: PublicEventsService) {}
+  constructor(@Inject(PublicEventsService) private readonly publicEventsService: PublicEventsService) {}
 
   @Get(':id')
   async getPublicEvent(@Param('id') id: string) {

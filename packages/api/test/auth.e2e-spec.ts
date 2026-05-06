@@ -22,6 +22,7 @@ describe('AuthController (e2e)', () => {
         name: 'E2E User',
         passwordHash,
         role: 'GESTOR',
+        username: 'e2euser',
       },
     });
   });

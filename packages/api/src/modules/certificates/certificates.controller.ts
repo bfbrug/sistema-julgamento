@@ -27,7 +27,7 @@ import * as path from 'path'
 @Roles(UserRole.GESTOR)
 export class CertificatesController {
   constructor(
-    private readonly certificatesService: CertificatesService,
+    @Inject(CertificatesService) private readonly certificatesService: CertificatesService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
   ) {}
 

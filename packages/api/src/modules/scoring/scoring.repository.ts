@@ -181,7 +181,15 @@ export class ScoringRepository {
           orderBy: { presentationOrder: 'asc' },
           include: {
             sessions: {
-              select: { status: true },
+              select: { status: true, judgeId: true },
+            },
+          },
+        },
+        judges: {
+          include: {
+            user: { select: { name: true } },
+            sessions: {
+              select: { status: true, participantId: true },
             },
           },
         },

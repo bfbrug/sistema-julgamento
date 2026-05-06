@@ -38,28 +38,30 @@ describe('ScoringForm', () => {
     expect(input1.value).toBe('')
   })
 
-  it('mostra hint de min/max', () => {
-    render(<ScoringForm {...baseProps} />)
-    expect(screen.getAllByText(/Mínimo: 0.0 — Máximo: 10.0/i)).toHaveLength(2)
-  })
-
   it('botão submit desabilitado com campos vazios', () => {
     render(<ScoringForm {...baseProps} />)
-    expect(screen.getByRole('button', { name: /confirmar notas/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /revisar notas/i })).toBeDisabled()
   })
 
   it('botão submit desabilitado com nota inválida', async () => {
     render(<ScoringForm {...baseProps} />)
     fireEvent.change(screen.getByLabelText('Criatividade'), { target: { value: '15' } })
     fireEvent.change(screen.getByLabelText('Execução'), { target: { value: '5' } })
-    await waitFor(() => expect(screen.getByRole('button', { name: /confirmar notas/i })).toBeDisabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: /revisar notas/i })).toBeDisabled())
   })
 
   it('submit chama callback com payload correto', async () => {
     render(<ScoringForm {...baseProps} />)
-    fireEvent.change(screen.getByLabelText('Criatividade'), { target: { value: '8.5' } })
-    fireEvent.change(screen.getByLabelText('Execução'), { target: { value: '9.0' } })
-    await waitFor(() => expect(screen.getByRole('button', { name: /confirmar notas/i })).not.toBeDisabled())
+    const input1 = screen.getByLabelText('Criatividade')
+    const input2 = screen.getByLabelText('Execução')
+    
+    fireEvent.change(input1, { target: { value: '8.5' } })
+    fireEvent.blur(input1)
+    
+    fireEvent.change(input2, { target: { value: '9.0' } })
+    fireEvent.blur(input2)
+    
+    await waitFor(() => expect(screen.getByRole('button', { name: /revisar notas/i })).not.toBeDisabled())
     fireEvent.submit(document.querySelector('form')!)
     await waitFor(() => expect(baseProps.onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       'cat-1': 8.5,

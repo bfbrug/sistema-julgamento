@@ -21,8 +21,7 @@ describe('EventHeader', () => {
     )
     expect(screen.getByText('Festival')).toBeInTheDocument()
     expect(screen.getByText(/15\/12\/2026|14\/12\/2026/)).toBeInTheDocument()
-    expect(screen.getByText('3')).toBeInTheDocument()
-    expect(screen.getByText('10')).toBeInTheDocument()
+    expect(screen.getByText('3/10 finalizados')).toBeInTheDocument()
   })
 })
 
@@ -47,8 +46,7 @@ describe('JudgesProgress', () => {
   it('renderiza X de Y com indicador visual', () => {
     render(<JudgesProgress finished={2} total={5} />)
     expect(screen.getByText('2')).toBeInTheDocument()
-    expect(screen.getByText('de 5')).toBeInTheDocument()
-    expect(screen.getByText('jurados finalizaram')).toBeInTheDocument()
+    expect(screen.getByText('de 5 jurados')).toBeInTheDocument()
   })
 })
 

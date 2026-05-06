@@ -37,7 +37,7 @@ describe('useUsers', () => {
   it('useCreateUser cria usuário', async () => {
     vi.mocked(apiClient).mockResolvedValue({ id: '1', name: 'User' })
     const { result } = renderHook(() => useCreateUser(), { wrapper })
-    await result.current.mutateAsync({ email: 'a@b.com', name: 'User', password: '12345678', role: 'JURADO' })
+    await result.current.mutateAsync({ email: 'a@b.com', name: 'User', password: '12345678', role: 'JURADO', username: 'test_user' })
     expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST', path: '/users' }))
   })
 

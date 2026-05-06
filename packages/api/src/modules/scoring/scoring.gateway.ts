@@ -25,8 +25,8 @@ export class ScoringGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    @Inject(JwtService) private readonly jwtService: JwtService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
   async handleConnection(client: Socket) {

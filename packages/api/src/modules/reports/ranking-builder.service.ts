@@ -12,9 +12,15 @@ export interface ClassificationEntry {
   isAbsent: boolean
 }
 
+export interface DetailedJudgeParticipant {
+  participantName: string
+  categories: Array<{ categoryName: string; value: number }>
+  average: number
+}
+
 export interface DetailedJudgeEntry {
   judgeAlias: string
-  scores: Array<{ participantName: string; categoryName: string; value: number }>
+  participants: DetailedJudgeParticipant[]
 }
 
 @Injectable()
@@ -86,14 +92,28 @@ export class RankingBuilderService {
 
     return judges.map((judge, idx) => {
       const alias = `Jurado ${idx + 1}`
-      const judgeScores = scores
-        .filter((s) => s.judgeId === judge.id)
-        .map((s) => ({
-          participantName: s.participant.name,
-          categoryName: s.category.name,
-          value: decimalToNumber(s.value),
-        }))
-      return { judgeAlias: alias, scores: judgeScores }
+      const judgeScores = scores.filter((s) => s.judgeId === judge.id)
+
+      // Agrupar por participante mantendo ordem de apresentação
+      const participantMap = new Map<string, { categoryName: string; value: number }[]>()
+      for (const s of judgeScores) {
+        const key = s.participant.name
+        if (!participantMap.has(key)) participantMap.set(key, [])
+        participantMap.get(key)!.push({ categoryName: s.category.name, value: decimalToNumber(s.value) })
+      }
+
+      const participants = Array.from(participantMap.entries()).map(([participantName, categories]) => {
+        const avg = categories.length > 0
+          ? categories.reduce((sum, c) => sum + c.value, 0) / categories.length
+          : 0
+        return {
+          participantName,
+          categories,
+          average: Math.round(avg * 100) / 100,
+        }
+      })
+
+      return { judgeAlias: alias, participants }
     })
   }
 

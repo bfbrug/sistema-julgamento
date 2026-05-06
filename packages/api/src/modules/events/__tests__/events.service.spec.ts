@@ -179,13 +179,13 @@ describe('EventsService', () => {
       repository.countCategoriesForEvent.mockResolvedValue(1)
       repository.countJudgesForEvent.mockResolvedValue(1)
       repository.countParticipantsForEvent.mockResolvedValue(1)
-      repository.updateStatus.mockResolvedValue(makeEvent({ status: EventStatus.REGISTERING }))
+      repository.updateStatus.mockResolvedValue(makeEvent({ status: EventStatus.IN_PROGRESS }))
       const res = await service.transition(
         'event-1',
-        { targetStatus: EventStatus.REGISTERING },
+        { targetStatus: EventStatus.IN_PROGRESS },
         'manager-1',
       )
-      expect(res.status).toBe(EventStatus.REGISTERING)
+      expect(res.status).toBe(EventStatus.IN_PROGRESS)
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'EVENT_STATUS_CHANGED' }),
         expect.anything(),
@@ -199,13 +199,13 @@ describe('EventsService', () => {
       ).rejects.toThrow(UnprocessableEntityException)
     })
 
-    it('DRAFT → REGISTERING sem categorias: lança UnprocessableEntityException com NO_CATEGORIES', async () => {
+    it('DRAFT → IN_PROGRESS sem categorias: lança UnprocessableEntityException com NO_CATEGORIES', async () => {
       repository.findById.mockResolvedValue(makeEvent({ status: EventStatus.DRAFT }))
       repository.countCategoriesForEvent.mockResolvedValue(0)
       repository.countJudgesForEvent.mockResolvedValue(1)
       repository.countParticipantsForEvent.mockResolvedValue(1)
       await expect(
-        service.transition('event-1', { targetStatus: EventStatus.REGISTERING }, 'manager-1'),
+        service.transition('event-1', { targetStatus: EventStatus.IN_PROGRESS }, 'manager-1'),
       ).rejects.toThrow(UnprocessableEntityException)
     })
   })

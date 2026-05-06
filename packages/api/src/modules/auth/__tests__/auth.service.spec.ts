@@ -20,6 +20,7 @@ describe('AuthService', () => {
   const mockUser = {
     id: 'user-1',
     email: 'test@example.com',
+    username: 'test_user',
     passwordHash: 'hashed-password',
     name: 'Test User',
     role: UserRole.GESTOR,
@@ -60,30 +61,59 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should login and return tokens', async () => {
-      vi.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser as any);
+    it('should login by email and return tokens', async () => {
+      vi.spyOn(prisma.user, 'findUnique')
+        .mockResolvedValueOnce(mockUser as any)
+        .mockResolvedValueOnce(null);
+
       (bcrypt.compare as Mock).mockResolvedValue(true);
 
       const result = await service.login('test@example.com', 'password');
 
       expect(result).toHaveProperty('accessToken', 'token');
       expect(result).toHaveProperty('refreshToken', 'token');
-      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGIN_SUCCESS', actorId: 'user-1', entityType: 'User', entityId: 'user-1', payload: { email: 'test@example.com' } }), expect.anything());
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'LOGIN_SUCCESS', actorId: 'user-1', payload: { identifier: 'test@example.com' } }),
+        expect.anything(),
+      );
     });
 
-    it('should throw UnauthorizedException if user not found', async () => {
+    it('should login by username when email lookup fails', async () => {
+      vi.spyOn(prisma.user, 'findUnique')
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockUser as any);
+
+      (bcrypt.compare as Mock).mockResolvedValue(true);
+
+      const result = await service.login('test_user', 'password');
+
+      expect(result).toHaveProperty('accessToken', 'token');
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'LOGIN_SUCCESS', payload: { identifier: 'test_user' } }),
+        expect.anything(),
+      );
+    });
+
+    it('should throw UnauthorizedException if neither email nor username found', async () => {
       vi.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
 
-      await expect(service.login('test@example.com', 'password')).rejects.toThrow(UnauthorizedException);
-      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGIN_FAILED', actorId: undefined, entityType: 'User', entityId: 'unknown', payload: { email: 'test@example.com' } }));
+      await expect(service.login('nobody', 'password')).rejects.toThrow(UnauthorizedException);
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'LOGIN_FAILED', entityId: 'unknown', payload: { identifier: 'nobody' } }),
+      );
     });
 
     it('should throw UnauthorizedException if password incorrect', async () => {
-      vi.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser as any);
+      vi.spyOn(prisma.user, 'findUnique')
+        .mockResolvedValueOnce(mockUser as any)
+        .mockResolvedValueOnce(null);
+
       (bcrypt.compare as Mock).mockResolvedValue(false);
 
       await expect(service.login('test@example.com', 'wrong')).rejects.toThrow(UnauthorizedException);
-      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'LOGIN_FAILED', actorId: 'user-1', entityType: 'User', entityId: 'user-1', payload: { email: 'test@example.com' } }));
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'LOGIN_FAILED', actorId: 'user-1', payload: { identifier: 'test@example.com' } }),
+      );
     });
   });
 

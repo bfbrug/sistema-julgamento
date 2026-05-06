@@ -1,5 +1,6 @@
 node_modules/
 dist/
+build/
 coverage/
 .env
 .env.local
@@ -7,5 +8,13 @@ coverage/
 .turbo/
 .next/
 *.log
+pnpm-debug.log*
 .DS_Store
+
+# temp/debug scripts
+test-ws.ts
+test-ws.html
+tmp-*.ts
+check_users.js
+update_usernames.js
 uploads/

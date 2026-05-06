@@ -39,8 +39,14 @@ function LoginForm() {
       setSession(response)
       toast.success(`Bem-vindo, ${response.user.name}!`)
 
-      const next = searchParams.get('next') || '/dashboard'
-      router.push(next)
+      const next = searchParams.get('next')
+      if (next) {
+        router.push(next)
+      } else if (response.user.role === 'JURADO') {
+        router.push('/judge')
+      } else {
+        router.push('/dashboard')
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Credenciais inválidas.')
     } finally {
@@ -56,13 +62,13 @@ function LoginForm() {
         body={
           <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
             <Input
-              id="email"
-              label="E-mail"
-              type="email"
-              autoComplete="email"
-              {...register('email')}
-              error={errors.email?.message}
-              placeholder="seu@email.com"
+              id="identifier"
+              label="Email ou nome de usuário"
+              type="text"
+              autoComplete="username"
+              {...register('identifier')}
+              error={errors.identifier?.message}
+              placeholder="seu@email.com ou joao_silva"
             />
             <Input
               id="password"

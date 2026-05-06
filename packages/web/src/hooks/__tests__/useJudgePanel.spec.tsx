@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor, act } from '@testing-library/react'
 import { useJudgePanel } from '../useJudgePanel'
 import 'socket.io-client'
 import { apiClient } from '@/lib/api'
@@ -65,7 +65,9 @@ describe('useJudgePanel', () => {
     const { result } = renderHook(() => useJudgePanel(eventId))
 
     const connectHandler = getHandler('connect')
-    connectHandler?.()
+    act(() => {
+      connectHandler?.()
+    })
 
     await waitFor(() => expect(result.current.currentState).toBe('WAITING'))
   })
@@ -75,7 +77,9 @@ describe('useJudgePanel', () => {
     const { result } = renderHook(() => useJudgePanel(eventId))
 
     const connectHandler = getHandler('connect')
-    connectHandler?.()
+    act(() => {
+      connectHandler?.()
+    })
 
     await waitFor(() => expect(result.current.currentState).toBe('PREVIEW'))
   })
@@ -89,12 +93,16 @@ describe('useJudgePanel', () => {
 
     const { result } = renderHook(() => useJudgePanel(eventId))
     const connectHandler = getHandler('connect')
-    connectHandler?.()
+    act(() => {
+      connectHandler?.()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('WAITING'))
 
     getResponse = makeState({ activeParticipant: makeParticipant('NOT_STARTED') })
     const activatedHandler = getHandler('participant_activated')
-    activatedHandler?.({ participantId: 'p1' })
+    act(() => {
+      activatedHandler?.({ participantId: 'p1' })
+    })
 
     await waitFor(() => expect(result.current.currentState).toBe('PREVIEW'))
   })
@@ -104,10 +112,14 @@ describe('useJudgePanel', () => {
     const { result } = renderHook(() => useJudgePanel(eventId))
 
     const connectHandler = getHandler('connect')
-    connectHandler?.()
+    act(() => {
+      connectHandler?.()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('PREVIEW'))
 
-    result.current.openScoringForm()
+    act(() => {
+      result.current.openScoringForm()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('SCORING'))
   })
 
@@ -123,13 +135,19 @@ describe('useJudgePanel', () => {
 
     const { result } = renderHook(() => useJudgePanel(eventId))
     const connectHandler = getHandler('connect')
-    connectHandler?.()
+    act(() => {
+      connectHandler?.()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('PREVIEW'))
 
-    result.current.openScoringForm()
+    act(() => {
+      result.current.openScoringForm()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('SCORING'))
 
-    await result.current.submitScores({ c1: 8.5 })
+    await act(async () => {
+      await result.current.submitScores({ c1: 8.5 })
+    })
 
     await waitFor(() => expect(result.current.currentState).toBe('REVIEW'))
   })
@@ -146,10 +164,14 @@ describe('useJudgePanel', () => {
 
     const { result } = renderHook(() => useJudgePanel(eventId))
     const connectHandler = getHandler('connect')
-    connectHandler?.()
+    act(() => {
+      connectHandler?.()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('REVIEW'))
 
-    await result.current.editScores()
+    await act(async () => {
+      await result.current.editScores()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('SCORING'))
   })
 
@@ -165,10 +187,14 @@ describe('useJudgePanel', () => {
 
     const { result } = renderHook(() => useJudgePanel(eventId))
     const connectHandler = getHandler('connect')
-    connectHandler?.()
+    act(() => {
+      connectHandler?.()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('REVIEW'))
 
-    await result.current.finalizeScores()
+    await act(async () => {
+      await result.current.finalizeScores()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('FINISHED'))
   })
 
@@ -177,21 +203,28 @@ describe('useJudgePanel', () => {
     const { result } = renderHook(() => useJudgePanel(eventId))
 
     const connectHandler = getHandler('connect')
-    connectHandler?.()
+    act(() => {
+      connectHandler?.()
+    })
     await waitFor(() => expect(result.current.currentState).toBe('WAITING'))
 
     const eventHandler = getHandler('event_state_changed')
-    eventHandler?.({ status: 'FINISHED' })
+    act(() => {
+      eventHandler?.({ status: 'FINISHED' })
+    })
 
     await waitFor(() => expect(result.current.currentState).toBe('EVENT_ENDED'))
   })
 
-  it('reconexão: chama connect do socket e fetchState', () => {
+  it('reconexão: chama connect do socket e fetchState', async () => {
     vi.mocked(apiClient).mockResolvedValue(makeState())
     const { result } = renderHook(() => useJudgePanel(eventId))
 
-    result.current.retryConnection()
+    act(() => {
+      result.current.retryConnection()
+    })
     expect(mSocket.connect).toHaveBeenCalled()
+    await waitFor(() => expect(result.current.currentState).toBe('WAITING'))
   })
 })
 

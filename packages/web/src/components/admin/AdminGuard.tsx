@@ -9,9 +9,22 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { isAuthenticated, user } = useAuthStore()
+  const [hydrated, setHydrated] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true)
+      return
+    }
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true))
+    if (isAuthenticated) setHydrated(true)
+    return unsub
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!hydrated) return
+
     if (!isAuthenticated) {
       router.push(`/auth/login?next=${pathname}`)
       return
@@ -23,11 +36,9 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     }
 
     setIsAuthorized(true)
-  }, [isAuthenticated, user, router, pathname])
+  }, [hydrated, isAuthenticated, user, router, pathname])
 
-  if (!isAuthorized) {
-    return null // Ou um skeleton/spinner
-  }
+  if (!isAuthorized) return null
 
   return <>{children}</>
 }

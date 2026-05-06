@@ -66,7 +66,7 @@ export class EventsService {
     const event = await this.prisma.$transaction(async (tx) => {
       const created = await this.repository.create({
         name: dto.name,
-        eventDate: dto.eventDate,
+        eventDate: new Date(dto.eventDate instanceof Date ? dto.eventDate.toISOString() : dto.eventDate),
         location: dto.location,
         organizer: dto.organizer,
         calculationRule: dto.calculationRule,
@@ -115,6 +115,30 @@ export class EventsService {
     }
   }
 
+  async findMyEvents(judgeUserId: string): Promise<EventResponseDto[]> {
+    const judges = await this.prisma.judge.findMany({
+      where: { userId: judgeUserId },
+      include: {
+        event: {
+          include: {
+            manager: { select: { id: true, name: true, email: true } },
+            categories: { orderBy: { displayOrder: 'asc' } },
+            tiebreakerConfig: {
+              include: {
+                firstCategory: true,
+                secondCategory: true,
+              },
+            },
+            _count: { select: { categories: true, judges: true, participants: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return judges.map((j) => toEventResponse(j.event))
+  }
+
   async update(id: string, dto: UpdateEventDto, managerId: string): Promise<EventResponseDto> {
     const event = await this.repository.findById(id, managerId)
     if (!event) throw new NotFoundException('Evento não encontrado')
@@ -153,7 +177,7 @@ export class EventsService {
     const updated = await this.prisma.$transaction(async (tx) => {
       const result = await this.repository.update(id, {
         ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.eventDate !== undefined && { eventDate: dto.eventDate }),
+        ...(dto.eventDate !== undefined && { eventDate: new Date(dto.eventDate instanceof Date ? dto.eventDate.toISOString() : dto.eventDate) }),
         ...(dto.location !== undefined && { location: dto.location }),
         ...(dto.organizer !== undefined && { organizer: dto.organizer }),
         ...(dto.calculationRule !== undefined && { calculationRule: dto.calculationRule }),
@@ -180,8 +204,8 @@ export class EventsService {
     const event = await this.repository.findById(id, managerId)
     if (!event) throw new NotFoundException('Evento não encontrado')
 
-    if (event.status === EventStatus.IN_PROGRESS || event.status === EventStatus.REGISTERING) {
-      throw new BadRequestException('Evento em andamento ou com inscrições abertas não pode ser excluído')
+    if (event.status === EventStatus.IN_PROGRESS) {
+      throw new BadRequestException('Evento em andamento não pode ser excluído')
     }
 
     await this.prisma.$transaction(async (tx) => {

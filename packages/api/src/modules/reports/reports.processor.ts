@@ -27,10 +27,10 @@ export class ReportsProcessor extends WorkerHost {
   private readonly partialsRegistered: boolean
 
   constructor(
-    private readonly pdfService: PdfService,
-    private readonly rankingBuilder: RankingBuilderService,
-    private readonly repository: ReportsRepository,
-    private readonly auditService: AuditService,
+    @Inject(PdfService) private readonly pdfService: PdfService,
+    @Inject(RankingBuilderService) private readonly rankingBuilder: RankingBuilderService,
+    @Inject(ReportsRepository) private readonly repository: ReportsRepository,
+    @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
   ) {
     super()

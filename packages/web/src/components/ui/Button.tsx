@@ -42,7 +42,7 @@ export function Button({
       {...rest}
       disabled={isDisabled}
       className={[
-        'inline-flex items-center justify-center gap-2 rounded font-medium',
+        'inline-flex items-center justify-center gap-2 rounded font-medium cursor-pointer',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         'transition-colors duration-150',

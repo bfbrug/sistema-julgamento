@@ -1,0 +1,16 @@
+**/.git
+**/.gitignore
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/.next
+**/dist
+**/build
+**/.turbo
+**/coverage
+**/.superpowers
+**/docs
+**/e2e
+**/*.log
+**/pnpm-debug.log*

@@ -6,6 +6,7 @@ describe('user.schema', () => {
     it('accepts valid payload', () => {
       const payload = {
         email: 'test@example.com',
+        username: 'testuser',
         name: 'Test User',
         password: 'password123',
         role: UserRole.GESTOR,

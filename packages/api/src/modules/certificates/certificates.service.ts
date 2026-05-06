@@ -27,7 +27,7 @@ export interface UploadResult {
 
 function formatDateLong(date: Date | string): string {
   const d = new Date(date)
-  return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 }
 
 function escapeHtml(unsafe: string): string {
@@ -42,12 +42,12 @@ function escapeHtml(unsafe: string): string {
 @Injectable()
 export class CertificatesService {
   constructor(
-    private readonly repository: CertificatesRepository,
+    @Inject(CertificatesRepository) private readonly repository: CertificatesRepository,
     @InjectQueue('certificates') private readonly certificatesQueue: Queue,
-    private readonly auditService: AuditService,
+    @Inject(AuditService) private readonly auditService: AuditService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
     @InjectPinoLogger(CertificatesService.name) private readonly logger: PinoLogger,
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {}
 
   async getConfig(eventId: string, managerId: string) {
@@ -332,7 +332,7 @@ export class CertificatesService {
 
   // Called by processor
   async buildBatchData(eventId: string) {
-    const event = await this.repository.findEventWithConfig(eventId, '')
+    const event = await this.repository.findEventById(eventId)
     if (!event) throw new Error('Evento não encontrado')
     if (!event.certificateConfig) throw new Error('Configuração de certificado não encontrada')
 
@@ -342,11 +342,11 @@ export class CertificatesService {
     const processedParticipants = participants.map((p) => {
       let text = event.certificateText ?? ''
       const replacements: Record<string, string> = {
-        participante: escapeHtml(p.name),
-        evento: escapeHtml(event.name),
-        data: formatDateLong(event.eventDate),
-        local: escapeHtml(event.location),
-        organizador: escapeHtml(event.organizer),
+        participante: `<strong>${escapeHtml(p.name)}</strong>`,
+        evento: `<strong>${escapeHtml(event.name)}</strong>`,
+        data: `<strong>${formatDateLong(event.eventDate)}</strong>`,
+        local: `<strong>${escapeHtml(event.location)}</strong>`,
+        organizador: `<strong>${escapeHtml(event.organizer)}</strong>`,
       }
 
       for (const [key, value] of Object.entries(replacements)) {

@@ -27,9 +27,9 @@ describe('CertificateTextEditor', () => {
   })
 
   it('insere placeholder ao clicar no botão', () => {
-    render(<CertificateTextEditor eventId="e1" initialText="" />)
+    render(<CertificateTextEditor eventId="e1" initialText="Texto inicial" />)
     fireEvent.click(screen.getByText('Participante'))
-    expect(screen.getByDisplayValue('{{participante}}')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Texto inicial{{participante}}')).toBeInTheDocument()
   })
 
   it('chama mutate ao salvar', () => {
@@ -41,5 +41,13 @@ describe('CertificateTextEditor', () => {
   it('desabilita botão se texto > 1500 caracteres', () => {
     render(<CertificateTextEditor eventId="e1" initialText={'x'.repeat(1501)} />)
     expect(screen.getByRole('button', { name: /salvar texto/i })).toBeDisabled()
+  })
+
+  it('preenche texto padrão quando initialText está vazio', () => {
+    render(<CertificateTextEditor eventId="e1" initialText="" />)
+    const textarea = screen.getByRole('textbox')
+    expect(textarea).toHaveValue(
+      'Certificamos que {{participante}} participou do evento {{evento}}, realizado em {{data}} em {{local}}, organizado por {{organizador}}.'
+    )
   })
 })

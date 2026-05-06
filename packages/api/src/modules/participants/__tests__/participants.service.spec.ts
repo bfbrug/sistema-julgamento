@@ -258,7 +258,6 @@ describe('ParticipantsService', () => {
       await service.reorder('event-1', dto, 'manager-1')
 
       expect(repository.reorderInTransaction).toHaveBeenCalledWith(dto.items, expect.anything())
-      expect(repository.compactPresentationOrder).toHaveBeenCalledWith('event-1', expect.anything())
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'PARTICIPANTS_REORDERED' }),
         expect.anything(),

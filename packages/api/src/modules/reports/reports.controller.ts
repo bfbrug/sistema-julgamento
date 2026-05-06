@@ -18,7 +18,7 @@ interface GenerateReportDto {
 @Roles(UserRole.GESTOR)
 export class ReportsController {
   constructor(
-    private readonly reportsService: ReportsService,
+    @Inject(ReportsService) private readonly reportsService: ReportsService,
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
   ) {}
 

@@ -1,0 +1,45 @@
+services:
+  # ─── PostgreSQL (gerenciado pelo Railway) ─────────────────────────────────────
+  # Não precisa de definição aqui — adicione um serviço PostgreSQL pelo painel do Railway
+  # e vincule a variável DATABASE_URL ao serviço da API.
+
+  # ─── Redis (gerenciado pelo Railway) ──────────────────────────────────────────
+  # Adicione um serviço Redis pelo painel e vincule REDIS_URL ao serviço da API.
+
+  # ─── API (NestJS + Fastify) ───────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    env:
+      NODE_ENV: production
+      PORT: 3000
+      # As variáveis abaixo devem ser configuradas nas variáveis de ambiente do Railway:
+      # DATABASE_URL       — fornecida automaticamente pelo serviço PostgreSQL do Railway
+      # REDIS_URL          — fornecida automaticamente pelo serviço Redis do Railway
+      # REDIS_HOST         — hostname do Redis
+      # REDIS_PORT         — porta do Redis (6379)
+      # JWT_ACCESS_SECRET  — string aleatória de 64+ chars (veja: scripts/gen-secrets.js)
+      # JWT_REFRESH_SECRET — string aleatória de 64+ chars (diferente da de cima)
+      # CORS_ORIGIN        — URL pública do frontend (ex: https://meu-sistema.up.railway.app)
+      # BCRYPT_ROUNDS      — 12 em produção
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ─── Web (Next.js) ────────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: packages/web/Dockerfile
+    env:
+      NODE_ENV: production
+      PORT: 3001
+      # NEXT_PUBLIC_API_URL — URL pública da API (ex: https://api-julgamento.up.railway.app/api)
+      # NEXT_PUBLIC_WS_URL  — URL pública da API sem o /api (ex: https://api-julgamento.up.railway.app)
+    depends_on:
+      api:
+        condition: service_healthy

@@ -18,6 +18,7 @@ describe('UsersService', () => {
   beforeEach(async () => {
     repository = {
       findByEmail: vi.fn(),
+      findByUsername: vi.fn(),
       findById: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
@@ -52,17 +53,18 @@ describe('UsersService', () => {
 
   it('should create user', async () => {
     repository.findByEmail.mockResolvedValue(null)
+    repository.findByUsername.mockResolvedValue(null)
     vi.mocked(bcrypt.hash).mockResolvedValue('hashed' as never)
-    repository.create.mockResolvedValue({ id: '1', email: 'test@test.com' })
+    repository.create.mockResolvedValue({ id: '1', email: 'test@test.com', username: 'test_user' })
 
-    const res = await service.create({ email: 'test@test.com', name: 'Test', password: 'pass', role: 'GESTOR' }, 'actor')
+    const res = await service.create({ email: 'test@test.com', username: 'test_user', name: 'Test', password: 'pass', role: 'GESTOR' }, 'actor')
     expect(res.id).toBe('1')
     expect(auditService.record).toHaveBeenCalled()
   })
 
   it('should throw ConflictException if email exists', async () => {
     repository.findByEmail.mockResolvedValue({ id: '1' })
-    await expect(service.create({ email: 'test', name: 't', password: 'p', role: 'GESTOR' }, 'actor')).rejects.toThrow(ConflictException)
+    await expect(service.create({ email: 'test', username: 'test', name: 't', password: 'p', role: 'GESTOR' }, 'actor')).rejects.toThrow(ConflictException)
   })
 
   it('should prevent deleting last gestor', async () => {

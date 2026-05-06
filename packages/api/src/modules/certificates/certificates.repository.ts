@@ -13,7 +13,6 @@ export interface UpdateCertificateJobInput {
   filePath?: string | null
   error?: string | null
   completedAt?: Date | null
-  totalParticipants?: number
 }
 
 @Injectable()
@@ -25,6 +24,18 @@ export class CertificatesRepository {
     return client.certificateConfig.findUnique({
       where: { eventId },
       include: { signatures: { orderBy: { displayOrder: 'asc' } } },
+    })
+  }
+
+  async findEventById(eventId: string) {
+    return this.prisma.judgingEvent.findUnique({
+      where: { id: eventId },
+      include: {
+        certificateConfig: {
+          include: { signatures: { orderBy: { displayOrder: 'asc' } } },
+        },
+        _count: { select: { participants: true } },
+      },
     })
   }
 

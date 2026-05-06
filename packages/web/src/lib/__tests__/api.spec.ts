@@ -21,8 +21,9 @@ describe('apiClient', () => {
   it('should include Authorization header if token exists', async () => {
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
+      headers: new Headers(),
       json: () => Promise.resolve({ data: { success: true } }),
-    } as Response)
+    } as unknown as Response)
 
     await apiClient({ method: 'GET', path: '/test' })
 
@@ -40,8 +41,9 @@ describe('apiClient', () => {
     vi.mocked(global.fetch).mockResolvedValue({
       ok: false,
       status: 400,
+      headers: new Headers(),
       json: () => Promise.resolve({ error: 'Bad Request', code: 'BAD_REQUEST' }),
-    } as Response)
+    } as unknown as Response)
 
     await expect(apiClient({ method: 'GET', path: '/test' })).rejects.toThrow(ApiError)
   })
@@ -50,8 +52,9 @@ describe('apiClient', () => {
     const mockData = { id: 1, name: 'Test' }
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
+      headers: new Headers(),
       json: () => Promise.resolve({ data: mockData }),
-    } as Response)
+    } as unknown as Response)
 
     const result = await apiClient({ method: 'GET', path: '/test' })
 
