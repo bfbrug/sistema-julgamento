@@ -94,7 +94,7 @@ export class ParticipantsRepository {
       })
       for (let i = 0; i < participants.length; i++) {
         await client.participant.update({
-          where: { id: participants[i].id },
+          where: { id: participants[i]!.id },
           data: { presentationOrder: i + 1 },
         })
       }
