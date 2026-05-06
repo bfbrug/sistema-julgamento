@@ -261,8 +261,9 @@ export default function EventLivePage() {
                   {p.status === 'FINISHED' && <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />}
                   {p.status === 'ABSENT' && <AlertCircle className="h-3.5 w-3.5 text-danger-400 flex-shrink-0" />}
                   {isCurrent && !done && <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse flex-shrink-0" />}
-                  {p.status === 'WAITING' && (
+                  {p.status === 'WAITING' && !isCurrent && (
                     <button
+                      type="button"
                       className="ml-auto text-xs text-danger-500 hover:text-danger-700 hover:underline flex-shrink-0"
                       onClick={() => setConfirmAbsentId(p.id)}
                     >
