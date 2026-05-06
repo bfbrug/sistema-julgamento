@@ -5,10 +5,7 @@ import { useParams } from 'next/navigation'
 import { useLiveScoring } from '@/hooks/useLiveScoring'
 import { useTransitionEvent } from '@/hooks/useEvents'
 import { Button } from '@/components/ui/Button'
-<<<<<<< HEAD
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-=======
->>>>>>> origin/develop
 import { Users, Trophy, Play, CheckCircle, AlertCircle, Clock, Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -264,7 +261,6 @@ export default function EventLivePage() {
                   {p.status === 'FINISHED' && <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />}
                   {p.status === 'ABSENT' && <AlertCircle className="h-3.5 w-3.5 text-danger-400 flex-shrink-0" />}
                   {isCurrent && !done && <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse flex-shrink-0" />}
-<<<<<<< HEAD
                   {p.status === 'WAITING' && !isCurrent && (
                     <button
                       type="button"
@@ -274,8 +270,6 @@ export default function EventLivePage() {
                       Marcar Ausente
                     </button>
                   )}
-=======
->>>>>>> origin/develop
                 </div>
               )
             })}
@@ -288,13 +282,6 @@ export default function EventLivePage() {
         title="Marcar participante como ausente?"
         description="Esta ação não pode ser desfeita durante o evento."
         confirmLabel="Marcar Ausente"
-        onConfirm={handleConfirmAbsent}
-        onClose={() => setConfirmAbsentId(null)}
-      />
-    </div>
-  )
-}
-arcar Ausente"
         onConfirm={handleConfirmAbsent}
         onClose={() => setConfirmAbsentId(null)}
       />
