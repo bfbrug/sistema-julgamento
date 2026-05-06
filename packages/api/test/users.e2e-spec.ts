@@ -27,6 +27,7 @@ describe('UsersController (e2e)', () => {
         name: 'Gestor',
         passwordHash,
         role: 'GESTOR',
+        username: 'gestor-users',
       },
     })
     gestorId = gestor.id
@@ -37,6 +38,7 @@ describe('UsersController (e2e)', () => {
         name: 'Jurado',
         passwordHash,
         role: 'JURADO',
+        username: 'jurado-users',
       },
     })
     juradoId = jurado.id

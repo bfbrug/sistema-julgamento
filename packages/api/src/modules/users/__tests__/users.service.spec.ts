@@ -64,7 +64,7 @@ describe('UsersService', () => {
 
   it('should throw ConflictException if email exists', async () => {
     repository.findByEmail.mockResolvedValue({ id: '1' })
-    await expect(service.create({ email: 'test', name: 't', password: 'p', role: 'GESTOR' }, 'actor')).rejects.toThrow(ConflictException)
+    await expect(service.create({ email: 'test', username: 'test', name: 't', password: 'p', role: 'GESTOR' }, 'actor')).rejects.toThrow(ConflictException)
   })
 
   it('should prevent deleting last gestor', async () => {
