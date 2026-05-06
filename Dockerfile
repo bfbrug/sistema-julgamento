@@ -37,17 +37,25 @@ RUN apk add --no-cache dumb-init wget
 
 ENV NODE_ENV=production
 
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/api/package.json ./packages/api/
+
+RUN pnpm install --frozen-lockfile --prod --filter @judging/api... --filter @judging/shared
+
+COPY --from=builder /app/packages/api/dist ./dist
+COPY --from=builder /app/packages/api/prisma ./prisma
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/packages/api/docker-entrypoint.sh ./docker-entrypoint.sh
+
+RUN cd packages/api && npx prisma generate
+
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 nestjs
 
-COPY --from=builder --chown=nestjs:nodejs /app/packages/api/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/packages/api/prisma ./prisma
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.pnpm ./node_modules/.pnpm
-COPY --from=builder --chown=nestjs:nodejs /app/packages/api/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/packages/shared ./packages/shared
-COPY --from=builder --chown=nestjs:nodejs /app/packages/api/docker-entrypoint.sh ./docker-entrypoint.sh
-
-RUN mkdir -p /app/uploads && chown nestjs:nodejs /app/uploads
+RUN mkdir -p /app/uploads && chown -R nestjs:nodejs /app
 
 USER nestjs
 
