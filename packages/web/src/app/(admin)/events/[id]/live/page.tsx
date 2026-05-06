@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useLiveScoring } from '@/hooks/useLiveScoring'
 import { useTransitionEvent } from '@/hooks/useEvents'
 import { Button } from '@/components/ui/Button'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Users, Trophy, Play, CheckCircle, AlertCircle, Clock, Flag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
@@ -27,6 +29,13 @@ export default function EventLivePage() {
   const { id: eventId } = useParams() as { id: string }
   const { liveState, isConnected, activateParticipant, markAbsent } = useLiveScoring(eventId)
   const { mutate: transitionEvent } = useTransitionEvent(eventId)
+  const [confirmAbsentId, setConfirmAbsentId] = useState<string | null>(null)
+
+  const handleConfirmAbsent = () => {
+    if (!confirmAbsentId) return
+    markAbsent(confirmAbsentId)
+    setConfirmAbsentId(null)
+  }
 
   if (!liveState) return <div className="p-12 text-center">Iniciando conexão...</div>
 
@@ -123,7 +132,7 @@ export default function EventLivePage() {
                           <Button size="sm" onClick={() => activateParticipant(subject.id)}>
                             <Play className="mr-1 h-3 w-3" /> Ativar
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-danger-600 text-xs" onClick={() => markAbsent(subject.id)}>
+                          <Button size="sm" variant="ghost" className="text-danger-600 text-xs" onClick={() => setConfirmAbsentId(subject.id)}>
                             Marcar Ausente
                           </Button>
                         </>)}
@@ -252,12 +261,29 @@ export default function EventLivePage() {
                   {p.status === 'FINISHED' && <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />}
                   {p.status === 'ABSENT' && <AlertCircle className="h-3.5 w-3.5 text-danger-400 flex-shrink-0" />}
                   {isCurrent && !done && <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse flex-shrink-0" />}
+                  {p.status === 'WAITING' && (
+                    <button
+                      className="ml-auto text-xs text-danger-500 hover:text-danger-700 hover:underline flex-shrink-0"
+                      onClick={() => setConfirmAbsentId(p.id)}
+                    >
+                      Marcar Ausente
+                    </button>
+                  )}
                 </div>
               )
             })}
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmAbsentId !== null}
+        title="Marcar participante como ausente?"
+        description="Esta ação não pode ser desfeita durante o evento."
+        confirmLabel="Marcar Ausente"
+        onConfirm={handleConfirmAbsent}
+        onClose={() => setConfirmAbsentId(null)}
+      />
     </div>
   )
 }
