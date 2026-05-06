@@ -30,17 +30,9 @@ export function ConfirmDialog({
     const dialog = ref.current
     if (!dialog) return
     if (open) {
-      try {
-        dialog.showModal()
-      } catch (e) {
-        // showModal may not be available in test environments
-      }
+      dialog.showModal()
     } else {
-      try {
-        dialog.close()
-      } catch (e) {
-        // close may not be available in test environments
-      }
+      dialog.close()
     }
   }, [open])
 
@@ -62,7 +54,7 @@ export function ConfirmDialog({
       ref={ref}
       className="rounded-lg shadow-xl p-0 w-full max-w-sm backdrop:bg-black/40"
       onClick={(e) => {
-        if (e.target === ref.current) onClose()
+        if (e.target === ref.current && !loading) onClose()
       }}
     >
       <div className="p-6 flex flex-col gap-4">
