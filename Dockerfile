@@ -42,8 +42,8 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=builder --chown=nestjs:nodejs /app/packages/api/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/packages/api/prisma ./prisma
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/packages/api/node_modules ./packages/api/node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.pnpm ./node_modules/.pnpm
+COPY --from=builder --chown=nestjs:nodejs /app/packages/api/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/packages/shared ./packages/shared
 COPY --from=builder --chown=nestjs:nodejs /app/packages/api/docker-entrypoint.sh ./docker-entrypoint.sh
 
