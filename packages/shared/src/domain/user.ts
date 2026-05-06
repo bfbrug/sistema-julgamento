@@ -3,6 +3,7 @@ import type { UserRole } from '../enums'
 export interface User {
   id: string
   email: string
+  username: string
   name: string
   role: UserRole
   isActive: boolean
