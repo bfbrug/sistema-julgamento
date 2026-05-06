@@ -35,10 +35,15 @@ import { CertificatesModule } from './modules/certificates/certificates.module'
       },
     }),
     BullModule.forRoot({
-      connection: {
-        host: env.REDIS_HOST,
-        port: env.REDIS_PORT,
-      },
+      connection: (() => {
+        const u = new URL(env.REDIS_URL)
+        return {
+          host: u.hostname,
+          port: Number(u.port) || 6379,
+          username: u.username || undefined,
+          password: u.password || undefined,
+        }
+      })(),
     }),
     DatabaseModule,
     HealthModule,
