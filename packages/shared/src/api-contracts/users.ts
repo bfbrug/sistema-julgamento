@@ -4,6 +4,7 @@ import type { Paginated } from './common'
 
 export interface CreateUserRequest {
   email: string
+  username: string
   name: string
   password: string
   role: UserRole

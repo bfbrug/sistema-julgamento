@@ -1,7 +1,7 @@
 import type { UserRole } from '../enums'
 
 export interface LoginRequest {
-  email: string
+  identifier: string
   password: string
 }
 
