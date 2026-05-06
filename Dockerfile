@@ -45,12 +45,14 @@ COPY packages/api/package.json ./packages/api/
 
 RUN pnpm install --frozen-lockfile --prod --filter @judging/api... --filter @judging/shared
 
-COPY --from=builder /app/packages/api/dist ./dist
-COPY --from=builder /app/packages/api/prisma ./prisma
+COPY --from=builder /app/packages/api/dist ./packages/api/dist
+COPY --from=builder /app/packages/api/prisma ./packages/api/prisma
 COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/packages/api/docker-entrypoint.sh ./docker-entrypoint.sh
 
-RUN cd packages/api && npx prisma generate
+RUN cd packages/api && npx prisma@6.7.0 generate --schema ./prisma/schema.prisma
+
+RUN cp -r packages/api/dist ./dist && cp -r packages/api/prisma ./prisma
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 nestjs
