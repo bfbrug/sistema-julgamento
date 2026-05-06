@@ -228,7 +228,6 @@ export class ParticipantsService {
 
     await this.prisma.$transaction(async (tx) => {
       await this.repository.reorderInTransaction(dto.items, tx)
-      await this.repository.compactPresentationOrder(eventId, tx)
 
       await this.auditService.record({
         action: 'PARTICIPANTS_REORDERED',

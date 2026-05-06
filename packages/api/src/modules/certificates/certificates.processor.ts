@@ -75,7 +75,7 @@ export class CertificatesProcessor extends WorkerHost {
       const participants = batchData.participants
       const signatures = batchData.signatures
 
-      await this.repository.updateJob(jobId, { progress: 30, totalParticipants: participants.length })
+      await this.repository.updateJob(jobId, { progress: 30 })
       await job.updateProgress(30)
 
       // Prepare images as data URIs so Puppeteer can render them without a server

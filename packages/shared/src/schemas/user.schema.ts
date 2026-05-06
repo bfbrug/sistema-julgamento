@@ -5,13 +5,22 @@ export const userRoleSchema = z.nativeEnum(UserRole)
 
 export const createUserSchema = z.object({
   email: z.string().email('Email inválido'),
+  username: z
+    .string()
+    .min(3, 'Mínimo 3 caracteres')
+    .max(50, 'Username muito longo')
+    .regex(/^[a-z0-9_]+$/, 'Apenas letras minúsculas, números e _'),
   name: z.string().min(2, 'Nome muito curto').max(120, 'Nome muito longo'),
   password: z.string().min(8, 'Senha precisa de no mínimo 8 caracteres').max(72, 'Senha muito longa'),
   role: userRoleSchema,
 })
 
 export const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
+  identifier: z.string().min(1, 'Campo obrigatório').superRefine((val, ctx) => {
+    if (val.includes('@') && !z.string().email().safeParse(val).success) {
+      ctx.addIssue({ code: 'custom', message: 'Email inválido' })
+    }
+  }),
   password: z.string().min(1, 'Senha é obrigatória'),
 })
 

@@ -4,6 +4,7 @@ import { UserRole } from '@prisma/client'
 export class UserResponseDto {
   @Expose() id!: string
   @Expose() email!: string
+  @Expose() username!: string
   @Expose() name!: string
   @Expose() role!: UserRole
   @Expose() isActive!: boolean

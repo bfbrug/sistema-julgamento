@@ -14,6 +14,7 @@ import { UserRole } from '@judging/shared'
 const schema = z.object({
   name: z.string().min(2, 'Mínimo 2 caracteres').max(120),
   email: z.string().email('E-mail inválido'),
+  username: z.string().min(3, 'Mínimo 3 caracteres').max(30),
   password: z.string().min(8, 'Mínimo 8 caracteres').max(72),
 })
 
@@ -61,6 +62,13 @@ export default function NewJudgePage() {
               {...register('email')}
               error={errors.email?.message}
               placeholder="jurado@email.com"
+            />
+            <Input
+              id="username"
+              label="Nome de usuário"
+              {...register('username')}
+              error={errors.username?.message}
+              placeholder="ex: joao.silva"
             />
             <Input
               id="password"

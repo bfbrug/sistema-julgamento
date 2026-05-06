@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { Calendar, Users, Trophy, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { EventStatus } from '@judging/shared'
-import { cn } from '@/lib/utils'
+import { cn, formatEventDate } from '@/lib/utils'
 import { eventStatusLabels } from '@/lib/event-status'
 
 
@@ -65,7 +65,7 @@ export default function DashboardPage() {
                   >
                     <div>
                       <p className="font-medium text-secondary-900">{event.name}</p>
-                      <p className="text-xs text-secondary-500">{new Date(event.eventDate).toLocaleDateString('pt-BR')}</p>
+                      <p className="text-xs text-secondary-500">{formatEventDate(event.eventDate)}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={cn(

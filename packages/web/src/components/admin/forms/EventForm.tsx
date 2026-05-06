@@ -27,14 +27,14 @@ export function EventForm({ initialData, onSubmit, isLoading }: EventFormProps) 
       scoreMax: 10,
       topN: 3,
       ...initialData,
-      eventDate: initialData?.eventDate ? new Date(initialData.eventDate).toISOString().split('T')[0] : undefined,
+      eventDate: initialData?.eventDate ? initialData.eventDate.split('T')[0] : undefined,
     },
   })
 
   return (
     <Card
       body={
-        <form onSubmit={handleSubmit((data) => onSubmit({ ...data, eventDate: new Date(data.eventDate).toISOString() }))} className="space-y-6">
+        <form onSubmit={handleSubmit((data) => onSubmit({ ...data, eventDate: data.eventDate }))} className="space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Input
               id="name"

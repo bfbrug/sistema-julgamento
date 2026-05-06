@@ -32,6 +32,7 @@ describe('PublicEventsController (e2e)', () => {
         name: 'Manager',
         passwordHash,
         role: 'GESTOR',
+        username: 'manager',
       },
     })
 

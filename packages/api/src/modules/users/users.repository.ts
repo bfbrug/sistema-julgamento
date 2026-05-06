@@ -28,6 +28,14 @@ export class UsersRepository {
     return this.prisma.user.findFirst({ where })
   }
 
+  async findByUsername(username: string, options?: { includeDeleted?: boolean }): Promise<User | null> {
+    const where: Prisma.UserWhereInput = { username }
+    if (options?.includeDeleted) {
+      where.deletedAt = undefined
+    }
+    return this.prisma.user.findFirst({ where })
+  }
+
   private normalizeBoolean(value: unknown): boolean | undefined {
     if (typeof value === 'boolean') return value
     if (typeof value === 'string') return value === 'true'

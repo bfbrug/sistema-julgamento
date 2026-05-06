@@ -23,25 +23,56 @@ export class AuthService {
     return user;
   }
 
-  async login(email: string, password: string, ipAddress?: string, userAgent?: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email, isActive: true, deletedAt: null },
-    });
+  async login(identifier: string, password: string, ipAddress?: string, userAgent?: string) {
+    const user =
+      (await this.prisma.user.findUnique({
+        where: { email: identifier, isActive: true, deletedAt: null },
+      })) ??
+      (await this.prisma.user.findUnique({
+        where: { username: identifier, isActive: true, deletedAt: null },
+      }));
 
     if (!user) {
-      await this.auditService.record({ action: 'LOGIN_FAILED', entityType: 'User', entityId: 'unknown', actorId: undefined, payload: { email }, ipAddress, userAgent });
+      await this.auditService.record({
+        action: 'LOGIN_FAILED',
+        entityType: 'User',
+        entityId: 'unknown',
+        actorId: undefined,
+        payload: { identifier },
+        ipAddress,
+        userAgent,
+      });
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      await this.auditService.record({ action: 'LOGIN_FAILED', entityType: 'User', entityId: user.id, actorId: user.id, payload: { email }, ipAddress, userAgent });
+      await this.auditService.record({
+        action: 'LOGIN_FAILED',
+        entityType: 'User',
+        entityId: user.id,
+        actorId: user.id,
+        payload: { identifier },
+        ipAddress,
+        userAgent,
+      });
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const { accessToken, refreshToken } = await this.prisma.$transaction(async (tx) => {
       const tokens = await this.generateTokens(user, ipAddress, userAgent, tx);
-      await this.auditService.record({ action: 'LOGIN_SUCCESS', entityType: 'User', entityId: user.id, actorId: user.id, payload: { email: user.email }, ipAddress, userAgent }, tx);
+      await this.auditService.record(
+        {
+          action: 'LOGIN_SUCCESS',
+          entityType: 'User',
+          entityId: user.id,
+          actorId: user.id,
+          payload: { identifier },
+          ipAddress,
+          userAgent,
+        },
+        tx,
+      );
       return tokens;
     });
 

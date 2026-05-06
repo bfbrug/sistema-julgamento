@@ -21,9 +21,14 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto, actorId: string): Promise<User> {
-    const existing = await this.repository.findByEmail(dto.email, { includeDeleted: true })
-    if (existing) {
+    const existingEmail = await this.repository.findByEmail(dto.email, { includeDeleted: true })
+    if (existingEmail) {
       throw new ConflictException('Email já em uso')
+    }
+
+    const existingUsername = await this.repository.findByUsername(dto.username, { includeDeleted: true })
+    if (existingUsername) {
+      throw new ConflictException('Nome de usuário já em uso')
     }
 
     const passwordHash = await bcrypt.hash(dto.password, env.BCRYPT_ROUNDS)
@@ -31,6 +36,7 @@ export class UsersService {
     return this.prisma.$transaction(async (tx) => {
       const user = await this.repository.create({
         email: dto.email,
+        username: dto.username,
         name: dto.name,
         role: dto.role,
         passwordHash,
@@ -41,7 +47,7 @@ export class UsersService {
         entityType: 'User',
         entityId: user.id,
         actorId,
-        payload: { email: user.email, role: user.role },
+        payload: { email: user.email, username: user.username, role: user.role },
       }, tx)
 
       return user

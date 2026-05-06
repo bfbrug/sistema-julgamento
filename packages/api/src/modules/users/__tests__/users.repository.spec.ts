@@ -119,7 +119,7 @@ describe('UsersRepository', () => {
 
   it('should create user', async () => {
     prisma.user.create.mockResolvedValue({ id: '1' })
-    await repository.create({ email: 't', name: 't', passwordHash: 'p', role: 'GESTOR' })
+    await repository.create({ email: 't', name: 't', passwordHash: 'p', role: 'GESTOR', username: 't' })
     expect(prisma.user.create).toHaveBeenCalled()
   })
 

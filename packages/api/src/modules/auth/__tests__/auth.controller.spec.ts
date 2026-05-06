@@ -32,7 +32,7 @@ describe('AuthController', () => {
   });
 
   it('should login', async () => {
-    const result = await controller.login({ email: 't', password: 'p' }, { ip: '1', headers: {} } as any);
+    const result = await controller.login({ identifier: 'test_user', password: 'p' }, { ip: '1', headers: {} } as any);
     expect(result.accessToken).toBe('a');
   });
 

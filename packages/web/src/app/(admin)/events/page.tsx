@@ -9,9 +9,7 @@ import { Plus, Edit, Trash2, Play, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { EventStatus } from '@judging/shared'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
+import { cn, formatEventDate } from '@/lib/utils'
 import { eventStatusLabels } from '@/lib/event-status'
 
 import type { JudgingEvent } from '@judging/shared'
@@ -33,7 +31,7 @@ export default function EventsPage() {
     },
     { 
       header: 'Data', 
-      accessor: (event: EventRow) => format(new Date(event.eventDate), "dd 'de' MMMM, yyyy", { locale: ptBR })
+      accessor: (event: EventRow) => formatEventDate(event.eventDate, 'long')
     },
     { 
       header: 'Status', 

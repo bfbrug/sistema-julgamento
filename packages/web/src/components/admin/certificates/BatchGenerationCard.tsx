@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useGenerateCertificates, useCertificateJobPolling } from '@/hooks/useCertificates'
+import { useAuthStore } from '@/stores/auth.store'
 import type { CertificateConfig } from '@judging/shared'
 import { FileDown, Loader2 } from 'lucide-react'
 
@@ -15,6 +16,7 @@ interface BatchGenerationCardProps {
 
 export function BatchGenerationCard({ eventId, config, participantCount }: BatchGenerationCardProps) {
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const [isDownloading, setIsDownloading] = useState(false)
   const { mutate: generate, isPending } = useGenerateCertificates(eventId)
   const { job: pollingJob, isPolling } = useCertificateJobPolling(eventId, activeJobId)
 
@@ -25,6 +27,27 @@ export function BatchGenerationCard({ eventId, config, participantCount }: Batch
     generate(undefined, {
       onSuccess: (data) => setActiveJobId(data.jobId),
     })
+  }
+
+  const handleDownload = async () => {
+    setIsDownloading(true)
+    try {
+      const { accessToken } = useAuthStore.getState()
+      const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
+      const res = await fetch(`${baseUrl}/events/${eventId}/certificates/download`, {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      })
+      if (!res.ok) throw new Error('Erro ao baixar PDF')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `certificados-${eventId}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   const progress = pollingJob?.progress ?? 0
@@ -39,15 +62,9 @@ export function BatchGenerationCard({ eventId, config, participantCount }: Batch
               <p className="text-sm text-secondary-500">{participantCount} participantes cadastrados</p>
             </div>
             {pollingJob?.status === 'COMPLETED' && (
-              <a
-                href={`${process.env['NEXT_PUBLIC_API_URL']}/events/${eventId}/certificates/download`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button size="sm" variant="secondary">
-                  <FileDown className="h-4 w-4 mr-1" /> Baixar PDF
-                </Button>
-              </a>
+              <Button size="sm" variant="secondary" onClick={handleDownload} loading={isDownloading}>
+                <FileDown className="h-4 w-4 mr-1" /> Baixar PDF
+              </Button>
             )}
           </div>
 

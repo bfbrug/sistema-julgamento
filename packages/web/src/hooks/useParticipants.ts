@@ -66,7 +66,7 @@ export function useReorderParticipants(eventId: string) {
 
   return useMutation({
     mutationFn: (participantIds: string[]) =>
-      apiClient({ method: 'POST', path: `/events/${eventId}/participants/reorder`, body: { participantIds } }),
+      apiClient({ method: 'PATCH', path: `/events/${eventId}/participants/reorder`, body: { items: participantIds.map((id, i) => ({ id, presentationOrder: i + 1 })) } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', eventId, 'participants'] })
     },

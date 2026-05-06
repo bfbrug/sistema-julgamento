@@ -202,7 +202,7 @@ export default function EventJudgesPage() {
                     }}
                   >
                     <span className="font-medium">{user.name}</span>
-                    <span className="text-xs text-secondary-500">{user.email}</span>
+                    <span className="text-xs text-secondary-500">@{user.username} · {user.email}</span>
                   </button>
                 ))
               })()}

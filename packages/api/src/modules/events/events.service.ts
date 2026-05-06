@@ -66,7 +66,7 @@ export class EventsService {
     const event = await this.prisma.$transaction(async (tx) => {
       const created = await this.repository.create({
         name: dto.name,
-        eventDate: dto.eventDate,
+        eventDate: new Date(dto.eventDate instanceof Date ? dto.eventDate.toISOString() : dto.eventDate),
         location: dto.location,
         organizer: dto.organizer,
         calculationRule: dto.calculationRule,
@@ -177,7 +177,7 @@ export class EventsService {
     const updated = await this.prisma.$transaction(async (tx) => {
       const result = await this.repository.update(id, {
         ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.eventDate !== undefined && { eventDate: dto.eventDate }),
+        ...(dto.eventDate !== undefined && { eventDate: new Date(dto.eventDate instanceof Date ? dto.eventDate.toISOString() : dto.eventDate) }),
         ...(dto.location !== undefined && { location: dto.location }),
         ...(dto.organizer !== undefined && { organizer: dto.organizer }),
         ...(dto.calculationRule !== undefined && { calculationRule: dto.calculationRule }),
