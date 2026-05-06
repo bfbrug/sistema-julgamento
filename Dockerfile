@@ -47,7 +47,7 @@ RUN pnpm install --frozen-lockfile --prod --filter @judging/api... --filter @jud
 
 COPY --from=builder /app/packages/api/dist ./dist
 COPY --from=builder /app/packages/api/prisma ./prisma
-COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/packages/api/docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN cd packages/api && npx prisma generate
