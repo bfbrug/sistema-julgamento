@@ -13,6 +13,11 @@ import { UserRole } from '@judging/shared'
 
 const schema = z.object({
   name: z.string().min(2, 'Mínimo 2 caracteres').max(120),
+  username: z
+    .string()
+    .min(3, 'Mínimo 3 caracteres')
+    .max(50)
+    .regex(/^[a-z0-9_]+$/, 'Apenas letras minúsculas, números e _'),
   email: z.string().email('E-mail inválido'),
   password: z.string().min(8, 'Mínimo 8 caracteres').max(72),
   role: z.nativeEnum(UserRole),
@@ -55,6 +60,13 @@ export default function NewUserPage() {
               {...register('name')}
               error={errors.name?.message}
               placeholder="Nome completo"
+            />
+            <Input
+              id="username"
+              label="Nome de usuário"
+              {...register('username')}
+              error={errors.username?.message}
+              placeholder="joao_silva"
             />
             <Input
               id="email"
