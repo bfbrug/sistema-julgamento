@@ -67,7 +67,7 @@ export function CurrentParticipantHero({
           >
             {photoPath ? (
               <Image
-                src={photoPath}
+                src={photoPath.startsWith('http') || photoPath.startsWith('/') ? photoPath : `/uploads/${photoPath}`}
                 alt={`Foto de ${name}`}
                 fill
                 className="object-cover"
