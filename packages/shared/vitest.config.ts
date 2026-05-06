@@ -6,7 +6,13 @@ export default defineConfig({
     passWithNoTests: true,
     coverage: {
       provider: 'v8',
-      exclude: ['src/**/index.ts', 'src/domain/**', 'src/api-contracts/**'],
+      exclude: [
+        'dist/**',
+        'vitest.config.ts',
+        'src/**/index.ts',
+        'src/domain/**',
+        'src/api-contracts/**',
+      ],
       thresholds: {
         statements: 80,
         branches: 75,

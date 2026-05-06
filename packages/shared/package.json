@@ -2,16 +2,32 @@
   "name": "@judging/shared",
   "version": "0.0.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./enums": "./src/enums.ts",
-    "./domain": "./src/domain/index.ts",
-    "./api-contracts": "./src/api-contracts/index.ts",
-    "./schemas": "./src/schemas/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./enums": {
+      "types": "./dist/enums.d.ts",
+      "default": "./dist/enums.js"
+    },
+    "./domain": {
+      "types": "./dist/domain/index.d.ts",
+      "default": "./dist/domain/index.js"
+    },
+    "./api-contracts": {
+      "types": "./dist/api-contracts/index.d.ts",
+      "default": "./dist/api-contracts/index.js"
+    },
+    "./schemas": {
+      "types": "./dist/schemas/index.d.ts",
+      "default": "./dist/schemas/index.js"
+    }
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src/",
     "type-check": "tsc --noEmit",
     "test": "vitest",
