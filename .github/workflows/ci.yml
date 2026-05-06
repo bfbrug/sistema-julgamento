@@ -71,6 +71,20 @@ jobs:
           PORT: 3001
           LOG_LEVEL: error
           CORS_ORIGIN: http://localhost:3001
+          JWT_ACCESS_SECRET: ci-test-access-secret-must-be-at-least-32-chars
+          JWT_REFRESH_SECRET: ci-test-refresh-secret-must-be-at-least-32-chars
+          JWT_ACCESS_EXPIRES_IN: 15m
+          JWT_REFRESH_EXPIRES_IN: 7d
+          BCRYPT_ROUNDS: 10
+          REDIS_URL: redis://localhost:6379
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          STORAGE_DRIVER: local
+          STORAGE_LOCAL_ROOT: /tmp/uploads-test
+          PARTICIPANT_PHOTO_MAX_BYTES: 2097152
+          PARTICIPANT_PHOTO_ALLOWED_MIMES: image/jpeg,image/png
+          THROTTLE_AUTH_TTL: 60
+          THROTTLE_AUTH_LIMIT: 100
 
       - name: Build
         run: pnpm build
