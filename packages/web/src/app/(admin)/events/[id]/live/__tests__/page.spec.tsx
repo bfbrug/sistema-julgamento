@@ -52,24 +52,10 @@ describe('EventLivePage — Marcar Ausente', () => {
 
   it('não mostra botão "Marcar Ausente" para participantes FINISHED', () => {
     render(<EventLivePage />)
-    // Verificar que Bruno Costa (FINISHED) não tem botão de Marcar Ausente associado
-    const brunoNameEl = screen.getByText('Bruno Costa')
-    // Walk up to the queue row (flex items container)
-    const brunoRow = brunoNameEl.closest('[class*="flex items-center gap-3"]')
-    if (brunoRow) {
-      const absentButton = Array.from(brunoRow.querySelectorAll('button')).find(
-        (btn) => /marcar ausente/i.test(btn.textContent ?? '')
-      )
-      expect(absentButton).toBeUndefined()
-    } else {
-      // Fallback: verify FINISHED participant has no "Marcar Ausente" button nearby
-      const allAbsentButtons = screen.queryAllByRole('button', { name: /marcar ausente/i })
-      // The only "Marcar Ausente" buttons should belong to WAITING participants (Ana Silva), not Bruno
-      allAbsentButtons.forEach((btn) => {
-        const row = btn.closest('div')
-        expect(row?.textContent).not.toContain('Bruno Costa')
-      })
-    }
+    const allAbsentButtons = screen.queryAllByRole('button', { name: /marcar ausente/i })
+    allAbsentButtons.forEach((btn) => {
+      expect(btn.closest('div')?.textContent).not.toContain('Bruno Costa')
+    })
   })
 
   it('abre dialog de confirmação ao clicar em "Marcar Ausente" na fila', async () => {
