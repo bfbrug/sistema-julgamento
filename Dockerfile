@@ -24,10 +24,10 @@ COPY tsconfig.base.json ./
 COPY packages/shared/ ./packages/shared/
 COPY packages/api/ ./packages/api/
 
+RUN cd packages/api && npx prisma generate
+
 RUN pnpm --filter @judging/shared build 2>/dev/null || true
 RUN pnpm --filter @judging/api build
-
-RUN cd packages/api && npx prisma generate
 
 # ─── Stage 3: runner ─────────────────────────────────────────────────────────
 FROM node:22-alpine AS runner
