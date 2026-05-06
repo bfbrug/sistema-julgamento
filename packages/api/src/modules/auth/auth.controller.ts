@@ -19,7 +19,7 @@ export class AuthController {
   login(@Body() dto: LoginDto, @Req() req: FastifyRequest) {
     const ipAddress = req.ip;
     const userAgent = req.headers['user-agent'];
-    return this.authService.login(dto.email, dto.password, ipAddress, userAgent);
+    return this.authService.login(dto.identifier, dto.password, ipAddress, userAgent);
   }
 
   @Public()
