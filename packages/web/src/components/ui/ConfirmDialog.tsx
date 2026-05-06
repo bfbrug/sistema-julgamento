@@ -52,7 +52,7 @@ export function ConfirmDialog({
   return (
     <dialog
       ref={ref}
-      className="rounded-lg shadow-xl p-0 w-full max-w-sm backdrop:bg-black/40"
+      className="fixed inset-0 m-auto rounded-lg shadow-xl p-0 w-full max-w-sm h-fit backdrop:bg-black/40"
       onClick={(e) => {
         if (e.target === ref.current && !loading) onClose()
       }}
