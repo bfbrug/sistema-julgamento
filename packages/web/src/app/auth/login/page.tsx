@@ -62,13 +62,13 @@ function LoginForm() {
         body={
           <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
             <Input
-              id="email"
-              label="E-mail"
-              type="email"
-              autoComplete="email"
-              {...register('email')}
-              error={errors.email?.message}
-              placeholder="seu@email.com"
+              id="identifier"
+              label="Email ou nome de usuário"
+              type="text"
+              autoComplete="username"
+              {...register('identifier')}
+              error={errors.identifier?.message}
+              placeholder="seu@email.com ou joao_silva"
             />
             <Input
               id="password"
