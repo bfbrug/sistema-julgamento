@@ -26,7 +26,7 @@ COPY packages/api/ ./packages/api/
 
 RUN cd packages/api && npx prisma generate
 
-RUN pnpm --filter @judging/shared build 2>/dev/null || true
+RUN pnpm --filter @judging/shared build
 RUN pnpm --filter @judging/api build
 
 # ─── Stage 3: runner ─────────────────────────────────────────────────────────
