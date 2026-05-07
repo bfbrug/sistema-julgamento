@@ -70,6 +70,7 @@ export async function main() {
       scoreMin: 5.0,
       scoreMax: 10.0,
       topN: 10,
+      genderMode: 'UNISEX_SPLIT',
       status: 'DRAFT',
     },
   });
