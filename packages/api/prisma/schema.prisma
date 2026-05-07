@@ -24,6 +24,7 @@ model User {
   judgeProfiles           Judge[]
   participantStateChanges ParticipantStateLog[]
   auditLogs               AuditLog[]
+  resultReleases          ResultRelease[]
 
   @@index([email])
   @@index([username])
@@ -71,6 +72,7 @@ model JudgingEvent {
   tiebreakerConfig  TiebreakerConfig?
   certificateText   String?
   reportJobs        ReportJob[]
+  resultReleases    ResultRelease[]
 
   @@index([managerId])
   @@index([status])
@@ -78,16 +80,18 @@ model JudgingEvent {
 }
 
 model Category {
-  id           String   @id @default(uuid())
+  id           String             @id @default(uuid())
   eventId      String
   name         String
   displayOrder Int
+  genderMode   CategoryGenderMode @default(MIXED) @map("gender_mode")
 
   event              JudgingEvent      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   judgeCategories    JudgeCategory[]
   scores             Score[]
   tiebreakerFirst    TiebreakerConfig? @relation("FirstCategory")
   tiebreakerSecond   TiebreakerConfig? @relation("SecondCategory")
+  resultReleases     ResultRelease[]
 
   @@unique([eventId, name])
   @@index([eventId])
@@ -129,6 +133,7 @@ model Participant {
   id                 String           @id @default(uuid())
   eventId            String
   name               String
+  gender             Gender
   photoPath          String?
   presentationOrder  Int
   isAbsent           Boolean          @default(false)
@@ -144,6 +149,7 @@ model Participant {
   @@unique([eventId, presentationOrder])
   @@index([eventId])
   @@index([currentState])
+  @@index([eventId, gender])
   @@map("participants")
 }
 
@@ -213,6 +219,24 @@ model TiebreakerConfig {
   secondCategory  Category?    @relation("SecondCategory", fields: [secondCategoryId], references: [id])
 
   @@map("tiebreaker_configs")
+}
+
+model ResultRelease {
+  id            String   @id @default(uuid())
+  eventId       String
+  categoryId    String
+  gender        Gender?
+  position      Int
+  releasedAt    DateTime @default(now())
+  releasedById  String
+
+  event      JudgingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  releasedBy User         @relation(fields: [releasedById], references: [id])
+
+  @@unique([categoryId, gender, position])
+  @@index([eventId])
+  @@map("result_releases")
 }
 
 model CertificateConfig {
@@ -327,4 +351,16 @@ enum JudgeSessionStatus {
   IN_SCORING
   IN_REVIEW
   FINISHED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum CategoryGenderMode {
+  MIXED
+  MALE_ONLY
+  FEMALE_ONLY
+  UNISEX_SPLIT
 }
