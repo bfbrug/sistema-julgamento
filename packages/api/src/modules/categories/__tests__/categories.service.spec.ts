@@ -172,7 +172,7 @@ describe('CategoriesService', () => {
       repository.create.mockResolvedValue(created)
       repository.findById.mockResolvedValue({ ...created, _count: { judgeCategories: 0, scores: 0 } })
 
-      const cat = await service.create('event-1', { name: 'Geral Test Split', displayOrder: 100, genderMode: 'UNISEX_SPLIT' as any }, 'manager-1')
+      const cat = await service.create('event-1', { name: 'Geral Test Split', displayOrder: 100, genderMode: 'UNISEX_SPLIT' }, 'manager-1')
 
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({ genderMode: 'UNISEX_SPLIT' }),
