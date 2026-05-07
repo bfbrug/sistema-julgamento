@@ -13,10 +13,8 @@ export interface ReleasedEntry {
   totalScore: number
 }
 
-export interface PublicCategoryResults {
-  categoryId: string
-  name: string
-  genderMode: GenderMode
+export interface PublicResults {
+  eventGenderMode: GenderMode
   released: {
     MIXED?: ReleasedEntry[]
     MALE?: ReleasedEntry[]
@@ -24,20 +22,15 @@ export interface PublicCategoryResults {
   }
 }
 
-export interface PublicResultsData {
-  status: string
-  categories: PublicCategoryResults[]
-}
-
 export function usePublicResults(eventId: string) {
-  const [data, setData] = useState<PublicResultsData | null>(null)
+  const [data, setData] = useState<PublicResults | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const socketRef = useRef<Socket | null>(null)
 
   const fetchResults = useCallback(async () => {
     try {
-      const res = await publicApiClient<PublicResultsData>(`/api/public/events/${eventId}/results`)
+      const res = await publicApiClient<PublicResults>(`/api/public/events/${eventId}/results`)
       setData(res)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar resultados')

@@ -74,6 +74,12 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
             )}
             {event.status === EventStatus.FINISHED && (
               <>
+                <Link href={`/events/${id}/live`}>
+                  <Button className="bg-primary-600 hover:bg-primary-700">
+                    <Monitor className="mr-2 h-4 w-4" />
+                    Painel de Liberação
+                  </Button>
+                </Link>
                 <Link href={`/events/${id}/reports`}>
                   <Button className="bg-success-600 hover:bg-success-700">
                     <BarChart3 className="mr-2 h-4 w-4" />

@@ -6,7 +6,6 @@ import { EventHeader } from '@/components/live-panel/EventHeader'
 import { CurrentParticipantHero } from '@/components/live-panel/CurrentParticipantHero'
 import { JudgesProgress } from '@/components/live-panel/JudgesProgress'
 import { UpcomingQueue } from '@/components/live-panel/UpcomingQueue'
-import { EventFinishedView } from '@/components/live-panel/EventFinishedView'
 import { ConnectionIndicator } from '@/components/live-panel/ConnectionIndicator'
 import { formatEventDate } from '@/lib/utils'
 import { usePublicResults } from '@/hooks/usePublicResults'
@@ -86,7 +85,7 @@ export default function LivePanelPage() {
     return (
       <PublicResultsBoard
         eventName={eventInfo?.name ?? ''}
-        categories={publicResults?.categories ?? []}
+        results={publicResults ?? { eventGenderMode: 'MIXED', released: {} }}
       />
     )
   }

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { CalculationRule, EventStatus } from '../enums'
+import { CalculationRule, EventGenderMode, EventStatus } from '../enums'
 
 export const calculationRuleSchema = z.nativeEnum(CalculationRule)
 export const eventStatusSchema = z.nativeEnum(EventStatus)
@@ -13,6 +13,7 @@ export const eventBaseSchema = z.object({
   scoreMin: z.number().min(0).max(100),
   scoreMax: z.number().min(0).max(100),
   topN: z.number().int().min(1).max(1000),
+  genderMode: z.nativeEnum(EventGenderMode),
 })
 
 export const createEventSchema = eventBaseSchema.refine((data) => data.scoreMin < data.scoreMax, {

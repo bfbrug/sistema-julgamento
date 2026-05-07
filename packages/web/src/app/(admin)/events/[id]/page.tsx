@@ -33,7 +33,6 @@ export default function EventCategoriesPage() {
   const { mutate: reorderCategories } = useReorderCategories(eventId)
 
   const [newName, setNewName] = useState('')
-  const [newGenderMode, setNewGenderMode] = useState<'MIXED' | 'MALE_ONLY' | 'FEMALE_ONLY' | 'UNISEX_SPLIT'>('MIXED')
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -56,8 +55,8 @@ export default function EventCategoriesPage() {
   const handleAddCategory = (e: FormEvent) => {
     e.preventDefault()
     if (!newName.trim()) return
-    createCategory({ name: newName.trim(), displayOrder: 1, genderMode: newGenderMode }, {
-      onSuccess: () => { setNewName(''); setNewGenderMode('MIXED') }
+    createCategory({ name: newName.trim(), displayOrder: 1 }, {
+      onSuccess: () => { setNewName('') }
     })
   }
 
@@ -78,19 +77,6 @@ export default function EventCategoriesPage() {
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="Ex: Originalidade, Execução..."
                 />
-              </div>
-              <div className="flex-1">
-                <label className="text-sm font-medium text-secondary-700">Modo de Gênero</label>
-                <select
-                  value={newGenderMode}
-                  onChange={(e) => setNewGenderMode(e.target.value as typeof newGenderMode)}
-                  className="mt-1 block w-full rounded-md border border-secondary-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                >
-                  <option value="MIXED">Mista</option>
-                  <option value="MALE_ONLY">Só masculino</option>
-                  <option value="FEMALE_ONLY">Só feminino</option>
-                  <option value="UNISEX_SPLIT">Unissex (rankings separados)</option>
-                </select>
               </div>
               <div className="flex items-end pb-1">
                 <Button type="submit" loading={isCreating}>
@@ -125,17 +111,9 @@ export default function EventCategoriesPage() {
   )
 }
 
-const GENDER_MODE_LABELS: Record<string, string> = {
-  MIXED: 'Mista',
-  MALE_ONLY: 'Só masculino',
-  FEMALE_ONLY: 'Só feminino',
-  UNISEX_SPLIT: 'Unissex (separado)',
-}
-
 interface CategoryItem {
   id: string
   name: string
-  genderMode?: string | null
 }
 
 function SortableCategoryItem({ category, onDelete }: { category: CategoryItem; onDelete: () => void }) {
@@ -156,11 +134,6 @@ function SortableCategoryItem({ category, onDelete }: { category: CategoryItem; 
         <GripVertical className="h-5 w-5" />
       </button>
       <span className="flex-1 font-medium text-secondary-900">{category.name}</span>
-      {category.genderMode && (
-        <span className="text-xs text-secondary-500 bg-secondary-100 px-2 py-0.5 rounded-full">
-          {GENDER_MODE_LABELS[category.genderMode] ?? category.genderMode}
-        </span>
-      )}
       <Button
         variant="ghost"
         size="sm"

@@ -1,9 +1,9 @@
 import { Trophy, Star } from 'lucide-react'
-import type { PublicCategoryResults, ReleasedEntry } from '@/hooks/usePublicResults'
+import type { PublicResults, ReleasedEntry } from '@/hooks/usePublicResults'
 
 interface Props {
   eventName: string
-  categories: PublicCategoryResults[]
+  results: PublicResults
 }
 
 const medalStyles: Record<number, { bg: string; text: string }> = {
@@ -67,11 +67,10 @@ function RankingColumn({ entries, label }: { entries: ReleasedEntry[] | undefine
   )
 }
 
-export function PublicResultsBoard({ eventName, categories }: Props) {
-  const totalReleased = categories.reduce(
-    (acc, c) => acc + Object.values(c.released).reduce((s, arr) => s + (arr?.length ?? 0), 0),
-    0,
-  )
+export function PublicResultsBoard({ eventName, results }: Props) {
+  const { eventGenderMode, released } = results
+  const totalReleased =
+    (released.MIXED?.length ?? 0) + (released.MALE?.length ?? 0) + (released.FEMALE?.length ?? 0)
 
   if (totalReleased === 0) {
     return (
@@ -119,34 +118,20 @@ export function PublicResultsBoard({ eventName, categories }: Props) {
         </div>
       </div>
 
-      {/* Categorias */}
-      <div className="mx-auto max-w-5xl flex flex-col gap-12">
-        {categories.map((cat) => {
-          const hasAny = Object.values(cat.released).some((arr) => (arr?.length ?? 0) > 0)
-          if (!hasAny) return null
-          return (
-            <section key={cat.categoryId}>
-              <h3
-                className="mb-6 text-center text-3xl font-black"
-                style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#1a1208' }}
-              >
-                {cat.name}
-              </h3>
-              {cat.genderMode === 'UNISEX_SPLIT' ? (
-                <div className="grid grid-cols-2 gap-8">
-                  <RankingColumn entries={cat.released.MALE} label="Masculino" />
-                  <RankingColumn entries={cat.released.FEMALE} label="Feminino" />
-                </div>
-              ) : cat.genderMode === 'MALE_ONLY' ? (
-                <RankingColumn entries={cat.released.MALE} label="Masculino" />
-              ) : cat.genderMode === 'FEMALE_ONLY' ? (
-                <RankingColumn entries={cat.released.FEMALE} label="Feminino" />
-              ) : (
-                <RankingColumn entries={cat.released.MIXED} />
-              )}
-            </section>
-          )
-        })}
+      {/* Ranking */}
+      <div className="mx-auto max-w-5xl">
+        {eventGenderMode === 'UNISEX_SPLIT' ? (
+          <div className="grid grid-cols-2 gap-8">
+            <RankingColumn entries={released.MALE} label="Masculino" />
+            <RankingColumn entries={released.FEMALE} label="Feminino" />
+          </div>
+        ) : eventGenderMode === 'MALE_ONLY' ? (
+          <RankingColumn entries={released.MALE} label="Masculino" />
+        ) : eventGenderMode === 'FEMALE_ONLY' ? (
+          <RankingColumn entries={released.FEMALE} label="Feminino" />
+        ) : (
+          <RankingColumn entries={released.MIXED} />
+        )}
       </div>
     </div>
   )

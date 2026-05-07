@@ -2,7 +2,6 @@
 
 import { useLiveResults } from '@/hooks/useLiveResults'
 import { ReleaseSlot } from './ReleaseSlot'
-import type { CategoryGenderMode } from '@judging/shared'
 
 interface RankEntry {
   participantId: string
@@ -11,58 +10,41 @@ interface RankEntry {
   position: number
 }
 
-interface RankingResult {
+interface OverallRanking {
   mode: 'MIXED' | 'MALE_ONLY' | 'FEMALE_ONLY' | 'UNISEX_SPLIT'
   entries?: RankEntry[]
   male?: RankEntry[]
   female?: RankEntry[]
 }
 
-interface CategoryWithRanking {
-  id: string
-  name: string
-  genderMode: CategoryGenderMode
-  ranking: RankingResult
-}
-
 interface Props {
   eventId: string
-  categories: CategoryWithRanking[]
+  ranking: OverallRanking
 }
 
-export function ReleasePanel({ eventId, categories }: Props) {
+export function ReleasePanel({ eventId, ranking }: Props) {
   const { releases, release, revert } = useLiveResults(eventId)
 
-  const renderColumn = (
-    cat: CategoryWithRanking,
-    gender: 'MALE' | 'FEMALE' | null,
-    entries: RankEntry[],
-  ) => {
+  const renderColumn = (gender: 'MALE' | 'FEMALE' | null, entries: RankEntry[]) => {
     const sorted = [...entries].sort((a, b) => b.position - a.position)
-    const maxPosition = Math.max(...entries.map((e) => e.position))
-
+    const maxPosition = entries.length ? Math.max(...entries.map((e) => e.position)) : 0
     return (
       <div className="space-y-2">
         {sorted.map((entry) => {
-          const rel = releases.find(
-            (r) => r.categoryId === cat.id && r.gender === gender && r.position === entry.position,
-          )
+          const rel = releases.find((r) => r.gender === gender && r.position === entry.position)
           const isLast = entry.position === maxPosition
-          const prevReleased = isLast
-            ? true
-            : releases.some(
-                (r) => r.categoryId === cat.id && r.gender === gender && r.position === entry.position + 1,
-              )
-
+          const prevReleased = isLast || releases.some(
+            (r) => r.gender === gender && r.position === entry.position + 1,
+          )
           return (
             <ReleaseSlot
               key={entry.position}
               position={entry.position}
               gender={gender}
               released={rel ? { id: rel.id, participantName: entry.name, score: entry.totalScore } : undefined}
-              prevReleased={prevReleased}
+              prevReleased={!!prevReleased}
               isPending={release.isPending || revert.isPending}
-              onRelease={() => release.mutate({ categoryId: cat.id, gender, position: entry.position })}
+              onRelease={() => release.mutate({ gender, position: entry.position })}
               onRevert={() => rel && revert.mutate(rel.id)}
             />
           )
@@ -74,35 +56,26 @@ export function ReleasePanel({ eventId, categories }: Props) {
   return (
     <section className="mt-6 space-y-4">
       <h2 className="text-lg font-bold text-secondary-900">Liberação de Resultados</h2>
-      {categories.map((cat) => (
-        <div key={cat.id} className="rounded-lg border border-secondary-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="font-semibold text-secondary-900">{cat.name}</h3>
-            <span className="text-xs text-secondary-400 bg-secondary-100 px-2 py-0.5 rounded-full">
-              {cat.genderMode}
-            </span>
-          </div>
-
-          {cat.ranking.mode === 'UNISEX_SPLIT' ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="mb-2 text-xs font-semibold text-blue-600 uppercase">Masculino</p>
-                {renderColumn(cat, 'MALE', cat.ranking.male ?? [])}
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-semibold text-pink-600 uppercase">Feminino</p>
-                {renderColumn(cat, 'FEMALE', cat.ranking.female ?? [])}
-              </div>
+      <div className="rounded-lg border border-secondary-200 bg-white p-4 shadow-sm">
+        {ranking.mode === 'UNISEX_SPLIT' ? (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="mb-2 text-xs font-semibold text-blue-600 uppercase">Masculino</p>
+              {renderColumn('MALE', ranking.male ?? [])}
             </div>
-          ) : cat.ranking.mode === 'MALE_ONLY' ? (
-            renderColumn(cat, 'MALE', cat.ranking.entries ?? [])
-          ) : cat.ranking.mode === 'FEMALE_ONLY' ? (
-            renderColumn(cat, 'FEMALE', cat.ranking.entries ?? [])
-          ) : (
-            renderColumn(cat, null, cat.ranking.entries ?? [])
-          )}
-        </div>
-      ))}
+            <div>
+              <p className="mb-2 text-xs font-semibold text-pink-600 uppercase">Feminino</p>
+              {renderColumn('FEMALE', ranking.female ?? [])}
+            </div>
+          </div>
+        ) : ranking.mode === 'MALE_ONLY' ? (
+          renderColumn('MALE', ranking.entries ?? [])
+        ) : ranking.mode === 'FEMALE_ONLY' ? (
+          renderColumn('FEMALE', ranking.entries ?? [])
+        ) : (
+          renderColumn(null, ranking.entries ?? [])
+        )}
+      </div>
     </section>
   )
 }

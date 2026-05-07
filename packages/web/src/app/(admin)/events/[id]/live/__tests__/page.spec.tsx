@@ -32,6 +32,11 @@ vi.mock('@/hooks/useLiveScoring', () => ({
 
 vi.mock('@/hooks/useEvents', () => ({
   useTransitionEvent: () => ({ mutate: vi.fn() }),
+  useEvent: () => ({ data: { status: 'IN_PROGRESS' } }),
+}))
+
+vi.mock('@/hooks/useLiveResults', () => ({
+  useFullRanking: () => ({ data: { categories: [] } }),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -45,14 +50,14 @@ describe('EventLivePage — Marcar Ausente', () => {
   it('mostra botão "Marcar Ausente" apenas para participantes WAITING na fila', () => {
     render(<EventLivePage />)
     // Ana Silva está WAITING — deve ter botão
-    const buttons = screen.getAllByRole('button', { name: /marcar ausente/i })
+    const buttons = screen.getAllByRole('button', { name: /ausente/i })
     // Ao menos um botão visível
     expect(buttons.length).toBeGreaterThanOrEqual(1)
   })
 
   it('não mostra botão "Marcar Ausente" para participantes FINISHED', () => {
     render(<EventLivePage />)
-    const allAbsentButtons = screen.queryAllByRole('button', { name: /marcar ausente/i })
+    const allAbsentButtons = screen.queryAllByRole('button', { name: /ausente/i })
     allAbsentButtons.forEach((btn) => {
       expect(btn.closest('div')?.textContent).not.toContain('Bruno Costa')
     })
@@ -60,7 +65,7 @@ describe('EventLivePage — Marcar Ausente', () => {
 
   it('abre dialog de confirmação ao clicar em "Marcar Ausente" na fila', async () => {
     render(<EventLivePage />)
-    const button = screen.getAllByRole('button', { name: /marcar ausente/i })[0]!
+    const button = screen.getAllByRole('button', { name: /ausente/i })[0]!
     fireEvent.click(button)
     await waitFor(() => {
       expect(screen.getByText('Marcar participante como ausente?')).toBeInTheDocument()
@@ -69,7 +74,7 @@ describe('EventLivePage — Marcar Ausente', () => {
 
   it('fecha dialog ao clicar em Cancelar', async () => {
     render(<EventLivePage />)
-    fireEvent.click(screen.getAllByRole('button', { name: /marcar ausente/i })[0]!)
+    fireEvent.click(screen.getAllByRole('button', { name: /ausente/i })[0]!)
     await waitFor(() => screen.getByText('Marcar participante como ausente?'))
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     await waitFor(() => {

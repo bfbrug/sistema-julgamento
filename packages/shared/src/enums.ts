@@ -34,3 +34,11 @@ export const JudgeSessionStatus = {
   FINISHED: 'FINISHED',
 } as const
 export type JudgeSessionStatus = (typeof JudgeSessionStatus)[keyof typeof JudgeSessionStatus]
+
+export const EventGenderMode = {
+  MIXED: 'MIXED',
+  MALE_ONLY: 'MALE_ONLY',
+  FEMALE_ONLY: 'FEMALE_ONLY',
+  UNISEX_SPLIT: 'UNISEX_SPLIT',
+} as const
+export type EventGenderMode = (typeof EventGenderMode)[keyof typeof EventGenderMode]

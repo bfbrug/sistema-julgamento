@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 export interface ResultRelease {
   id: string
   eventId: string
-  categoryId: string
   gender: 'MALE' | 'FEMALE' | null
   position: number
   releasedAt: string
@@ -15,7 +14,6 @@ export interface ResultRelease {
 }
 
 export interface ReleaseInput {
-  categoryId: string
   gender: 'MALE' | 'FEMALE' | null
   position: number
 }
@@ -27,22 +25,17 @@ export interface RankEntry {
   position: number
 }
 
-export interface CategoryWithRanking {
-  id: string
-  name: string
-  genderMode: 'MIXED' | 'MALE_ONLY' | 'FEMALE_ONLY' | 'UNISEX_SPLIT'
-  ranking: {
-    mode: 'MIXED' | 'MALE_ONLY' | 'FEMALE_ONLY' | 'UNISEX_SPLIT'
-    entries?: RankEntry[]
-    male?: RankEntry[]
-    female?: RankEntry[]
-  }
+export interface OverallRanking {
+  mode: 'MIXED' | 'MALE_ONLY' | 'FEMALE_ONLY' | 'UNISEX_SPLIT'
+  entries?: RankEntry[]
+  male?: RankEntry[]
+  female?: RankEntry[]
 }
 
 export function useFullRanking(eventId: string, enabled: boolean) {
-  return useQuery<{ categories: CategoryWithRanking[] }>({
+  return useQuery<{ genderMode: string; ranking: OverallRanking }>({
     queryKey: ['results-full', eventId],
-    queryFn: () => apiClient<{ categories: CategoryWithRanking[] }>({ method: 'GET', path: `/events/${eventId}/results/full` }),
+    queryFn: () => apiClient<{ genderMode: string; ranking: OverallRanking }>({ method: 'GET', path: `/events/${eventId}/results/full` }),
     enabled: !!eventId && enabled,
   })
 }
@@ -62,7 +55,7 @@ export function useLiveResults(eventId: string) {
       apiClient<ResultRelease, ReleaseInput>({
         method: 'POST',
         path: `/events/${eventId}/results/releases`,
-        body: input,
+        body: { gender: input.gender ?? undefined, position: input.position } as any,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['live-results', eventId] }),
     onError: (error: unknown) => toast.error(error instanceof Error ? error.message : 'Erro ao liberar posição.'),

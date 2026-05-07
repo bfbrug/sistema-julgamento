@@ -10,8 +10,6 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Users, Trophy, Play, CheckCircle, Clock, Flag, UserX, UserMinus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useRouter } from 'next/navigation'
-
 function translateStatus(status: string): string {
   const map: Record<string, string> = {
     'NOT_STARTED': 'NÃO INICIADO',
@@ -27,7 +25,6 @@ function translateStatus(status: string): string {
 }
 
 export default function EventLivePage() {
-  const router = useRouter()
   const { id: eventId } = useParams() as { id: string }
   const { liveState, isConnected, activateParticipant, markAbsent } = useLiveScoring(eventId)
   const { mutate: transitionEvent } = useTransitionEvent(eventId)
@@ -50,11 +47,7 @@ export default function EventLivePage() {
   const allFinished = queue.length > 0 && queue.every((p) => p.status === 'FINISHED' || p.status === 'ABSENT')
 
   const handleFinishEvent = () => {
-    transitionEvent({ targetStatus: 'FINISHED' }, {
-      onSuccess: () => {
-        router.push(`/events/${eventId}/reports`)
-      },
-    })
+    transitionEvent({ targetStatus: 'FINISHED' })
   }
 
   return (
@@ -303,8 +296,8 @@ export default function EventLivePage() {
         </div>
       </div>
 
-      {isEventFinished && fullRanking?.categories && fullRanking.categories.length > 0 && (
-        <ReleasePanel eventId={eventId} categories={fullRanking.categories} />
+      {isEventFinished && fullRanking?.ranking && (
+        <ReleasePanel eventId={eventId} ranking={fullRanking.ranking} />
       )}
 
       <ConfirmDialog

@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createEventSchema, type CreateEventDto, CalculationRule } from '@judging/shared'
+import { createEventSchema, type CreateEventDto, CalculationRule, EventGenderMode } from '@judging/shared'
 import type { Resolver } from 'react-hook-form'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -26,6 +26,7 @@ export function EventForm({ initialData, onSubmit, isLoading }: EventFormProps) 
       scoreMin: 0,
       scoreMax: 10,
       topN: 3,
+      genderMode: EventGenderMode.MIXED,
       ...initialData,
       eventDate: initialData?.eventDate ? initialData.eventDate.split('T')[0] : undefined,
     },
@@ -103,6 +104,21 @@ export function EventForm({ initialData, onSubmit, isLoading }: EventFormProps) 
               {...register('topN', { valueAsNumber: true })}
               error={errors.topN?.message}
             />
+            <div>
+              <label className="text-sm font-medium text-secondary-700">Modo de Gênero</label>
+              <select
+                {...register('genderMode')}
+                className="mt-1 block w-full rounded-md border border-secondary-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              >
+                <option value={EventGenderMode.MIXED}>Misto</option>
+                <option value={EventGenderMode.MALE_ONLY}>Apenas masculino</option>
+                <option value={EventGenderMode.FEMALE_ONLY}>Apenas feminino</option>
+                <option value={EventGenderMode.UNISEX_SPLIT}>Unissex (rankings separados)</option>
+              </select>
+              {errors.genderMode && (
+                <p className="mt-1 text-xs text-danger-500">{errors.genderMode.message}</p>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-3">

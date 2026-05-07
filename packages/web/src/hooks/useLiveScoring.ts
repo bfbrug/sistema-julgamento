@@ -121,13 +121,31 @@ export function useLiveScoring(eventId: string) {
       fetchState()
     })
 
-    socket.on('participant_state_changed', (payload: { status: string }) => {
+    socket.onAny((event, ...args) => {
+      console.log('[WS]', event, args)
+    })
+
+    socket.on('participant_state_changed', (payload: { status: string; participantId?: string }) => {
       setLiveState((prev: LiveState | null) => {
         if (!prev?.currentParticipant) return prev
+        if (payload.participantId && payload.participantId !== prev.currentParticipant.id) return prev
         return {
           ...prev,
           currentParticipant: { ...prev.currentParticipant, status: payload.status }
         }
+      })
+    })
+
+    socket.on('participant_absent', (payload: { participantId: string }) => {
+      setLiveState((prev: LiveState | null) => {
+        if (!prev) return prev
+        const updatedQueue = prev.queue.map((p) =>
+          p.id === payload.participantId ? { ...p, status: 'ABSENT' } : p
+        )
+        const updatedCurrent = prev.currentParticipant?.id === payload.participantId
+          ? { ...prev.currentParticipant, status: 'ABSENT' }
+          : prev.currentParticipant
+        return { ...prev, queue: updatedQueue, currentParticipant: updatedCurrent }
       })
     })
 
