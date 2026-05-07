@@ -22,6 +22,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { JwtPayload } from '../auth/types/jwt-payload.type'
 import { AppException } from '../../common/exceptions/app.exception'
 import { env } from '../../config/env'
+import { BulkCreateParticipantsDto } from './dto/bulk-create-participants.dto'
+import { BulkCreateResult } from './dto/bulk-create-result.interface'
 
 @Roles('GESTOR')
 @Controller('events/:eventId/participants')
@@ -29,6 +31,16 @@ export class ParticipantsController {
   constructor(
     @Inject(ParticipantsService) private readonly participantsService: ParticipantsService,
   ) {}
+
+  @Post('bulk')
+  @HttpCode(HttpStatus.CREATED)
+  async bulkCreate(
+    @Param('eventId') eventId: string,
+    @Body() dto: BulkCreateParticipantsDto,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<BulkCreateResult> {
+    return this.participantsService.bulkCreate(eventId, dto, user.sub)
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
