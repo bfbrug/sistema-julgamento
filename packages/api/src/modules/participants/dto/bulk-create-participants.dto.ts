@@ -1,5 +1,4 @@
 import { IsArray, IsString, IsNotEmpty, MaxLength, ArrayMinSize, ArrayMaxSize } from 'class-validator'
-import { ParticipantResponseDto } from './participant-response.dto'
 
 export class BulkCreateParticipantsDto {
   @IsArray()
@@ -9,10 +8,4 @@ export class BulkCreateParticipantsDto {
   @IsNotEmpty({ each: true })
   @MaxLength(255, { each: true })
   names!: string[]
-}
-
-export interface BulkCreateResult {
-  created: number
-  skipped: number
-  participants: ParticipantResponseDto[]
 }
