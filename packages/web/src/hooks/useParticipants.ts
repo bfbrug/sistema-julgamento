@@ -109,3 +109,28 @@ export function useShuffleParticipants(eventId: string) {
     },
   })
 }
+
+export interface BulkImportResult {
+  created: number
+  skipped: number
+  participants: ParticipantResponse[]
+}
+
+export function useImportParticipants(eventId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: { names: string[] }) =>
+      apiClient<BulkImportResult, { names: string[] }>({
+        method: 'POST',
+        path: `/events/${eventId}/participants/bulk`,
+        body: data,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', eventId, 'participants'] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao importar participantes.')
+    },
+  })
+}
