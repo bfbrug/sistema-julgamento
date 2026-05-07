@@ -9,10 +9,14 @@ import { UpcomingQueue } from '@/components/live-panel/UpcomingQueue'
 import { EventFinishedView } from '@/components/live-panel/EventFinishedView'
 import { ConnectionIndicator } from '@/components/live-panel/ConnectionIndicator'
 import { formatEventDate } from '@/lib/utils'
+import { usePublicResults } from '@/hooks/usePublicResults'
+import { PublicResultsBoard } from '@/components/live/PublicResultsBoard'
 
 export default function LivePanelPage() {
   const params = useParams()
   const eventId = typeof params['eventId'] === 'string' ? params['eventId'] : ''
+
+  const { data: publicResults } = usePublicResults(eventId)
 
   const {
     eventInfo,
@@ -79,22 +83,12 @@ export default function LivePanelPage() {
     )
   }
 
-  if (status === 'FINISHED' && finalResults) {
+  if (status === 'FINISHED') {
     return (
-      <div className="flex h-screen flex-col" style={{ cursor: 'none', background: '#fffdf5' }}>
-        <EventFinishedView eventName={eventInfo.name} ranking={finalResults} />
-        <EventHeader
-          name={eventInfo.name}
-          eventDate={eventInfo.eventDate}
-          location={eventInfo.location}
-          organizer={eventInfo.organizer}
-          completedCount={completedCount}
-          totalCount={totalCount}
-        />
-        <div className="absolute bottom-14 right-6">
-          <ConnectionIndicator status={connectionStatus} />
-        </div>
-      </div>
+      <PublicResultsBoard
+        eventName={eventInfo?.name ?? ''}
+        categories={publicResults?.categories ?? []}
+      />
     )
   }
 
