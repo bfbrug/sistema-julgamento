@@ -26,7 +26,6 @@ export default function LivePanelPage() {
     totalCount,
     upcomingParticipants,
     status,
-    finalResults,
     connectionStatus,
     error,
   } = usePublicLivePanel(eventId)

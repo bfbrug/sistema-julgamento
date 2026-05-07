@@ -32,14 +32,15 @@ export interface PublicResultsData {
 export function usePublicResults(eventId: string) {
   const [data, setData] = useState<PublicResultsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const socketRef = useRef<Socket | null>(null)
 
   const fetchResults = useCallback(async () => {
     try {
       const res = await publicApiClient<PublicResultsData>(`/api/public/events/${eventId}/results`)
       setData(res)
-    } catch {
-      // mantém dados anteriores em caso de erro transitório
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar resultados')
     } finally {
       setLoading(false)
     }
@@ -62,5 +63,5 @@ export function usePublicResults(eventId: string) {
     }
   }, [eventId, fetchResults])
 
-  return { data, loading }
+  return { data, loading, error }
 }
