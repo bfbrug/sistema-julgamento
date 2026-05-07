@@ -21,4 +21,9 @@ export class PublicEventsController {
   async getFinalResults(@Param('id') id: string) {
     return this.publicEventsService.getFinalResults(id)
   }
+
+  @Get(':id/results')
+  async getPublicResults(@Param('id') id: string) {
+    return this.publicEventsService.getPublicResults(id)
+  }
 }

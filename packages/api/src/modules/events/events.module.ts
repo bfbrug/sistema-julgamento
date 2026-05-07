@@ -7,9 +7,10 @@ import { PublicEventsService } from './public-events.service'
 import { AuditModule } from '../audit/audit.module'
 import { ScoringModule } from '../scoring/scoring.module'
 import { CalculationModule } from '../calculation/calculation.module'
+import { ReportsModule } from '../reports/reports.module'
 
 @Module({
-  imports: [AuditModule, ScoringModule, CalculationModule],
+  imports: [AuditModule, ScoringModule, CalculationModule, ReportsModule],
   controllers: [EventsController, PublicEventsController],
   providers: [EventsService, EventsRepository, PublicEventsService],
   exports: [EventsService, EventsRepository],

@@ -1,13 +1,15 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../../config/prisma.service'
-import { EventStatus } from '@prisma/client'
+import { EventStatus, Gender } from '@prisma/client'
 import { CalculationService } from '../calculation/calculation.service'
+import { RankingBuilderService, RankingResult } from '../reports/ranking-builder.service'
 
 @Injectable()
 export class PublicEventsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(CalculationService) private readonly calculationService: CalculationService,
+    @Inject(RankingBuilderService) private readonly rankingBuilder: RankingBuilderService,
   ) {}
 
   async getPublicEvent(id: string) {
@@ -122,6 +124,53 @@ export class PublicEventsService {
       judgesFinishedCurrentParticipant,
       upcomingParticipants,
     }
+  }
+
+  async getPublicResults(id: string) {
+    const event = await this.prisma.judgingEvent.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true, status: true, managerId: true, categories: { select: { id: true, name: true, genderMode: true } } },
+    })
+
+    if (!event) throw new NotFoundException('Evento não encontrado')
+
+    const releases = await this.prisma.resultRelease.findMany({ where: { eventId: id } })
+    const releasedByCat = new Map<string, typeof releases>()
+    for (const r of releases) {
+      const arr = releasedByCat.get(r.categoryId) ?? []
+      arr.push(r)
+      releasedByCat.set(r.categoryId, arr)
+    }
+
+    const categories = await Promise.all(
+      event.categories.map(async (cat) => {
+        const ranking = await this.rankingBuilder.computeRanking(id, cat.id, event.managerId)
+        const rels = releasedByCat.get(cat.id) ?? []
+        return {
+          categoryId: cat.id,
+          name: cat.name,
+          genderMode: cat.genderMode,
+          released: this.buildReleased(ranking, rels),
+        }
+      }),
+    )
+
+    return { status: event.status, categories }
+  }
+
+  private buildReleased(ranking: RankingResult, rels: { gender: Gender | null; position: number }[]) {
+    const pick = (entries: { position: number; participantId: string; name: string; totalScore: number }[], gender: Gender | null) =>
+      rels
+        .filter((r) => r.gender === gender)
+        .map((r) => entries.find((e) => e.position === r.position))
+        .filter(Boolean)
+
+    if (ranking.mode === 'UNISEX_SPLIT') {
+      return { MALE: pick(ranking.male, Gender.MALE), FEMALE: pick(ranking.female, Gender.FEMALE) }
+    }
+    if (ranking.mode === 'MALE_ONLY') return { MALE: pick(ranking.entries, Gender.MALE) }
+    if (ranking.mode === 'FEMALE_ONLY') return { FEMALE: pick(ranking.entries, Gender.FEMALE) }
+    return { MIXED: pick(ranking.entries, null) }
   }
 
   async getFinalResults(id: string) {
