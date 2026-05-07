@@ -441,7 +441,9 @@ export class ParticipantsService {
 
     const createdIds = new Set(records.map((r) => r.id))
     const allAfter = await this.repository.findByEventId(eventId)
-    const newParticipants = allAfter.filter((p) => createdIds.has(p.id))
+    const newParticipants = allAfter.filter((p) =>
+      createdIds.has(p.id as `${string}-${string}-${string}-${string}-${string}`),
+    )
 
     const participantDtos = await Promise.all(
       newParticipants.map((p) => toParticipantResponse(p, this.storageService)),

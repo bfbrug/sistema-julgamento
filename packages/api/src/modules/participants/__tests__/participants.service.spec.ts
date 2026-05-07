@@ -678,8 +678,8 @@ describe('ParticipantsService', () => {
 
       const result = await svc.bulkCreate('event-1', { names: ['Ana', 'Bruno'] }, 'manager-1')
 
-      expect(result.participants[0].presentationOrder).toBe(6)
-      expect(result.participants[1].presentationOrder).toBe(7)
+      expect(result.participants[0]!.presentationOrder).toBe(6)
+      expect(result.participants[1]!.presentationOrder).toBe(7)
     })
   })
 })
