@@ -536,4 +536,136 @@ describe('ParticipantsService', () => {
       expect(result.photoUrl).toBe('/uploads/participant-photo/event-1/foto.jpg')
     })
   })
+
+  describe('bulkCreate', () => {
+    it('cria todos os nomes quando nenhum existe', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      repository.maxPresentationOrder.mockResolvedValue(0)
+
+      const part1 = makeParticipant({ id: 'p1', name: 'Ana Silva', presentationOrder: 1 })
+      const part2 = makeParticipant({ id: 'p2', name: 'Bruno Costa', presentationOrder: 2 })
+
+      const prismaClient = { participant: { createMany: vi.fn() } }
+      const customPrisma = { $transaction: vi.fn(async (cb: any) => cb(prismaClient)) }
+
+      const mod = await Test.createTestingModule({
+        providers: [
+          ParticipantsService,
+          { provide: ParticipantsRepository, useValue: repository },
+          { provide: EventsRepository, useValue: eventsRepository },
+          { provide: AuditService, useValue: auditService },
+          { provide: STORAGE_SERVICE, useValue: storageService },
+          { provide: PrismaService, useValue: customPrisma },
+        ],
+      }).compile()
+      const svc = mod.get<ParticipantsService>(ParticipantsService)
+
+      repository.findByEventId
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([part1, part2])
+      storageService.getPublicUrl.mockResolvedValue(null)
+
+      const result = await svc.bulkCreate('event-1', { names: ['Ana Silva', 'Bruno Costa'] }, 'manager-1')
+
+      expect(result.created).toBe(2)
+      expect(result.skipped).toBe(0)
+      expect(result.participants).toHaveLength(2)
+    })
+
+    it('pula todos quando todos já existem (normalização trim+lowercase)', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      const existing = [makeParticipant({ id: 'p1', name: 'Ana Silva', presentationOrder: 1 })]
+      repository.findByEventId.mockResolvedValue(existing)
+      storageService.getPublicUrl.mockResolvedValue(null)
+
+      const result = await service.bulkCreate('event-1', { names: ['  ANA SILVA  '] }, 'manager-1')
+
+      expect(result.created).toBe(0)
+      expect(result.skipped).toBe(1)
+      expect(result.participants).toHaveLength(0)
+    })
+
+    it('mix: cria novos e pula existentes', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      const existing = [makeParticipant({ id: 'p1', name: 'Ana Silva', presentationOrder: 1 })]
+
+      const prismaClient = { participant: { createMany: vi.fn() } }
+      const customPrisma = { $transaction: vi.fn(async (cb: any) => cb(prismaClient)) }
+
+      const mod = await Test.createTestingModule({
+        providers: [
+          ParticipantsService,
+          { provide: ParticipantsRepository, useValue: repository },
+          { provide: EventsRepository, useValue: eventsRepository },
+          { provide: AuditService, useValue: auditService },
+          { provide: STORAGE_SERVICE, useValue: storageService },
+          { provide: PrismaService, useValue: customPrisma },
+        ],
+      }).compile()
+      const svc = mod.get<ParticipantsService>(ParticipantsService)
+
+      repository.findByEventId
+        .mockResolvedValueOnce(existing)
+        .mockResolvedValueOnce([
+          ...existing,
+          makeParticipant({ id: 'p2', name: 'Bruno Costa', presentationOrder: 2 }),
+        ])
+      repository.maxPresentationOrder.mockResolvedValue(1)
+      storageService.getPublicUrl.mockResolvedValue(null)
+
+      const result = await svc.bulkCreate('event-1', { names: ['Ana Silva', 'Bruno Costa'] }, 'manager-1')
+
+      expect(result.created).toBe(1)
+      expect(result.skipped).toBe(1)
+    })
+
+    it('rejeita evento FINISHED', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.FINISHED }))
+
+      await expect(
+        service.bulkCreate('event-1', { names: ['João'] }, 'manager-1'),
+      ).rejects.toThrow()
+    })
+
+    it('rejeita evento IN_PROGRESS', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.IN_PROGRESS }))
+
+      await expect(
+        service.bulkCreate('event-1', { names: ['João'] }, 'manager-1'),
+      ).rejects.toThrow()
+    })
+
+    it('presentationOrder sequencial após o maior existente', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+
+      const prismaClient = { participant: { createMany: vi.fn() } }
+      const customPrisma = { $transaction: vi.fn(async (cb: any) => cb(prismaClient)) }
+
+      const mod = await Test.createTestingModule({
+        providers: [
+          ParticipantsService,
+          { provide: ParticipantsRepository, useValue: repository },
+          { provide: EventsRepository, useValue: eventsRepository },
+          { provide: AuditService, useValue: auditService },
+          { provide: STORAGE_SERVICE, useValue: storageService },
+          { provide: PrismaService, useValue: customPrisma },
+        ],
+      }).compile()
+      const svc = mod.get<ParticipantsService>(ParticipantsService)
+
+      repository.findByEventId
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          makeParticipant({ id: 'p1', name: 'Ana', presentationOrder: 6 }),
+          makeParticipant({ id: 'p2', name: 'Bruno', presentationOrder: 7 }),
+        ])
+      repository.maxPresentationOrder.mockResolvedValue(5)
+      storageService.getPublicUrl.mockResolvedValue(null)
+
+      const result = await svc.bulkCreate('event-1', { names: ['Ana', 'Bruno'] }, 'manager-1')
+
+      expect(result.participants[0].presentationOrder).toBe(6)
+      expect(result.participants[1].presentationOrder).toBe(7)
+    })
+  })
 })

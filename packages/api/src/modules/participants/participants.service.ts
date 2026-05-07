@@ -16,6 +16,8 @@ import { UpdateParticipantDto } from './dto/update-participant.dto'
 import { ReorderParticipantsDto } from './dto/reorder-participants.dto'
 import { MarkAbsentDto } from './dto/mark-absent.dto'
 import { ParticipantResponseDto } from './dto/participant-response.dto'
+import { BulkCreateParticipantsDto } from './dto/bulk-create-participants.dto'
+import { BulkCreateResult } from './dto/bulk-create-result.interface'
 import { IStorageService, STORAGE_SERVICE } from '../storage/storage.service.interface'
 import { plainToInstance } from 'class-transformer'
 import { env } from '../../config/env'
@@ -378,6 +380,78 @@ export class ParticipantsService {
 
     const updated = await this.repository.findById(id)
     return toParticipantResponse(updated!, this.storageService)
+  }
+
+  async bulkCreate(
+    eventId: string,
+    dto: BulkCreateParticipantsDto,
+    managerId: string,
+  ): Promise<BulkCreateResult> {
+    const event = await this.getEventOrThrow(eventId, managerId)
+    this.assertEventMutable(event.status)
+
+    const existing = await this.repository.findByEventId(eventId)
+    const existingNormalized = new Set(existing.map((p) => p.name.trim().toLowerCase()))
+
+    const toCreate: string[] = []
+    const skippedNames: string[] = []
+
+    for (const name of dto.names) {
+      const normalized = name.trim().toLowerCase()
+      if (existingNormalized.has(normalized)) {
+        skippedNames.push(name)
+      } else {
+        toCreate.push(name.trim())
+        existingNormalized.add(normalized)
+      }
+    }
+
+    if (toCreate.length === 0) {
+      return { created: 0, skipped: skippedNames.length, participants: [] }
+    }
+
+    const maxOrder = await this.repository.maxPresentationOrder(eventId)
+
+    await this.prisma.$transaction(async (tx) => {
+      const { randomUUID } = await import('crypto')
+      const records = toCreate.map((name, i) => ({
+        id: randomUUID(),
+        eventId,
+        name,
+        presentationOrder: maxOrder + 1 + i,
+        isAbsent: false,
+        currentState: 'WAITING' as const,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }))
+
+      await (tx as any).participant.createMany({ data: records })
+
+      await this.auditService.record(
+        {
+          action: 'PARTICIPANT_BULK_IMPORTED',
+          entityType: 'Participant',
+          entityId: eventId,
+          actorId: managerId,
+          payload: { eventId, created: toCreate.length, skipped: skippedNames.length },
+        },
+        tx,
+      )
+    })
+
+    const allAfter = await this.repository.findByEventId(eventId)
+    const createdNormalized = new Set(toCreate.map((n) => n.trim().toLowerCase()))
+    const newParticipants = allAfter.filter((p) => createdNormalized.has(p.name.trim().toLowerCase()))
+
+    const participantDtos = await Promise.all(
+      newParticipants.map((p) => toParticipantResponse(p, this.storageService)),
+    )
+
+    return {
+      created: toCreate.length,
+      skipped: skippedNames.length,
+      participants: participantDtos,
+    }
   }
 
   async unmarkAbsent(
