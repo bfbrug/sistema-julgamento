@@ -30,7 +30,7 @@ describe('useParticipants', () => {
   it('useCreateParticipant cria', async () => {
     vi.mocked(apiClient).mockResolvedValue({ id: '1', name: 'P' })
     const { result } = renderHook(() => useCreateParticipant('e1'), { wrapper })
-    await result.current.mutateAsync({ name: 'P' })
+    await result.current.mutateAsync({ name: 'P', gender: 'MALE' })
     expect(apiClient).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST', path: '/events/e1/participants' }))
   })
 

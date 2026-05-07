@@ -40,6 +40,7 @@ export default function EventParticipantsPage() {
   const { mutate: reorderParticipants } = useReorderParticipants(eventId)
 
   const [newName, setNewName] = useState('')
+  const [newGender, setNewGender] = useState<'MALE' | 'FEMALE' | ''>('')
   const [showImportModal, setShowImportModal] = useState(false)
 
   const sensors = useSensors(
@@ -59,8 +60,11 @@ export default function EventParticipantsPage() {
 
   const handleAddParticipant = (e: FormEvent) => {
     e.preventDefault()
-    if (!newName.trim()) return
-    createParticipant({ name: newName.trim() }, { onSuccess: () => setNewName('') })
+    if (!newName.trim() || !newGender) return
+    createParticipant(
+      { name: newName.trim(), gender: newGender },
+      { onSuccess: () => { setNewName(''); setNewGender('') } },
+    )
   }
 
   if (isLoading) return <div>Carregando participantes...</div>
@@ -82,8 +86,36 @@ export default function EventParticipantsPage() {
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="Nome completo ou artístico"
                 />
+                <fieldset>
+                  <legend className="text-sm font-medium text-secondary-700 mb-2">Gênero *</legend>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="MALE"
+                        checked={newGender === 'MALE'}
+                        onChange={() => setNewGender('MALE')}
+                        required
+                        className="accent-primary-600"
+                      />
+                      <span className="text-sm">Masculino</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="FEMALE"
+                        checked={newGender === 'FEMALE'}
+                        onChange={() => setNewGender('FEMALE')}
+                        className="accent-primary-600"
+                      />
+                      <span className="text-sm">Feminino</span>
+                    </label>
+                  </div>
+                </fieldset>
                 <div className="flex justify-end">
-                  <Button type="submit" loading={isCreating}>
+                  <Button type="submit" loading={isCreating} disabled={!newGender}>
                     <Plus className="mr-2 h-4 w-4" />
                     Cadastrar
                   </Button>
