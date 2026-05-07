@@ -60,7 +60,7 @@ export default function EventLivePage() {
         </div>
       )}
 
-      {allFinished && (
+      {allFinished && !isEventFinished && (
         <div className="bg-success-50 border border-success-200 text-success-800 px-4 py-3 rounded flex items-center justify-between">
           <div className="flex items-center gap-2 font-medium">
             <CheckCircle className="h-5 w-5" />
