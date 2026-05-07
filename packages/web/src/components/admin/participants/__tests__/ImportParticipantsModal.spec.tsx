@@ -40,14 +40,16 @@ import { useImportParticipants } from '@/hooks/useParticipants'
 const mockExistingParticipants = [
   {
     id: '1',
+    eventId: 'event-1',
     name: 'Ana Silva',
     presentationOrder: 1,
     isAbsent: false,
     currentState: 'WAITING' as const,
-    photoUrl: null,
-    counts: { scoresRecorded: 0, scoresFinalized: 0 },
+    photoPath: null,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
   },
-]
+] as Parameters<typeof ImportParticipantsModal>[0]['existingParticipants']
 
 describe('ImportParticipantsModal', () => {
   const onClose = vi.fn()

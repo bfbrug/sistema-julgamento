@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { Trash2, GripVertical, Plus, Shuffle, Upload, UserCircle2 } from 'lucide-react'
 import { useState, useRef, type FormEvent } from 'react'
+import { ImportParticipantsModal } from '@/components/admin/participants/ImportParticipantsModal'
 import {
   DndContext,
   closestCenter,
@@ -39,6 +40,7 @@ export default function EventParticipantsPage() {
   const { mutate: reorderParticipants } = useReorderParticipants(eventId)
 
   const [newName, setNewName] = useState('')
+  const [showImportModal, setShowImportModal] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -98,6 +100,13 @@ export default function EventParticipantsPage() {
               <p className="text-sm text-secondary-500">
                 Sorteie a ordem de apresentação de todos os participantes cadastrados de uma só vez.
               </p>
+              <Button
+                variant="secondary"
+                onClick={() => setShowImportModal(true)}
+                disabled={isFinished}
+              >
+                Importar
+              </Button>
               <Button variant="secondary" onClick={() => shuffleParticipants()} className="w-full" disabled={isFinished}>
                 <Shuffle className="mr-2 h-4 w-4" />
                 Sortear Ordem Aleatória
@@ -136,6 +145,14 @@ export default function EventParticipantsPage() {
           </DndContext>
         )}
       </div>
+
+      {showImportModal && (
+        <ImportParticipantsModal
+          eventId={eventId}
+          existingParticipants={participants ?? []}
+          onClose={() => setShowImportModal(false)}
+        />
+      )}
     </div>
   )
 }

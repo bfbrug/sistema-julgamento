@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState, useCallback } from 'react'
+import React, { useRef, useState, useCallback, useMemo } from 'react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { Button } from '@/components/ui/Button'
@@ -34,7 +34,7 @@ function parseFile(file: File): Promise<string[]> {
         skipEmptyLines: true,
         complete: (results) => {
           const names = results.data
-            .map((row) => (Array.isArray(row) ? row[0] : ''))
+            .map((row) => (Array.isArray(row) ? row[0] ?? '' : ''))
             .map((n) => n.trim())
             .filter(Boolean)
           const first = names[0]?.toLowerCase()
@@ -48,7 +48,9 @@ function parseFile(file: File): Promise<string[]> {
         try {
           const data = new Uint8Array(e.target!.result as ArrayBuffer)
           const workbook = XLSX.read(data, { type: 'array' })
-          const sheet = workbook.Sheets[workbook.SheetNames[0]]
+          const sheetName = workbook.SheetNames[0]
+          if (!sheetName) { resolve([]); return }
+          const sheet = workbook.Sheets[sheetName]!
           const rows = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1 })
           const names = rows
             .map((row) => (Array.isArray(row) ? String(row[0] ?? '').trim() : ''))
@@ -74,7 +76,10 @@ export function ImportParticipantsModal({ eventId, existingParticipants, onClose
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { mutate: importParticipants, isPending } = useImportParticipants(eventId)
 
-  const existingNormalized = new Set(existingParticipants.map((p) => normalizeName(p.name)))
+  const existingNormalized = useMemo(
+    () => new Set(existingParticipants.map((p) => normalizeName(p.name))),
+    [existingParticipants],
+  )
 
   const handleFile = useCallback(
     async (file: File) => {
