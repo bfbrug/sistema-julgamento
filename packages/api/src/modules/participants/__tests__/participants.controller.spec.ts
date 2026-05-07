@@ -44,9 +44,9 @@ describe('ParticipantsController', () => {
   })
 
   it('create: chama service.create com eventId, dto e managerId', async () => {
-    const res = await controller.create('event-1', { name: 'João Silva' }, { sub: 'manager-1' } as never)
+    const res = await controller.create('event-1', { name: 'João Silva', gender: 'MALE' as const }, { sub: 'manager-1' } as never)
     expect(res.id).toBe('part-1')
-    expect(service.create).toHaveBeenCalledWith('event-1', { name: 'João Silva' }, 'manager-1')
+    expect(service.create).toHaveBeenCalledWith('event-1', { name: 'João Silva', gender: 'MALE' }, 'manager-1')
   })
 
   it('list: retorna array de participantes', async () => {
@@ -105,10 +105,10 @@ describe('ParticipantsController', () => {
       const bulkResult = { created: 2, skipped: 0, participants: [] }
       service.bulkCreate = vi.fn().mockResolvedValue(bulkResult)
 
-      const res = await controller.bulkCreate('event-1', { names: ['Ana', 'Bruno'] }, { sub: 'manager-1' } as never)
+      const res = await controller.bulkCreate('event-1', { names: ['Ana', 'Bruno'], gender: 'MALE' as const }, { sub: 'manager-1' } as never)
       expect(res.created).toBe(2)
       expect(res.skipped).toBe(0)
-      expect(service.bulkCreate).toHaveBeenCalledWith('event-1', { names: ['Ana', 'Bruno'] }, 'manager-1')
+      expect(service.bulkCreate).toHaveBeenCalledWith('event-1', { names: ['Ana', 'Bruno'], gender: 'MALE' }, 'manager-1')
     })
   })
 
