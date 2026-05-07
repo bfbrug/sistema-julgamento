@@ -7,6 +7,8 @@ const mockPrisma = {
   judgingEvent: { findFirst: vi.fn() },
   judge: { findMany: vi.fn() },
   score: { findMany: vi.fn() },
+  category: { findUniqueOrThrow: vi.fn() },
+  participant: { findMany: vi.fn() },
 }
 
 const mockCalculationService = {
@@ -136,6 +138,107 @@ describe('RankingBuilderService', () => {
       const result = await service.buildAbsents('e1', 'm1')
       expect(result).toHaveLength(1)
       expect(result[0]!.participantName).toBe('Bob')
+    })
+  })
+
+  describe('computeRanking', () => {
+    const makeParticipants = () => [
+      { id: 'm1', name: 'João', gender: 'MALE' },
+      { id: 'm2', name: 'Pedro', gender: 'MALE' },
+      { id: 'm3', name: 'Carlos', gender: 'MALE' },
+      { id: 'f1', name: 'Ana', gender: 'FEMALE' },
+      { id: 'f2', name: 'Maria', gender: 'FEMALE' },
+      { id: 'f3', name: 'Clara', gender: 'FEMALE' },
+    ]
+
+    const makeCalcWithScores = () =>
+      baseCalcResponse([
+        makeRanking('m1', 'João', 1, 30),
+        makeRanking('f1', 'Ana', 2, 28),
+        makeRanking('m2', 'Pedro', 3, 25),
+        makeRanking('f2', 'Maria', 4, 22),
+        makeRanking('m3', 'Carlos', 5, 20),
+        makeRanking('f3', 'Clara', 6, 18),
+      ])
+
+    const setupCategory = (genderMode: string, topN = 2) => {
+      mockPrisma.category.findUniqueOrThrow.mockResolvedValueOnce({
+        genderMode,
+        event: { topN },
+      })
+    }
+
+    it('MIXED retorna top2 unificado (melhor geral)', async () => {
+      setupCategory('MIXED', 2)
+      mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
+      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
+
+      const r = await service.computeRanking('e1', 'cat1', 'm1')
+      expect(r.mode).toBe('MIXED')
+      if (r.mode !== 'MIXED') return
+      expect(r.entries).toHaveLength(2)
+      expect(r.entries[0]!.totalScore).toBe(30)
+      expect(r.entries[1]!.totalScore).toBe(28)
+      expect(r.entries[0]!.position).toBe(1)
+      expect(r.entries[1]!.position).toBe(2)
+    })
+
+    it('MALE_ONLY filtra mulheres, retorna top2 masculino', async () => {
+      setupCategory('MALE_ONLY', 2)
+      mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
+      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
+
+      const r = await service.computeRanking('e1', 'cat1', 'm1')
+      expect(r.mode).toBe('MALE_ONLY')
+      if (r.mode !== 'MALE_ONLY') return
+      expect(r.entries).toHaveLength(2)
+      expect(r.entries[0]!.totalScore).toBe(30)
+      expect(r.entries[1]!.totalScore).toBe(25)
+      expect(r.entries.every((e) => ['m1', 'm2', 'm3'].includes(e.participantId))).toBe(true)
+    })
+
+    it('FEMALE_ONLY filtra homens, retorna top2 feminino', async () => {
+      setupCategory('FEMALE_ONLY', 2)
+      mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
+      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
+
+      const r = await service.computeRanking('e1', 'cat1', 'm1')
+      expect(r.mode).toBe('FEMALE_ONLY')
+      if (r.mode !== 'FEMALE_ONLY') return
+      expect(r.entries).toHaveLength(2)
+      expect(r.entries[0]!.totalScore).toBe(28)
+      expect(r.entries[1]!.totalScore).toBe(22)
+      expect(r.entries.every((e) => ['f1', 'f2', 'f3'].includes(e.participantId))).toBe(true)
+    })
+
+    it('UNISEX_SPLIT retorna dois rankings separados com topN cada', async () => {
+      setupCategory('UNISEX_SPLIT', 2)
+      mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
+      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
+
+      const r = await service.computeRanking('e1', 'cat1', 'm1')
+      expect(r.mode).toBe('UNISEX_SPLIT')
+      if (r.mode !== 'UNISEX_SPLIT') return
+      expect(r.male).toHaveLength(2)
+      expect(r.female).toHaveLength(2)
+      expect(r.male[0]!.totalScore).toBe(30)
+      expect(r.female[0]!.totalScore).toBe(28)
+      expect(r.male[0]!.position).toBe(1)
+      expect(r.female[0]!.position).toBe(1)
+    })
+
+    it('participante sem score no calculation recebe totalScore 0', async () => {
+      setupCategory('MIXED', 10)
+      mockCalculate.mockResolvedValueOnce(baseCalcResponse([makeRanking('m1', 'João', 1, 30)]))
+      mockPrisma.participant.findMany.mockResolvedValueOnce([
+        { id: 'm1', name: 'João', gender: 'MALE' },
+        { id: 'm2', name: 'Pedro', gender: 'MALE' },
+      ])
+
+      const r = await service.computeRanking('e1', 'cat1', 'm1')
+      if (r.mode !== 'MIXED') return
+      const pedro = r.entries.find((e) => e.participantId === 'm2')
+      expect(pedro?.totalScore).toBe(0)
     })
   })
 
