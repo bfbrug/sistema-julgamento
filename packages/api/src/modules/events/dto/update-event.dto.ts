@@ -11,7 +11,7 @@ import {
   IsOptional,
 } from 'class-validator'
 import { Type } from 'class-transformer'
-import { CalculationRule, EventStatus } from '@prisma/client'
+import { CalculationRule, EventGenderMode, EventStatus } from '@prisma/client'
 
 export class UpdateEventDto {
   @IsOptional()
@@ -62,4 +62,8 @@ export class UpdateEventDto {
   @IsOptional()
   @IsEnum(EventStatus)
   status?: EventStatus
+
+  @IsOptional()
+  @IsEnum(EventGenderMode)
+  genderMode?: EventGenderMode
 }

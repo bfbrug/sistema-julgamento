@@ -14,7 +14,7 @@ import { TransitionEventDto } from './dto/transition-event.dto'
 import { ListEventsDto } from './dto/list-events.dto'
 import { EventResponseDto, TiebreakerConfigDto } from './dto/event-response.dto'
 import { EventStateMachine } from './state-machine/event-state.machine'
-import { EventStatus, CalculationRule } from '@prisma/client'
+import { EventStatus, CalculationRule, EventGenderMode } from '@prisma/client'
 import { plainToInstance } from 'class-transformer'
 import { ScoringGateway } from '../scoring/scoring.gateway'
 import { PublicLiveGateway } from '../scoring/public-live.gateway'
@@ -73,6 +73,7 @@ export class EventsService {
         scoreMin: dto.scoreMin,
         scoreMax: dto.scoreMax,
         topN: dto.topN,
+        genderMode: dto.genderMode ?? EventGenderMode.MIXED,
         status: EventStatus.DRAFT,
         manager: { connect: { id: managerId } },
       }, tx)
@@ -173,7 +174,7 @@ export class EventsService {
       throw new BadRequestException('scoreMin deve ser menor que scoreMax')
     }
 
-    const before = { name: event.name, location: event.location, status: event.status }
+    const before = { name: event.name, location: event.location, status: event.status, genderMode: event.genderMode }
     const updated = await this.prisma.$transaction(async (tx) => {
       const result = await this.repository.update(id, {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -184,14 +185,25 @@ export class EventsService {
         ...(dto.scoreMin !== undefined && { scoreMin: dto.scoreMin }),
         ...(dto.scoreMax !== undefined && { scoreMax: dto.scoreMax }),
         ...(dto.topN !== undefined && { topN: dto.topN }),
+        ...(dto.genderMode !== undefined && { genderMode: dto.genderMode }),
       }, tx)
+
+      if (dto.genderMode !== undefined && dto.genderMode !== event.genderMode) {
+        await this.auditService.record({
+          action: 'EVENT_GENDER_MODE_CHANGED',
+          entityType: 'JudgingEvent',
+          entityId: id,
+          actorId: managerId,
+          payload: { from: event.genderMode, to: dto.genderMode },
+        }, tx)
+      }
 
       await this.auditService.record({
         action: 'EVENT_UPDATED',
         entityType: 'JudgingEvent',
         entityId: id,
         actorId: managerId,
-        payload: { before, after: { name: result.name, location: result.location } },
+        payload: { before, after: { name: result.name, location: result.location, genderMode: result.genderMode } },
       }, tx)
 
       return result

@@ -19,6 +19,7 @@ const makeEvent = (overrides: Record<string, unknown> = {}) => ({
   scoreMin: 0 as unknown,
   scoreMax: 10 as unknown,
   topN: 10,
+  genderMode: 'MIXED',
   status: EventStatus.DRAFT,
   certificateText: null,
   createdAt: new Date(),
@@ -85,6 +86,7 @@ describe('EventsService', () => {
           scoreMin: 0,
           scoreMax: 10,
           topN: 5,
+          genderMode: 'MIXED' as any,
         },
         'manager-1',
       )
@@ -207,6 +209,44 @@ describe('EventsService', () => {
       await expect(
         service.transition('event-1', { targetStatus: EventStatus.IN_PROGRESS }, 'manager-1'),
       ).rejects.toThrow(UnprocessableEntityException)
+    })
+  })
+
+  describe('genderMode', () => {
+    it('persiste genderMode em create com default MIXED', async () => {
+      repository.create.mockResolvedValue(makeEvent({ genderMode: 'UNISEX_SPLIT' }))
+      const res = await service.create(
+        {
+          name: 'Evento',
+          eventDate: new Date(),
+          location: 'SP',
+          organizer: 'Org',
+          calculationRule: CalculationRule.R1,
+          scoreMin: 0,
+          scoreMax: 10,
+          topN: 5,
+          genderMode: 'UNISEX_SPLIT' as any,
+        },
+        'manager-1',
+      )
+      expect(res.genderMode).toBe('UNISEX_SPLIT')
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ genderMode: 'UNISEX_SPLIT' }),
+        expect.anything(),
+      )
+    })
+
+    it('emite audit EVENT_GENDER_MODE_CHANGED em update', async () => {
+      repository.findById.mockResolvedValue(makeEvent({ genderMode: 'MIXED' }))
+      repository.update.mockResolvedValue(makeEvent({ genderMode: 'FEMALE_ONLY' }))
+      await service.update('event-1', { genderMode: 'FEMALE_ONLY' as any }, 'manager-1')
+      expect(auditService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'EVENT_GENDER_MODE_CHANGED',
+          payload: { from: 'MIXED', to: 'FEMALE_ONLY' },
+        }),
+        expect.anything(),
+      )
     })
   })
 

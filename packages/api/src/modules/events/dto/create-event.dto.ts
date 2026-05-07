@@ -10,7 +10,7 @@ import {
   Max,
 } from 'class-validator'
 import { Type } from 'class-transformer'
-import { CalculationRule } from '@prisma/client'
+import { CalculationRule, EventGenderMode } from '@prisma/client'
 
 export class CreateEventDto {
   @IsString()
@@ -49,4 +49,7 @@ export class CreateEventDto {
   @Min(1)
   @Max(1000)
   topN!: number
+
+  @IsEnum(EventGenderMode)
+  genderMode!: EventGenderMode
 }

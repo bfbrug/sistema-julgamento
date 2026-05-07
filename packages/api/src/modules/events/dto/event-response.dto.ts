@@ -1,5 +1,5 @@
 import { Expose, Type } from 'class-transformer'
-import { CalculationRule, EventStatus } from '@prisma/client'
+import { CalculationRule, EventGenderMode, EventStatus } from '@prisma/client'
 
 export class TiebreakerConfigDto {
   @Expose() id!: string
@@ -24,6 +24,7 @@ export class EventResponseDto {
   @Expose() scoreMin!: number
   @Expose() scoreMax!: number
   @Expose() topN!: number
+  @Expose() genderMode!: EventGenderMode
   @Expose() status!: EventStatus
   @Expose() certificateText!: string | null
   @Expose() managerId!: string
