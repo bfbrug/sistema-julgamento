@@ -542,10 +542,12 @@ describe('ParticipantsService', () => {
       eventsRepository.findById.mockResolvedValue(makeEvent())
       repository.maxPresentationOrder.mockResolvedValue(0)
 
-      const part1 = makeParticipant({ id: 'p1', name: 'Ana Silva', presentationOrder: 1 })
-      const part2 = makeParticipant({ id: 'p2', name: 'Bruno Costa', presentationOrder: 2 })
-
-      const prismaClient = { participant: { createMany: vi.fn() } }
+      let capturedRecords: any[] = []
+      const prismaClient = {
+        participant: {
+          createMany: vi.fn(async ({ data }: any) => { capturedRecords = data }),
+        },
+      }
       const customPrisma = { $transaction: vi.fn(async (cb: any) => cb(prismaClient)) }
 
       const mod = await Test.createTestingModule({
@@ -560,9 +562,12 @@ describe('ParticipantsService', () => {
       }).compile()
       const svc = mod.get<ParticipantsService>(ParticipantsService)
 
-      repository.findByEventId
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([part1, part2])
+      repository.findByEventId.mockResolvedValueOnce([])
+      repository.findByEventId.mockImplementationOnce(async () =>
+        capturedRecords.map((r, i) =>
+          makeParticipant({ id: r.id, name: r.name, presentationOrder: i + 1 }),
+        ),
+      )
       storageService.getPublicUrl.mockResolvedValue(null)
 
       const result = await svc.bulkCreate('event-1', { names: ['Ana Silva', 'Bruno Costa'] }, 'manager-1')
@@ -589,7 +594,12 @@ describe('ParticipantsService', () => {
       eventsRepository.findById.mockResolvedValue(makeEvent())
       const existing = [makeParticipant({ id: 'p1', name: 'Ana Silva', presentationOrder: 1 })]
 
-      const prismaClient = { participant: { createMany: vi.fn() } }
+      let capturedRecords: any[] = []
+      const prismaClient = {
+        participant: {
+          createMany: vi.fn(async ({ data }: any) => { capturedRecords = data }),
+        },
+      }
       const customPrisma = { $transaction: vi.fn(async (cb: any) => cb(prismaClient)) }
 
       const mod = await Test.createTestingModule({
@@ -604,12 +614,11 @@ describe('ParticipantsService', () => {
       }).compile()
       const svc = mod.get<ParticipantsService>(ParticipantsService)
 
-      repository.findByEventId
-        .mockResolvedValueOnce(existing)
-        .mockResolvedValueOnce([
-          ...existing,
-          makeParticipant({ id: 'p2', name: 'Bruno Costa', presentationOrder: 2 }),
-        ])
+      repository.findByEventId.mockResolvedValueOnce(existing)
+      repository.findByEventId.mockImplementationOnce(async () => [
+        ...existing,
+        ...capturedRecords.map((r) => makeParticipant({ id: r.id, name: r.name, presentationOrder: 2 })),
+      ])
       repository.maxPresentationOrder.mockResolvedValue(1)
       storageService.getPublicUrl.mockResolvedValue(null)
 
@@ -638,7 +647,12 @@ describe('ParticipantsService', () => {
     it('presentationOrder sequencial após o maior existente', async () => {
       eventsRepository.findById.mockResolvedValue(makeEvent())
 
-      const prismaClient = { participant: { createMany: vi.fn() } }
+      let capturedRecords: any[] = []
+      const prismaClient = {
+        participant: {
+          createMany: vi.fn(async ({ data }: any) => { capturedRecords = data }),
+        },
+      }
       const customPrisma = { $transaction: vi.fn(async (cb: any) => cb(prismaClient)) }
 
       const mod = await Test.createTestingModule({
@@ -653,12 +667,12 @@ describe('ParticipantsService', () => {
       }).compile()
       const svc = mod.get<ParticipantsService>(ParticipantsService)
 
-      repository.findByEventId
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([
-          makeParticipant({ id: 'p1', name: 'Ana', presentationOrder: 6 }),
-          makeParticipant({ id: 'p2', name: 'Bruno', presentationOrder: 7 }),
-        ])
+      repository.findByEventId.mockResolvedValueOnce([])
+      repository.findByEventId.mockImplementationOnce(async () =>
+        capturedRecords.map((r) =>
+          makeParticipant({ id: r.id, name: r.name, presentationOrder: r.presentationOrder }),
+        ),
+      )
       repository.maxPresentationOrder.mockResolvedValue(5)
       storageService.getPublicUrl.mockResolvedValue(null)
 

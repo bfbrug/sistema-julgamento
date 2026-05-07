@@ -20,6 +20,7 @@ import { BulkCreateParticipantsDto } from './dto/bulk-create-participants.dto'
 import { BulkCreateResult } from './dto/bulk-create-result.interface'
 import { IStorageService, STORAGE_SERVICE } from '../storage/storage.service.interface'
 import { plainToInstance } from 'class-transformer'
+import { randomUUID } from 'crypto'
 import { env } from '../../config/env'
 
 async function toParticipantResponse(
@@ -412,20 +413,19 @@ export class ParticipantsService {
 
     const maxOrder = await this.repository.maxPresentationOrder(eventId)
 
-    await this.prisma.$transaction(async (tx) => {
-      const { randomUUID } = await import('crypto')
-      const records = toCreate.map((name, i) => ({
-        id: randomUUID(),
-        eventId,
-        name,
-        presentationOrder: maxOrder + 1 + i,
-        isAbsent: false,
-        currentState: 'WAITING' as const,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }))
+    const records = toCreate.map((name, i) => ({
+      id: randomUUID(),
+      eventId,
+      name,
+      presentationOrder: maxOrder + 1 + i,
+      isAbsent: false,
+      currentState: 'WAITING' as const,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }))
 
-      await (tx as any).participant.createMany({ data: records })
+    await this.prisma.$transaction(async (tx) => {
+      await tx.participant.createMany({ data: records })
 
       await this.auditService.record(
         {
@@ -439,9 +439,9 @@ export class ParticipantsService {
       )
     })
 
+    const createdIds = new Set(records.map((r) => r.id))
     const allAfter = await this.repository.findByEventId(eventId)
-    const createdNormalized = new Set(toCreate.map((n) => n.trim().toLowerCase()))
-    const newParticipants = allAfter.filter((p) => createdNormalized.has(p.name.trim().toLowerCase()))
+    const newParticipants = allAfter.filter((p) => createdIds.has(p.id))
 
     const participantDtos = await Promise.all(
       newParticipants.map((p) => toParticipantResponse(p, this.storageService)),
