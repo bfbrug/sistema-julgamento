@@ -27,5 +27,6 @@ import { DatabaseModule } from '../../config/database.module'
     RankingBuilderService,
     PdfService,
   ],
+  exports: [RankingBuilderService],
 })
 export class ReportsModule {}

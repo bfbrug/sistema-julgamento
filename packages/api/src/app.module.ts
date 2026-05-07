@@ -21,6 +21,7 @@ import { ScoringModule } from './modules/scoring/scoring.module'
 import { CalculationModule } from './modules/calculation/calculation.module'
 import { ReportsModule } from './modules/reports/reports.module'
 import { CertificatesModule } from './modules/certificates/certificates.module'
+import { ResultReleasesModule } from './modules/result-releases/result-releases.module'
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { CertificatesModule } from './modules/certificates/certificates.module'
     UsersModule,
     ReportsModule,
     CertificatesModule,
+    ResultReleasesModule,
     ThrottlerModule.forRoot([
       { name: 'default', ttl: 60000, limit: 100 },
       { name: 'auth', ttl: env.THROTTLE_AUTH_TTL * 1000, limit: env.THROTTLE_AUTH_LIMIT },
