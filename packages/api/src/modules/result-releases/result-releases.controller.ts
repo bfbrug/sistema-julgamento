@@ -5,19 +5,24 @@ import { ResultReleasesGateway } from './result-releases.gateway'
 import { CreateResultReleaseDto } from './dto/create-result-release.dto'
 
 @UseGuards(JwtAuthGuard)
-@Controller('events/:eventId/results/releases')
+@Controller('events/:eventId/results')
 export class ResultReleasesController {
   constructor(
     @Inject(ResultReleasesService) private readonly service: ResultReleasesService,
     @Inject(ResultReleasesGateway) private readonly gateway: ResultReleasesGateway,
   ) {}
 
-  @Get()
+  @Get('full')
+  getFullRanking(@Param('eventId') eventId: string) {
+    return this.service.getFullRanking(eventId)
+  }
+
+  @Get('releases')
   list(@Param('eventId') eventId: string) {
     return this.service.list(eventId)
   }
 
-  @Post()
+  @Post('releases')
   async create(
     @Param('eventId') eventId: string,
     @Body() dto: CreateResultReleaseDto,
@@ -28,7 +33,7 @@ export class ResultReleasesController {
     return release
   }
 
-  @Delete(':releaseId')
+  @Delete('releases/:releaseId')
   async remove(
     @Param('eventId') eventId: string,
     @Param('releaseId') releaseId: string,

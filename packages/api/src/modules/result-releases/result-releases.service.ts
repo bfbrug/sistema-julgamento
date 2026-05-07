@@ -75,6 +75,20 @@ export class ResultReleasesService {
     return { id: releaseId }
   }
 
+  async getFullRanking(eventId: string) {
+    const event = await this.prisma.judgingEvent.findUniqueOrThrow({
+      where: { id: eventId },
+      select: { managerId: true, categories: { select: { id: true, name: true, genderMode: true } } },
+    })
+    const categories = await Promise.all(
+      event.categories.map(async (cat) => {
+        const ranking = await this.rankingBuilder.computeRanking(eventId, cat.id, event.managerId)
+        return { id: cat.id, name: cat.name, genderMode: cat.genderMode, ranking }
+      }),
+    )
+    return { categories }
+  }
+
   async list(eventId: string) {
     return this.prisma.resultRelease.findMany({
       where: { eventId },

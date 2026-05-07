@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useLiveScoring } from '@/hooks/useLiveScoring'
-import { useTransitionEvent } from '@/hooks/useEvents'
+import { useTransitionEvent, useEvent } from '@/hooks/useEvents'
+import { useFullRanking } from '@/hooks/useLiveResults'
+import { ReleasePanel } from '@/components/live/ReleasePanel'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Users, Trophy, Play, CheckCircle, AlertCircle, Clock, Flag } from 'lucide-react'
+import { Users, Trophy, Play, CheckCircle, Clock, Flag, UserX, UserMinus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
@@ -29,6 +31,9 @@ export default function EventLivePage() {
   const { id: eventId } = useParams() as { id: string }
   const { liveState, isConnected, activateParticipant, markAbsent } = useLiveScoring(eventId)
   const { mutate: transitionEvent } = useTransitionEvent(eventId)
+  const { data: event } = useEvent(eventId)
+  const isEventFinished = event?.status === 'FINISHED'
+  const { data: fullRanking } = useFullRanking(eventId, isEventFinished)
   const [confirmAbsentId, setConfirmAbsentId] = useState<string | null>(null)
 
   const handleConfirmAbsent = () => {
@@ -246,28 +251,49 @@ export default function EventLivePage() {
               return (
                 <div key={p.id} className={cn(
                   'flex items-center gap-3 px-4 py-2.5 transition-colors',
-                  isCurrent ? 'bg-primary-50' : done ? 'opacity-50' : 'hover:bg-secondary-50'
+                  isCurrent ? 'bg-primary-50' :
+                  p.status === 'ABSENT' ? 'bg-danger-50/40' :
+                  p.status === 'FINISHED' ? 'opacity-40' :
+                  'hover:bg-secondary-50'
                 )}>
-                  <div className="h-8 w-8 rounded-full flex-shrink-0 overflow-hidden border border-secondary-200 bg-secondary-100 flex items-center justify-center text-xs font-bold text-secondary-500">
+                  <div className={cn(
+                    'h-8 w-8 rounded-full flex-shrink-0 overflow-hidden border flex items-center justify-center text-xs font-bold',
+                    p.status === 'ABSENT' ? 'border-danger-200 bg-danger-100 text-danger-400' : 'border-secondary-200 bg-secondary-100 text-secondary-500'
+                  )}>
                     {p.photoUrl
                       ? <img src={p.photoUrl} alt={p.name} className="h-full w-full object-cover object-top" />
                       : p.presentationOrder
                     }
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={cn('text-sm font-semibold truncate leading-tight', isCurrent ? 'text-primary-800' : done ? 'text-secondary-400' : 'text-secondary-800')}>{p.name}</p>
-                    <p className={cn('text-[10px] font-medium uppercase tracking-wide', isCurrent ? 'text-primary-500' : done ? 'text-secondary-400' : 'text-secondary-400')}>{translateStatus(p.status)}</p>
+                    <p className={cn(
+                      'text-sm font-semibold truncate leading-tight',
+                      isCurrent ? 'text-primary-800' :
+                      p.status === 'ABSENT' ? 'text-danger-300 line-through' :
+                      p.status === 'FINISHED' ? 'text-secondary-400 line-through' :
+                      'text-secondary-800'
+                    )}>{p.name}</p>
+                    <p className={cn(
+                      'text-[10px] font-medium uppercase tracking-wide',
+                      isCurrent ? 'text-primary-500' : 'text-secondary-400'
+                    )}>{translateStatus(p.status)}</p>
                   </div>
                   {p.status === 'FINISHED' && <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />}
-                  {p.status === 'ABSENT' && <AlertCircle className="h-3.5 w-3.5 text-danger-400 flex-shrink-0" />}
+                  {p.status === 'ABSENT' && (
+                    <span className="flex items-center gap-1 rounded-full bg-danger-100 px-2 py-0.5 text-[10px] font-semibold text-danger-600 flex-shrink-0">
+                      <UserX className="h-3 w-3" />
+                      Ausente
+                    </span>
+                  )}
                   {isCurrent && !done && <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse flex-shrink-0" />}
                   {p.status === 'WAITING' && !isCurrent && (
                     <button
                       type="button"
-                      className="ml-auto text-xs text-danger-500 hover:text-danger-700 hover:underline flex-shrink-0"
+                      className="ml-auto flex items-center gap-1 rounded-full border border-danger-200 px-2 py-0.5 text-[10px] font-semibold text-danger-500 hover:bg-danger-50 hover:border-danger-300 hover:text-danger-700 transition-colors flex-shrink-0"
                       onClick={() => setConfirmAbsentId(p.id)}
                     >
-                      Marcar Ausente
+                      <UserMinus className="h-3 w-3" />
+                      Ausente
                     </button>
                   )}
                 </div>
@@ -276,6 +302,10 @@ export default function EventLivePage() {
           </div>
         </div>
       </div>
+
+      {isEventFinished && fullRanking?.categories && fullRanking.categories.length > 0 && (
+        <ReleasePanel eventId={eventId} categories={fullRanking.categories} />
+      )}
 
       <ConfirmDialog
         open={confirmAbsentId !== null}
