@@ -146,42 +146,6 @@ describe('CategoriesService', () => {
     })
   })
 
-  describe('genderMode', () => {
-    it('cria categoria com genderMode default MIXED', async () => {
-      eventsRepository.findById.mockResolvedValue(makeEvent())
-      repository.findByEventIdAndName.mockResolvedValue(null)
-      repository.maxDisplayOrder.mockResolvedValue(98)
-      const created = { id: 'cat-mixed', eventId: 'event-1', name: 'Geral Test', displayOrder: 99, genderMode: 'MIXED' }
-      repository.create.mockResolvedValue(created)
-      repository.findById.mockResolvedValue({ ...created, _count: { judgeCategories: 0, scores: 0 } })
-
-      const cat = await service.create('event-1', { name: 'Geral Test', displayOrder: 99 }, 'manager-1')
-
-      expect(repository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ genderMode: 'MIXED' }),
-        expect.anything(),
-      )
-      expect((cat as any).genderMode).toBe('MIXED')
-    })
-
-    it('cria categoria com genderMode UNISEX_SPLIT', async () => {
-      eventsRepository.findById.mockResolvedValue(makeEvent())
-      repository.findByEventIdAndName.mockResolvedValue(null)
-      repository.maxDisplayOrder.mockResolvedValue(99)
-      const created = { id: 'cat-split', eventId: 'event-1', name: 'Geral Test Split', displayOrder: 100, genderMode: 'UNISEX_SPLIT' }
-      repository.create.mockResolvedValue(created)
-      repository.findById.mockResolvedValue({ ...created, _count: { judgeCategories: 0, scores: 0 } })
-
-      const cat = await service.create('event-1', { name: 'Geral Test Split', displayOrder: 100, genderMode: 'UNISEX_SPLIT' }, 'manager-1')
-
-      expect(repository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ genderMode: 'UNISEX_SPLIT' }),
-        expect.anything(),
-      )
-      expect((cat as any).genderMode).toBe('UNISEX_SPLIT')
-    })
-  })
-
   describe('list', () => {
     it('retorna categorias ordenadas por displayOrder', async () => {
       eventsRepository.findById.mockResolvedValue(makeEvent())
@@ -225,44 +189,6 @@ describe('CategoriesService', () => {
       ).rejects.toSatisfy((e: any) => e?.response?.code === 'EVENT_IN_PROGRESS_LOCK')
     })
 
-    it('grava audit log ao mudar genderMode', async () => {
-      eventsRepository.findById.mockResolvedValue(makeEvent())
-      const original = makeCategory({ genderMode: 'MIXED' })
-      repository.findById.mockResolvedValueOnce(original)
-      repository.findByEventIdAndName.mockResolvedValue(null)
-      const updatedRaw = { id: 'cat-1', eventId: 'event-1', name: 'Técnica Vocal', displayOrder: 1, genderMode: 'UNISEX_SPLIT' }
-      repository.update.mockResolvedValue(updatedRaw)
-      repository.findById.mockResolvedValueOnce({ ...updatedRaw, _count: { judgeCategories: 0, scores: 0 } })
-
-      await service.update('cat-1', 'event-1', { genderMode: 'UNISEX_SPLIT' }, 'manager-1')
-
-      expect(auditService.record).toHaveBeenCalledWith(
-        expect.objectContaining({
-          action: 'CATEGORY_GENDER_MODE_CHANGED',
-          entityType: 'Category',
-          entityId: 'cat-1',
-          payload: { from: 'MIXED', to: 'UNISEX_SPLIT' },
-        }),
-        expect.anything(),
-      )
-    })
-
-    it('não grava audit log se genderMode não mudar', async () => {
-      eventsRepository.findById.mockResolvedValue(makeEvent())
-      const original = makeCategory({ genderMode: 'MIXED' })
-      repository.findById.mockResolvedValueOnce(original)
-      repository.findByEventIdAndName.mockResolvedValue(null)
-      const updatedRaw = { id: 'cat-1', eventId: 'event-1', name: 'Técnica Vocal', displayOrder: 1, genderMode: 'MIXED' }
-      repository.update.mockResolvedValue(updatedRaw)
-      repository.findById.mockResolvedValueOnce({ ...updatedRaw, _count: { judgeCategories: 0, scores: 0 } })
-
-      await service.update('cat-1', 'event-1', { genderMode: 'MIXED' }, 'manager-1')
-
-      const genderModeChangedCalls = (auditService.record as ReturnType<typeof vi.fn>).mock.calls.filter(
-        (call: any[]) => call[0]?.action === 'CATEGORY_GENDER_MODE_CHANGED',
-      )
-      expect(genderModeChangedCalls).toHaveLength(0)
-    })
   })
 
   describe('remove', () => {

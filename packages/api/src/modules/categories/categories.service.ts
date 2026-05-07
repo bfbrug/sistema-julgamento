@@ -83,7 +83,6 @@ export class CategoriesService {
       const created = await this.repository.create({
         name: dto.name,
         displayOrder,
-        genderMode: dto.genderMode ?? 'MIXED',
         event: { connect: { id: eventId } },
       }, tx)
 
@@ -145,7 +144,6 @@ export class CategoriesService {
     const updated = await this.prisma.$transaction(async (tx) => {
       const result = await this.repository.update(id, {
         ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.genderMode !== undefined && { genderMode: dto.genderMode }),
       }, tx)
 
       await this.auditService.record({
@@ -155,16 +153,6 @@ export class CategoriesService {
         actorId: managerId,
         payload: { before: { name: category.name }, after: dto },
       }, tx)
-
-      if (dto.genderMode !== undefined && category.genderMode !== dto.genderMode) {
-        await this.auditService.record({
-          action: 'CATEGORY_GENDER_MODE_CHANGED',
-          entityType: 'Category',
-          entityId: id,
-          actorId: managerId,
-          payload: { from: category.genderMode, to: dto.genderMode },
-        }, tx)
-      }
 
       return result
     })

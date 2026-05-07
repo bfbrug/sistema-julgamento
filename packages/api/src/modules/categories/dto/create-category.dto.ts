@@ -1,5 +1,4 @@
-import { IsString, MinLength, MaxLength, IsOptional, IsInt, Min, IsEnum } from 'class-validator'
-import { CategoryGenderMode } from '@prisma/client'
+import { IsString, MinLength, MaxLength, IsOptional, IsInt, Min } from 'class-validator'
 
 export class CreateCategoryDto {
   @IsString()
@@ -11,8 +10,4 @@ export class CreateCategoryDto {
   @IsInt()
   @Min(1)
   displayOrder?: number
-
-  @IsOptional()
-  @IsEnum(CategoryGenderMode, { message: 'Modo de gênero inválido.' })
-  genderMode?: CategoryGenderMode
 }
