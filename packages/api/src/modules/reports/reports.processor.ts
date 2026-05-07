@@ -24,7 +24,6 @@ interface EventData {
 @Processor('reports')
 export class ReportsProcessor extends WorkerHost {
   private readonly templatesDir = path.join(__dirname, 'templates')
-  private readonly partialsRegistered: boolean
 
   constructor(
     @Inject(PdfService) private readonly pdfService: PdfService,
@@ -34,7 +33,6 @@ export class ReportsProcessor extends WorkerHost {
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
   ) {
     super()
-    this.partialsRegistered = false
     this.registerPartials()
     Handlebars.registerHelper('eq', (a: unknown, b: unknown) => a === b)
   }

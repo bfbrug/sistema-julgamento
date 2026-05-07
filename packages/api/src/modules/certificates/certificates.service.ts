@@ -332,8 +332,8 @@ export class CertificatesService {
     return job.filePath
   }
 
-  // Called by processor
-  async buildBatchData(eventId: string, managerId?: string) {
+  // Called by processor — managerId is always provided by CertificatesProcessor
+  async buildBatchData(eventId: string, managerId: string) {
     const event = await this.repository.findEventById(eventId)
     if (!event) throw new Error('Evento não encontrado')
     if (!event.certificateConfig) throw new Error('Configuração de certificado não encontrada')
@@ -343,11 +343,9 @@ export class CertificatesService {
 
     // Build ranking map for posicao placeholder
     const rankingMap = new Map<string, number>()
-    if (managerId) {
-      const ranking = await this.rankingBuilder.buildClassification(eventId, managerId)
-      for (const r of ranking) {
-        rankingMap.set(r.participantId, r.position)
-      }
+    const ranking = await this.rankingBuilder.buildClassification(eventId, managerId)
+    for (const r of ranking) {
+      rankingMap.set(r.participantId, r.position)
     }
 
     const processedParticipants = participants.map((p) => {
