@@ -137,10 +137,15 @@ export async function apiClient<T, B = unknown>({
       })
 
       res = await retryRequest
-    } else if (errorCode === 'INVALID_TOKEN' || !errorCode) {
+    } else if (errorCode === 'INVALID_TOKEN') {
       useAuthStore.getState().clearSession()
-      window.location.href = `/auth/login?next=${window.location.pathname}`
+      if (!window.location.pathname.startsWith('/auth/login')) {
+        window.location.href = `/auth/login?next=${window.location.pathname}`
+      }
       throw new ApiError('Sessão inválida', 401, 'INVALID_TOKEN')
+    } else {
+      const errorMsg = isApiError(responseBody) ? responseBody.error : `HTTP ${res.status}`
+      throw new ApiError(errorMsg, 401, errorCode)
     }
   }
 

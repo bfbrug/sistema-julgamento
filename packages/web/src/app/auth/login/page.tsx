@@ -11,12 +11,14 @@ import { apiClient } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 import { toast } from 'sonner'
 import { useState, Suspense } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const setSession = useAuthStore((state) => state.setSession)
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
@@ -70,15 +72,26 @@ function LoginForm() {
               error={errors.identifier?.message}
               placeholder="seu@email.com ou joao_silva"
             />
-            <Input
-              id="password"
-              label="Senha"
-              type="password"
-              autoComplete="current-password"
-              {...register('password')}
-              error={errors.password?.message}
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                label="Senha"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                {...register('password')}
+                error={errors.password?.message}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-9 text-secondary-500 hover:text-secondary-700"
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             <Button
               type="submit"
               className="mt-2 w-full"
