@@ -156,6 +156,16 @@ export class CategoriesService {
         payload: { before: { name: category.name }, after: dto },
       }, tx)
 
+      if (dto.genderMode !== undefined && category.genderMode !== dto.genderMode) {
+        await this.auditService.record({
+          action: 'CATEGORY_GENDER_MODE_CHANGED',
+          entityType: 'Category',
+          entityId: id,
+          actorId: managerId,
+          payload: { from: category.genderMode, to: dto.genderMode },
+        }, tx)
+      }
+
       return result
     })
 

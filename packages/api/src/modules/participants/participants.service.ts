@@ -157,6 +157,16 @@ export class ParticipantsService {
         actorId: managerId,
         payload: { before: { name: participant.name }, after: dto },
       }, tx)
+
+      if (dto.gender !== undefined && participant.gender !== dto.gender) {
+        await this.auditService.record({
+          action: 'PARTICIPANT_GENDER_CHANGED',
+          entityType: 'Participant',
+          entityId: id,
+          actorId: managerId,
+          payload: { from: participant.gender, to: dto.gender },
+        }, tx)
+      }
     })
 
     const updated = await this.repository.findById(id)

@@ -224,6 +224,45 @@ describe('CategoriesService', () => {
         service.update('cat-1', 'event-1', { name: 'X' }, 'manager-1'),
       ).rejects.toSatisfy((e: any) => e?.response?.code === 'EVENT_IN_PROGRESS_LOCK')
     })
+
+    it('grava audit log ao mudar genderMode', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      const original = makeCategory({ genderMode: 'MIXED' })
+      repository.findById.mockResolvedValueOnce(original)
+      repository.findByEventIdAndName.mockResolvedValue(null)
+      const updatedRaw = { id: 'cat-1', eventId: 'event-1', name: 'Técnica Vocal', displayOrder: 1, genderMode: 'UNISEX_SPLIT' }
+      repository.update.mockResolvedValue(updatedRaw)
+      repository.findById.mockResolvedValueOnce({ ...updatedRaw, _count: { judgeCategories: 0, scores: 0 } })
+
+      await service.update('cat-1', 'event-1', { genderMode: 'UNISEX_SPLIT' }, 'manager-1')
+
+      expect(auditService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'CATEGORY_GENDER_MODE_CHANGED',
+          entityType: 'Category',
+          entityId: 'cat-1',
+          payload: { from: 'MIXED', to: 'UNISEX_SPLIT' },
+        }),
+        expect.anything(),
+      )
+    })
+
+    it('não grava audit log se genderMode não mudar', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      const original = makeCategory({ genderMode: 'MIXED' })
+      repository.findById.mockResolvedValueOnce(original)
+      repository.findByEventIdAndName.mockResolvedValue(null)
+      const updatedRaw = { id: 'cat-1', eventId: 'event-1', name: 'Técnica Vocal', displayOrder: 1, genderMode: 'MIXED' }
+      repository.update.mockResolvedValue(updatedRaw)
+      repository.findById.mockResolvedValueOnce({ ...updatedRaw, _count: { judgeCategories: 0, scores: 0 } })
+
+      await service.update('cat-1', 'event-1', { genderMode: 'MIXED' }, 'manager-1')
+
+      const genderModeChangedCalls = (auditService.record as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (call: any[]) => call[0]?.action === 'CATEGORY_GENDER_MODE_CHANGED',
+      )
+      expect(genderModeChangedCalls).toHaveLength(0)
+    })
   })
 
   describe('remove', () => {

@@ -179,6 +179,43 @@ describe('ParticipantsService', () => {
         service.update('part-1', 'event-1', { name: 'X' }, 'manager-1'),
       ).rejects.toSatisfy((e: any) => e?.response?.code === 'EVENT_IN_PROGRESS_LOCK')
     })
+
+    it('grava audit log ao mudar gender', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      const original = makeParticipant({ gender: 'MALE' })
+      repository.findById.mockResolvedValueOnce(original)
+      const updated = makeParticipant({ gender: 'FEMALE' })
+      repository.update.mockResolvedValue(updated)
+      repository.findById.mockResolvedValueOnce(updated)
+
+      await service.update('part-1', 'event-1', { gender: 'FEMALE' }, 'manager-1')
+
+      expect(auditService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'PARTICIPANT_GENDER_CHANGED',
+          entityType: 'Participant',
+          entityId: 'part-1',
+          payload: { from: 'MALE', to: 'FEMALE' },
+        }),
+        expect.anything(),
+      )
+    })
+
+    it('não grava audit log se gender não mudar', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      const original = makeParticipant({ gender: 'MALE' })
+      repository.findById.mockResolvedValueOnce(original)
+      const updated = makeParticipant({ gender: 'MALE' })
+      repository.update.mockResolvedValue(updated)
+      repository.findById.mockResolvedValueOnce(updated)
+
+      await service.update('part-1', 'event-1', { gender: 'MALE' }, 'manager-1')
+
+      const genderChangedCalls = (auditService.record as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (call: any[]) => call[0]?.action === 'PARTICIPANT_GENDER_CHANGED',
+      )
+      expect(genderChangedCalls).toHaveLength(0)
+    })
   })
 
   describe('remove', () => {
