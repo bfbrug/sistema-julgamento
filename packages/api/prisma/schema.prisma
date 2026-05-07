@@ -234,8 +234,9 @@ model ResultRelease {
   category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   releasedBy User         @relation(fields: [releasedById], references: [id])
 
-  @@unique([categoryId, gender, position])
   @@index([eventId])
+  @@index([categoryId, position])
+  @@index([releasedById])
   @@map("result_releases")
 }
 
