@@ -74,7 +74,7 @@ describe('ReportsProcessor', () => {
     })
 
     mockRankingBuilder.buildTopNByCategory.mockResolvedValueOnce([
-      { categoryId: 'c1', categoryName: 'Cat', genderMode: 'MIXED', mixed: [{ position: 1, participantName: 'A' }] },
+      { categoryId: 'c1', categoryName: 'Cat', entries: [{ position: 1, participantName: 'A', participantId: 'p1', finalScore: 9, scoresByCategory: {}, isAbsent: false }] },
     ])
 
     mockPdfService.render.mockResolvedValueOnce(Buffer.from('pdf'))
