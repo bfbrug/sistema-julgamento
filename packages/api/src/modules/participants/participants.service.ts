@@ -92,6 +92,7 @@ export class ParticipantsService {
       const participant = await this.repository.create({
         name: dto.name,
         presentationOrder,
+        gender: dto.gender,
         event: { connect: { id: eventId } },
       }, tx)
 
@@ -146,6 +147,7 @@ export class ParticipantsService {
     await this.prisma.$transaction(async (tx) => {
       await this.repository.update(id, {
         ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.gender !== undefined && { gender: dto.gender }),
       }, tx)
 
       await this.auditService.record({
@@ -417,6 +419,7 @@ export class ParticipantsService {
       id: randomUUID(),
       eventId,
       name,
+      gender: dto.gender,
       presentationOrder: maxOrder + 1 + i,
       isAbsent: false,
       currentState: 'WAITING' as const,

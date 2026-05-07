@@ -10,6 +10,7 @@ export class CategoryResponseDto {
   @Expose() eventId!: string
   @Expose() name!: string
   @Expose() displayOrder!: number
+  @Expose() genderMode!: string
 
   @Expose()
   @Type(() => CategoryCountsDto)

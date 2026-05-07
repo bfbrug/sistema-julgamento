@@ -1,4 +1,5 @@
-import { IsArray, IsString, IsNotEmpty, MaxLength, ArrayMinSize, ArrayMaxSize } from 'class-validator'
+import { IsArray, IsString, IsNotEmpty, MaxLength, ArrayMinSize, ArrayMaxSize, IsEnum } from 'class-validator'
+import { Gender } from '@prisma/client'
 
 export class BulkCreateParticipantsDto {
   @IsArray()
@@ -8,4 +9,7 @@ export class BulkCreateParticipantsDto {
   @IsNotEmpty({ each: true })
   @MaxLength(255, { each: true })
   names!: string[]
+
+  @IsEnum(Gender, { message: 'Gênero inválido. Use MALE ou FEMALE.' })
+  gender!: Gender
 }

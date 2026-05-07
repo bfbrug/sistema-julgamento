@@ -143,6 +143,7 @@ export async function main() {
         eventId: evento.id,
         name: `Participante ${i}`,
         presentationOrder: i,
+        gender: i % 2 === 0 ? 'FEMALE' : 'MALE',
         currentState: 'WAITING',
       },
     });

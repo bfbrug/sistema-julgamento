@@ -1,4 +1,5 @@
-import { IsString, MinLength, MaxLength, IsOptional } from 'class-validator'
+import { IsString, MinLength, MaxLength, IsOptional, IsEnum } from 'class-validator'
+import { Gender } from '@prisma/client'
 
 export class UpdateParticipantDto {
   @IsOptional()
@@ -6,4 +7,8 @@ export class UpdateParticipantDto {
   @MinLength(1)
   @MaxLength(160)
   name?: string
+
+  @IsOptional()
+  @IsEnum(Gender, { message: 'Gênero inválido. Use MALE ou FEMALE.' })
+  gender?: Gender
 }

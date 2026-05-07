@@ -9,6 +9,7 @@ export class ParticipantResponseDto {
   @Expose() id!: string
   @Expose() eventId!: string
   @Expose() name!: string
+  @Expose() gender!: string
   @Expose() photoUrl!: string | null
   @Expose() presentationOrder!: number
   @Expose() isAbsent!: boolean

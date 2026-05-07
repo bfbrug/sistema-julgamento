@@ -537,6 +537,40 @@ describe('ParticipantsService', () => {
     })
   })
 
+  describe('gender', () => {
+    it('cria participante com gender MALE', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      repository.maxPresentationOrder.mockResolvedValue(98)
+      const created = makeParticipant({ id: 'part-male', presentationOrder: 99, gender: 'MALE' })
+      repository.create.mockResolvedValue(created)
+      repository.findById.mockResolvedValue(created)
+
+      const res = await service.create('event-1', { name: 'João', gender: 'MALE' as any }, 'manager-1')
+
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ gender: 'MALE' }),
+        expect.anything(),
+      )
+      expect((res as any).gender).toBe('MALE')
+    })
+
+    it('cria participante com gender FEMALE', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      repository.maxPresentationOrder.mockResolvedValue(99)
+      const created = makeParticipant({ id: 'part-female', presentationOrder: 100, gender: 'FEMALE' })
+      repository.create.mockResolvedValue(created)
+      repository.findById.mockResolvedValue(created)
+
+      const res = await service.create('event-1', { name: 'Maria', gender: 'FEMALE' as any }, 'manager-1')
+
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ gender: 'FEMALE' }),
+        expect.anything(),
+      )
+      expect((res as any).gender).toBe('FEMALE')
+    })
+  })
+
   describe('bulkCreate', () => {
     it('cria todos os nomes quando nenhum existe', async () => {
       eventsRepository.findById.mockResolvedValue(makeEvent())

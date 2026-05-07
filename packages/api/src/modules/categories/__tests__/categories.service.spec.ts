@@ -146,6 +146,42 @@ describe('CategoriesService', () => {
     })
   })
 
+  describe('genderMode', () => {
+    it('cria categoria com genderMode default MIXED', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      repository.findByEventIdAndName.mockResolvedValue(null)
+      repository.maxDisplayOrder.mockResolvedValue(98)
+      const created = { id: 'cat-mixed', eventId: 'event-1', name: 'Geral Test', displayOrder: 99, genderMode: 'MIXED' }
+      repository.create.mockResolvedValue(created)
+      repository.findById.mockResolvedValue({ ...created, _count: { judgeCategories: 0, scores: 0 } })
+
+      const cat = await service.create('event-1', { name: 'Geral Test', displayOrder: 99 }, 'manager-1')
+
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ genderMode: 'MIXED' }),
+        expect.anything(),
+      )
+      expect((cat as any).genderMode).toBe('MIXED')
+    })
+
+    it('cria categoria com genderMode UNISEX_SPLIT', async () => {
+      eventsRepository.findById.mockResolvedValue(makeEvent())
+      repository.findByEventIdAndName.mockResolvedValue(null)
+      repository.maxDisplayOrder.mockResolvedValue(99)
+      const created = { id: 'cat-split', eventId: 'event-1', name: 'Geral Test Split', displayOrder: 100, genderMode: 'UNISEX_SPLIT' }
+      repository.create.mockResolvedValue(created)
+      repository.findById.mockResolvedValue({ ...created, _count: { judgeCategories: 0, scores: 0 } })
+
+      const cat = await service.create('event-1', { name: 'Geral Test Split', displayOrder: 100, genderMode: 'UNISEX_SPLIT' as any }, 'manager-1')
+
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ genderMode: 'UNISEX_SPLIT' }),
+        expect.anything(),
+      )
+      expect((cat as any).genderMode).toBe('UNISEX_SPLIT')
+    })
+  })
+
   describe('list', () => {
     it('retorna categorias ordenadas por displayOrder', async () => {
       eventsRepository.findById.mockResolvedValue(makeEvent())
