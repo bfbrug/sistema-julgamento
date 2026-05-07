@@ -109,6 +109,7 @@ describe('EventsService', () => {
             scoreMin: 10,
             scoreMax: 10,
             topN: 5,
+            genderMode: 'MIXED' as any,
           },
           'manager-1',
         ),
