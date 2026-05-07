@@ -63,7 +63,7 @@ export class CertificatesProcessor extends WorkerHost {
 
     try {
       // 10% — validation
-      const batchData = await this.certificatesService.buildBatchData(eventId)
+      const batchData = await this.certificatesService.buildBatchData(eventId, managerId)
       if (!batchData.backgroundPath) {
         throw new Error('Background do certificado não configurado')
       }

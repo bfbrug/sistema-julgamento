@@ -107,7 +107,7 @@ export class CertificatesRepository {
     return this.prisma.participant.findMany({
       where: { eventId },
       orderBy: { name: 'asc' },
-      select: { id: true, name: true },
+      select: { id: true, name: true, gender: true },
     })
   }
 

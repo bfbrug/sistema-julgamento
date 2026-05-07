@@ -8,6 +8,7 @@ import { StorageModule } from '../storage/storage.module'
 import { AuditModule } from '../audit/audit.module'
 import { DatabaseModule } from '../../config/database.module'
 import { PdfService } from '../../services/pdf.service'
+import { ReportsModule } from '../reports/reports.module'
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { PdfService } from '../../services/pdf.service'
     StorageModule,
     AuditModule,
     DatabaseModule,
+    ReportsModule,
   ],
   controllers: [CertificatesController],
   providers: [

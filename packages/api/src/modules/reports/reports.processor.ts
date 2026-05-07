@@ -36,6 +36,7 @@ export class ReportsProcessor extends WorkerHost {
     super()
     this.partialsRegistered = false
     this.registerPartials()
+    Handlebars.registerHelper('eq', (a: unknown, b: unknown) => a === b)
   }
 
   private registerPartials(): void {
@@ -95,11 +96,10 @@ export class ReportsProcessor extends WorkerHost {
       let html: string
 
       if (type === ReportType.TOP_N) {
-        const entries = await this.rankingBuilder.buildTopN(eventId, managerId)
         const topN = eventInfo.topN
+        const categories = await this.rankingBuilder.buildTopNByCategory(eventId, managerId)
         const template = this.loadTemplate('top-n')
-        const tied = entries.some((e, i, arr) => i > 0 && arr[i - 1]!.position === e.position)
-        html = template({ event, entries, topN, generatedAt, verificationCode, tied })
+        html = template({ event, categories, topN, generatedAt, verificationCode })
 
       } else if (type === ReportType.GENERAL) {
         const entries = await this.rankingBuilder.buildClassification(eventId, managerId)

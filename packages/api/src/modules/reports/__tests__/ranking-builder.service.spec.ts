@@ -7,7 +7,7 @@ const mockPrisma = {
   judgingEvent: { findFirst: vi.fn() },
   judge: { findMany: vi.fn() },
   score: { findMany: vi.fn() },
-  category: { findUniqueOrThrow: vi.fn() },
+  category: { findUniqueOrThrow: vi.fn(), findMany: vi.fn() },
   participant: { findMany: vi.fn() },
 }
 
@@ -239,6 +239,57 @@ describe('RankingBuilderService', () => {
       if (r.mode !== 'MIXED') return
       const pedro = r.entries.find((e) => e.participantId === 'm2')
       expect(pedro?.totalScore).toBe(0)
+    })
+  })
+
+  describe('buildTopNByCategory', () => {
+    const makeParticipants = () => [
+      { id: 'm1', name: 'João', gender: 'MALE' },
+      { id: 'f1', name: 'Ana', gender: 'FEMALE' },
+    ]
+
+    const makeCalc = () =>
+      baseCalcResponse([
+        makeRanking('m1', 'João', 1, 9.0),
+        makeRanking('f1', 'Ana', 2, 8.0),
+      ])
+
+    it('MIXED retorna uma seção com mixed', async () => {
+      mockPrisma.category.findMany.mockResolvedValueOnce([
+        { id: 'cat1', name: 'Técnica', genderMode: 'MIXED' },
+      ])
+      mockPrisma.category.findUniqueOrThrow.mockResolvedValueOnce({
+        genderMode: 'MIXED',
+        event: { topN: 10 },
+      })
+      mockCalculate.mockResolvedValueOnce(makeCalc())
+      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
+
+      const result = await service.buildTopNByCategory('e1', 'm1')
+      expect(result).toHaveLength(1)
+      expect(result[0]!.genderMode).toBe('MIXED')
+      expect(result[0]!.mixed).toBeDefined()
+      expect(result[0]!.male).toBeUndefined()
+      expect(result[0]!.female).toBeUndefined()
+    })
+
+    it('UNISEX_SPLIT retorna male e female separados', async () => {
+      mockPrisma.category.findMany.mockResolvedValueOnce([
+        { id: 'cat1', name: 'Técnica', genderMode: 'UNISEX_SPLIT' },
+      ])
+      mockPrisma.category.findUniqueOrThrow.mockResolvedValueOnce({
+        genderMode: 'UNISEX_SPLIT',
+        event: { topN: 10 },
+      })
+      mockCalculate.mockResolvedValueOnce(makeCalc())
+      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
+
+      const result = await service.buildTopNByCategory('e1', 'm1')
+      expect(result).toHaveLength(1)
+      expect(result[0]!.genderMode).toBe('UNISEX_SPLIT')
+      expect(result[0]!.male).toBeDefined()
+      expect(result[0]!.female).toBeDefined()
+      expect(result[0]!.mixed).toBeUndefined()
     })
   })
 

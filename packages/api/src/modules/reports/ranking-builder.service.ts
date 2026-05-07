@@ -71,6 +71,51 @@ export class RankingBuilderService {
     }))
   }
 
+  async buildTopNByCategory(eventId: string, managerId: string): Promise<Array<{
+    categoryId: string
+    categoryName: string
+    genderMode: 'MIXED' | 'MALE_ONLY' | 'FEMALE_ONLY' | 'UNISEX_SPLIT'
+    mixed?: ClassificationEntry[]
+    male?: ClassificationEntry[]
+    female?: ClassificationEntry[]
+  }>> {
+    const categories = await this.prisma.category.findMany({
+      where: { event: { id: eventId } },
+      orderBy: { displayOrder: 'asc' },
+      select: { id: true, name: true, genderMode: true },
+    })
+
+    return Promise.all(
+      categories.map(async (cat) => {
+        const ranking = await this.computeRanking(eventId, cat.id, managerId)
+        const toEntry = (e: RankEntry): ClassificationEntry => ({
+          position: e.position,
+          participantId: e.participantId,
+          participantName: e.name,
+          finalScore: Number(e.totalScore.toFixed(2)),
+          scoresByCategory: {},
+          isAbsent: false,
+        })
+
+        if (ranking.mode === 'UNISEX_SPLIT') {
+          return {
+            categoryId: cat.id,
+            categoryName: cat.name,
+            genderMode: 'UNISEX_SPLIT' as const,
+            male: ranking.male.map(toEntry),
+            female: ranking.female.map(toEntry),
+          }
+        }
+        return {
+          categoryId: cat.id,
+          categoryName: cat.name,
+          genderMode: ranking.mode,
+          mixed: ranking.entries.map(toEntry),
+        }
+      }),
+    )
+  }
+
   async buildAbsents(
     eventId: string,
     managerId: string,

@@ -8,6 +8,7 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino'
 import { UpdateCertificateConfigDto } from './dto/update-config.dto'
 import { UpdateSignatureDto } from './dto/update-signature.dto'
 import { PrismaService } from '../../config/prisma.service'
+import { RankingBuilderService } from '../reports/ranking-builder.service'
 
 export interface GenerateCertificatesJobPayload {
   jobId: string
@@ -48,6 +49,7 @@ export class CertificatesService {
     @Inject(STORAGE_SERVICE) private readonly storageService: IStorageService,
     @InjectPinoLogger(CertificatesService.name) private readonly logger: PinoLogger,
     @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(RankingBuilderService) private readonly rankingBuilder: RankingBuilderService,
   ) {}
 
   async getConfig(eventId: string, managerId: string) {
@@ -68,7 +70,7 @@ export class CertificatesService {
     if (!event) throw new NotFoundException('Evento não encontrado')
 
     const warnings: string[] = []
-    const knownPlaceholders = ['participante', 'evento', 'data', 'local', 'organizador']
+    const knownPlaceholders = ['participante', 'evento', 'data', 'local', 'organizador', 'posicao', 'genero']
     const matches = dto.certificateText.match(/\{\{(\w+)\}\}/g) ?? []
     for (const match of matches) {
       const key = match.replace(/[{}]/g, '')
@@ -331,7 +333,7 @@ export class CertificatesService {
   }
 
   // Called by processor
-  async buildBatchData(eventId: string) {
+  async buildBatchData(eventId: string, managerId?: string) {
     const event = await this.repository.findEventById(eventId)
     if (!event) throw new Error('Evento não encontrado')
     if (!event.certificateConfig) throw new Error('Configuração de certificado não encontrada')
@@ -339,14 +341,31 @@ export class CertificatesService {
     const participants = await this.repository.getParticipants(eventId)
     const signatures = event.certificateConfig.signatures.sort((a, b) => a.displayOrder - b.displayOrder)
 
+    // Build ranking map for posicao placeholder
+    const rankingMap = new Map<string, number>()
+    if (managerId) {
+      const ranking = await this.rankingBuilder.buildClassification(eventId, managerId)
+      for (const r of ranking) {
+        rankingMap.set(r.participantId, r.position)
+      }
+    }
+
     const processedParticipants = participants.map((p) => {
       let text = event.certificateText ?? ''
+
+      const position = rankingMap.get(p.id)
+      const posicao = position !== undefined ? `${position}º` : ''
+      const genderLabel = (p as { gender?: string }).gender === 'MALE' ? 'Masculino'
+        : (p as { gender?: string }).gender === 'FEMALE' ? 'Feminino' : ''
+
       const replacements: Record<string, string> = {
         participante: `<strong>${escapeHtml(p.name)}</strong>`,
         evento: `<strong>${escapeHtml(event.name)}</strong>`,
         data: `<strong>${formatDateLong(event.eventDate)}</strong>`,
         local: `<strong>${escapeHtml(event.location)}</strong>`,
         organizador: `<strong>${escapeHtml(event.organizer)}</strong>`,
+        posicao: posicao ? `<strong>${posicao}</strong>` : '',
+        genero: genderLabel ? `<strong>${genderLabel}</strong>` : '',
       }
 
       for (const [key, value] of Object.entries(replacements)) {
