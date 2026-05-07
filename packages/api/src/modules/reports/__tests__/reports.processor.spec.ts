@@ -23,7 +23,7 @@ describe('ReportsProcessor', () => {
   }
 
   const mockRankingBuilder = {
-    buildTopN: vi.fn(),
+    buildTopNByCategory: vi.fn(),
     buildClassification: vi.fn(),
     buildAbsents: vi.fn(),
     buildDetailedByJudge: vi.fn(),
@@ -73,8 +73,8 @@ describe('ReportsProcessor', () => {
       topN: 10,
     })
 
-    mockRankingBuilder.buildTopN.mockResolvedValueOnce([
-      { position: 1, participantName: 'A' },
+    mockRankingBuilder.buildTopNByCategory.mockResolvedValueOnce([
+      { categoryId: 'c1', categoryName: 'Cat', genderMode: 'MIXED', mixed: [{ position: 1, participantName: 'A' }] },
     ])
 
     mockPdfService.render.mockResolvedValueOnce(Buffer.from('pdf'))

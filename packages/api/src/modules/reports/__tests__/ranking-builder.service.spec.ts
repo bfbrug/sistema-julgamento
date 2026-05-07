@@ -4,7 +4,7 @@ import { RankingBuilderService } from '../ranking-builder.service'
 const mockCalculate = vi.fn()
 const mockGetTopN = vi.fn()
 const mockPrisma = {
-  judgingEvent: { findFirst: vi.fn() },
+  judgingEvent: { findFirst: vi.fn(), findUniqueOrThrow: vi.fn() },
   judge: { findMany: vi.fn() },
   score: { findMany: vi.fn() },
   category: { findUniqueOrThrow: vi.fn(), findMany: vi.fn() },
@@ -141,7 +141,7 @@ describe('RankingBuilderService', () => {
     })
   })
 
-  describe('computeRanking', () => {
+  describe('computeOverallRanking', () => {
     const makeParticipants = () => [
       { id: 'm1', name: 'João', gender: 'MALE' },
       { id: 'm2', name: 'Pedro', gender: 'MALE' },
@@ -161,135 +161,89 @@ describe('RankingBuilderService', () => {
         makeRanking('f3', 'Clara', 6, 18),
       ])
 
-    const setupCategory = (genderMode: string, topN = 2) => {
-      mockPrisma.category.findUniqueOrThrow.mockResolvedValueOnce({
+    const setupEvent = (genderMode: string, topN = 2) => {
+      mockPrisma.judgingEvent.findUniqueOrThrow.mockResolvedValueOnce({
         genderMode,
-        event: { topN },
+        topN,
       })
     }
 
-    it('MIXED retorna top2 unificado (melhor geral)', async () => {
-      setupCategory('MIXED', 2)
+    it('MIXED retorna entries únicos ordenados desc por finalScore (top-N do evento)', async () => {
+      setupEvent('MIXED', 3)
       mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
       mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
 
-      const r = await service.computeRanking('e1', 'cat1', 'm1')
+      const r = await service.computeOverallRanking('e1', 'm1')
       expect(r.mode).toBe('MIXED')
       if (r.mode !== 'MIXED') return
-      expect(r.entries).toHaveLength(2)
-      expect(r.entries[0]!.totalScore).toBe(30)
-      expect(r.entries[1]!.totalScore).toBe(28)
+      expect(r.entries).toHaveLength(3)
+      expect(r.entries[0]!.participantId).toBe('m1')
+      expect(r.entries[1]!.participantId).toBe('f1')
+      expect(r.entries[2]!.participantId).toBe('m2')
       expect(r.entries[0]!.position).toBe(1)
       expect(r.entries[1]!.position).toBe(2)
+      expect(r.entries[2]!.position).toBe(3)
     })
 
-    it('MALE_ONLY filtra mulheres, retorna top2 masculino', async () => {
-      setupCategory('MALE_ONLY', 2)
+    it('UNISEX_SPLIT retorna male e female separados, cada um até topN', async () => {
+      setupEvent('UNISEX_SPLIT', 2)
       mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
       mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
 
-      const r = await service.computeRanking('e1', 'cat1', 'm1')
-      expect(r.mode).toBe('MALE_ONLY')
-      if (r.mode !== 'MALE_ONLY') return
-      expect(r.entries).toHaveLength(2)
-      expect(r.entries[0]!.totalScore).toBe(30)
-      expect(r.entries[1]!.totalScore).toBe(25)
-      expect(r.entries.every((e) => ['m1', 'm2', 'm3'].includes(e.participantId))).toBe(true)
-    })
-
-    it('FEMALE_ONLY filtra homens, retorna top2 feminino', async () => {
-      setupCategory('FEMALE_ONLY', 2)
-      mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
-      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
-
-      const r = await service.computeRanking('e1', 'cat1', 'm1')
-      expect(r.mode).toBe('FEMALE_ONLY')
-      if (r.mode !== 'FEMALE_ONLY') return
-      expect(r.entries).toHaveLength(2)
-      expect(r.entries[0]!.totalScore).toBe(28)
-      expect(r.entries[1]!.totalScore).toBe(22)
-      expect(r.entries.every((e) => ['f1', 'f2', 'f3'].includes(e.participantId))).toBe(true)
-    })
-
-    it('UNISEX_SPLIT retorna dois rankings separados com topN cada', async () => {
-      setupCategory('UNISEX_SPLIT', 2)
-      mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
-      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
-
-      const r = await service.computeRanking('e1', 'cat1', 'm1')
+      const r = await service.computeOverallRanking('e1', 'm1')
       expect(r.mode).toBe('UNISEX_SPLIT')
       if (r.mode !== 'UNISEX_SPLIT') return
       expect(r.male).toHaveLength(2)
       expect(r.female).toHaveLength(2)
-      expect(r.male[0]!.totalScore).toBe(30)
-      expect(r.female[0]!.totalScore).toBe(28)
+      expect(r.male[0]!.participantId).toBe('m1')
+      expect(r.female[0]!.participantId).toBe('f1')
       expect(r.male[0]!.position).toBe(1)
       expect(r.female[0]!.position).toBe(1)
     })
 
-    it('participante sem score no calculation recebe totalScore 0', async () => {
-      setupCategory('MIXED', 10)
-      mockCalculate.mockResolvedValueOnce(baseCalcResponse([makeRanking('m1', 'João', 1, 30)]))
-      mockPrisma.participant.findMany.mockResolvedValueOnce([
-        { id: 'm1', name: 'João', gender: 'MALE' },
-        { id: 'm2', name: 'Pedro', gender: 'MALE' },
-      ])
+    it('MALE_ONLY filtra apenas masculinos', async () => {
+      setupEvent('MALE_ONLY', 5)
+      mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
+      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
 
-      const r = await service.computeRanking('e1', 'cat1', 'm1')
-      if (r.mode !== 'MIXED') return
-      const pedro = r.entries.find((e) => e.participantId === 'm2')
-      expect(pedro?.totalScore).toBe(0)
+      const r = await service.computeOverallRanking('e1', 'm1')
+      expect(r.mode).toBe('MALE_ONLY')
+      if (r.mode !== 'MALE_ONLY') return
+      expect(r.entries).toHaveLength(3)
+      expect(r.entries.every((e) => ['m1', 'm2', 'm3'].includes(e.participantId))).toBe(true)
+    })
+
+    it('respeita calculationRule R2 do evento (delegado a CalculationService)', async () => {
+      setupEvent('MIXED', 10)
+      mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
+      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
+
+      await service.computeOverallRanking('e1', 'm1')
+      expect(mockCalculate).toHaveBeenCalledWith('e1', 'm1')
     })
   })
 
   describe('buildTopNByCategory', () => {
-    const makeParticipants = () => [
-      { id: 'm1', name: 'João', gender: 'MALE' },
-      { id: 'f1', name: 'Ana', gender: 'FEMALE' },
-    ]
-
     const makeCalc = () =>
       baseCalcResponse([
         makeRanking('m1', 'João', 1, 9.0),
         makeRanking('f1', 'Ana', 2, 8.0),
       ])
 
-    it('MIXED retorna uma seção com mixed', async () => {
+    it('retorna entries por categoria sem split de gênero', async () => {
       mockPrisma.category.findMany.mockResolvedValueOnce([
-        { id: 'cat1', name: 'Técnica', genderMode: 'MIXED' },
+        { id: 'cat1', name: 'Técnica' },
       ])
-      mockPrisma.category.findUniqueOrThrow.mockResolvedValueOnce({
-        genderMode: 'MIXED',
-        event: { topN: 10 },
-      })
+      mockPrisma.judgingEvent.findUniqueOrThrow.mockResolvedValueOnce({ topN: 10 })
       mockCalculate.mockResolvedValueOnce(makeCalc())
-      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
 
       const result = await service.buildTopNByCategory('e1', 'm1')
       expect(result).toHaveLength(1)
-      expect(result[0]!.genderMode).toBe('MIXED')
-      expect(result[0]!.mixed).toBeDefined()
-      expect(result[0]!.male).toBeUndefined()
-      expect(result[0]!.female).toBeUndefined()
-    })
-
-    it('UNISEX_SPLIT retorna male e female separados', async () => {
-      mockPrisma.category.findMany.mockResolvedValueOnce([
-        { id: 'cat1', name: 'Técnica', genderMode: 'UNISEX_SPLIT' },
-      ])
-      mockPrisma.category.findUniqueOrThrow.mockResolvedValueOnce({
-        genderMode: 'UNISEX_SPLIT',
-        event: { topN: 10 },
-      })
-      mockCalculate.mockResolvedValueOnce(makeCalc())
-      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
-
-      const result = await service.buildTopNByCategory('e1', 'm1')
-      expect(result).toHaveLength(1)
-      expect(result[0]!.genderMode).toBe('UNISEX_SPLIT')
-      expect(result[0]!.male).toBeDefined()
-      expect(result[0]!.female).toBeDefined()
-      expect(result[0]!.mixed).toBeUndefined()
+      expect(result[0]!.categoryId).toBe('cat1')
+      expect(result[0]!.categoryName).toBe('Técnica')
+      expect(result[0]!.entries).toHaveLength(2)
+      expect(result[0]!.entries[0]!.participantName).toBe('João')
+      expect(result[0]!.entries[1]!.participantName).toBe('Ana')
     })
   })
 

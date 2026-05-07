@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { Gender, CategoryGenderMode } from '@prisma/client'
+import { Gender, EventGenderMode } from '@prisma/client'
 import { PrismaService } from '../../config/prisma.service'
 import { CalculationService } from '../calculation/calculation.service'
 import { decimalToNumber } from '../calculation/helpers/numeric'
@@ -11,7 +11,7 @@ export interface RankEntry {
   position: number
 }
 
-export type RankingResult =
+export type OverallRankingResult =
   | { mode: 'MIXED' | 'MALE_ONLY' | 'FEMALE_ONLY'; entries: RankEntry[] }
   | { mode: 'UNISEX_SPLIT'; male: RankEntry[]; female: RankEntry[] }
 
@@ -74,46 +74,37 @@ export class RankingBuilderService {
   async buildTopNByCategory(eventId: string, managerId: string): Promise<Array<{
     categoryId: string
     categoryName: string
-    genderMode: 'MIXED' | 'MALE_ONLY' | 'FEMALE_ONLY' | 'UNISEX_SPLIT'
-    mixed?: ClassificationEntry[]
-    male?: ClassificationEntry[]
-    female?: ClassificationEntry[]
+    entries: ClassificationEntry[]
   }>> {
     const categories = await this.prisma.category.findMany({
       where: { event: { id: eventId } },
       orderBy: { displayOrder: 'asc' },
-      select: { id: true, name: true, genderMode: true },
+      select: { id: true, name: true },
     })
-
-    return Promise.all(
-      categories.map(async (cat) => {
-        const ranking = await this.computeRanking(eventId, cat.id, managerId)
-        const toEntry = (e: RankEntry): ClassificationEntry => ({
-          position: e.position,
-          participantId: e.participantId,
-          participantName: e.name,
-          finalScore: Number(e.totalScore.toFixed(2)),
-          scoresByCategory: {},
-          isAbsent: false,
-        })
-
-        if (ranking.mode === 'UNISEX_SPLIT') {
-          return {
-            categoryId: cat.id,
-            categoryName: cat.name,
-            genderMode: 'UNISEX_SPLIT' as const,
-            male: ranking.male.map(toEntry),
-            female: ranking.female.map(toEntry),
+    const calc = await this.calculationService.calculate(eventId, managerId)
+    const event = await this.prisma.judgingEvent.findUniqueOrThrow({
+      where: { id: eventId }, select: { topN: true },
+    })
+    const topN = event.topN ?? 10
+    return categories.map((cat) => {
+      const ranked = calc.data.rankings
+        .map((r) => {
+          const catAvg = this.extractCategoryScores(r.breakdown)[cat.name]
+          return catAvg == null ? null : {
+            participantId: r.participant.id,
+            participantName: r.participant.name,
+            finalScore: catAvg,
+            scoresByCategory: { [cat.name]: catAvg },
+            isAbsent: false,
+            position: 0,
           }
-        }
-        return {
-          categoryId: cat.id,
-          categoryName: cat.name,
-          genderMode: ranking.mode,
-          mixed: ranking.entries.map(toEntry),
-        }
-      }),
-    )
+        })
+        .filter((x): x is NonNullable<typeof x> => x != null)
+        .sort((a, b) => b.finalScore - a.finalScore)
+        .slice(0, topN)
+        .map((e, i) => ({ ...e, position: i + 1 }))
+      return { categoryId: cat.id, categoryName: cat.name, entries: ranked }
+    })
   }
 
   async buildAbsents(
@@ -174,46 +165,48 @@ export class RankingBuilderService {
     })
   }
 
-  async computeRanking(eventId: string, categoryId: string, managerId: string): Promise<RankingResult> {
-    const [category, calculation] = await Promise.all([
-      this.prisma.category.findUniqueOrThrow({
-        where: { id: categoryId },
-        select: { genderMode: true, event: { select: { topN: true } } },
-      }),
-      this.calculationService.calculate(eventId, managerId),
-    ])
-
-    const topN = category.event.topN ?? 10
-    const scoreMap = new Map<string, number>()
-    for (const r of calculation.data.rankings) {
-      scoreMap.set(r.participant.id, r.finalScore)
-    }
-
+  async computeOverallRanking(eventId: string, managerId: string): Promise<OverallRankingResult> {
+    const event = await this.prisma.judgingEvent.findUniqueOrThrow({
+      where: { id: eventId },
+      select: { topN: true, genderMode: true },
+    })
+    const calc = await this.calculationService.calculate(eventId, managerId)
     const participants = await this.prisma.participant.findMany({
       where: { eventId, isAbsent: false },
       select: { id: true, name: true, gender: true },
     })
+    const genderMap = new Map(participants.map((p) => [p.id, p.gender]))
 
-    const buildEntries = (parts: typeof participants): RankEntry[] =>
-      parts
-        .map((p) => ({ participantId: p.id, name: p.name, totalScore: scoreMap.get(p.id) ?? 0 }))
+    const all: Array<RankEntry & { gender: Gender }> = calc.data.rankings
+      .filter((r) => genderMap.has(r.participant.id))
+      .map((r) => ({
+        participantId: r.participant.id,
+        name: r.participant.name,
+        totalScore: Number(r.finalScore.toFixed(2)),
+        position: 0,
+        gender: genderMap.get(r.participant.id)!,
+      }))
+
+    const topN = event.topN ?? 10
+    const sortAndRank = (arr: typeof all): RankEntry[] =>
+      arr
+        .slice()
         .sort((a, b) => b.totalScore - a.totalScore)
         .slice(0, topN)
-        .map((e, i) => ({ ...e, position: i + 1 }))
+        .map(({ gender: _g, ...e }, i) => ({ ...e, position: i + 1 }))
 
-    const mode = category.genderMode as CategoryGenderMode
-    switch (mode) {
+    switch (event.genderMode as EventGenderMode) {
       case 'MIXED':
-        return { mode: 'MIXED', entries: buildEntries(participants) }
+        return { mode: 'MIXED', entries: sortAndRank(all) }
       case 'MALE_ONLY':
-        return { mode: 'MALE_ONLY', entries: buildEntries(participants.filter((p) => p.gender === Gender.MALE)) }
+        return { mode: 'MALE_ONLY', entries: sortAndRank(all.filter((e) => e.gender === Gender.MALE)) }
       case 'FEMALE_ONLY':
-        return { mode: 'FEMALE_ONLY', entries: buildEntries(participants.filter((p) => p.gender === Gender.FEMALE)) }
+        return { mode: 'FEMALE_ONLY', entries: sortAndRank(all.filter((e) => e.gender === Gender.FEMALE)) }
       case 'UNISEX_SPLIT':
         return {
           mode: 'UNISEX_SPLIT',
-          male: buildEntries(participants.filter((p) => p.gender === Gender.MALE)),
-          female: buildEntries(participants.filter((p) => p.gender === Gender.FEMALE)),
+          male: sortAndRank(all.filter((e) => e.gender === Gender.MALE)),
+          female: sortAndRank(all.filter((e) => e.gender === Gender.FEMALE)),
         }
     }
   }
