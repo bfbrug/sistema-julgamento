@@ -59,6 +59,7 @@ model JudgingEvent {
   scoreMin        Decimal         @db.Decimal(3, 1)
   scoreMax        Decimal         @db.Decimal(3, 1)
   topN            Int             @default(10)
+  genderMode      EventGenderMode @default(MIXED) @map("gender_mode")
   status          EventStatus     @default(DRAFT)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -80,18 +81,16 @@ model JudgingEvent {
 }
 
 model Category {
-  id           String             @id @default(uuid())
+  id           String @id @default(uuid())
   eventId      String
   name         String
   displayOrder Int
-  genderMode   CategoryGenderMode @default(MIXED) @map("gender_mode")
 
   event              JudgingEvent      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   judgeCategories    JudgeCategory[]
   scores             Score[]
   tiebreakerFirst    TiebreakerConfig? @relation("FirstCategory")
   tiebreakerSecond   TiebreakerConfig? @relation("SecondCategory")
-  resultReleases     ResultRelease[]
 
   @@unique([eventId, name])
   @@index([eventId])
@@ -224,18 +223,15 @@ model TiebreakerConfig {
 model ResultRelease {
   id            String   @id @default(uuid())
   eventId       String
-  categoryId    String
   gender        Gender?
   position      Int
   releasedAt    DateTime @default(now())
   releasedById  String
 
   event      JudgingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   releasedBy User         @relation(fields: [releasedById], references: [id])
 
   @@index([eventId])
-  @@index([categoryId, position])
   @@index([releasedById])
   @@map("result_releases")
 }
@@ -359,7 +355,7 @@ enum Gender {
   FEMALE
 }
 
-enum CategoryGenderMode {
+enum EventGenderMode {
   MIXED
   MALE_ONLY
   FEMALE_ONLY
