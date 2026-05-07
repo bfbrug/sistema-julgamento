@@ -129,7 +129,7 @@ export default function EventParticipantsPage() {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={participants.map((p) => p.id)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
                 {participants.map((participant, index) => (
                   <SortableParticipantCard
                     key={participant.id}
@@ -177,8 +177,9 @@ function SortableParticipantCard({ participant, index, eventId, onDelete, isFini
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 10 : undefined,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
+    scale: isDragging ? '1.05' : undefined,
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,46 +193,46 @@ function SortableParticipantCard({ participant, index, eventId, onDelete, isFini
     <div
       ref={setNodeRef}
       style={style}
-      className="flex flex-col rounded-xl border border-secondary-200 bg-white shadow-sm hover:border-primary-300 hover:shadow-md transition-all"
+      className="flex flex-col rounded-2xl border border-secondary-200 bg-white shadow-sm hover:border-primary-300 hover:shadow-lg transition-all duration-200"
     >
       {/* drag handle + número */}
       <div className="flex items-center justify-between px-2 pt-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-[10px] font-bold text-primary-700">
           {index + 1}
         </span>
         {!isFinished && (
           <button
             {...attributes}
             {...listeners}
-            className="cursor-grab text-secondary-300 hover:text-secondary-500 touch-none"
-            title="Arrastar"
+            className="cursor-grab active:cursor-grabbing rounded p-1 text-secondary-300 hover:bg-secondary-100 hover:text-secondary-600 touch-none transition-colors"
+            title="Arrastar para reordenar"
           >
-            <GripVertical className="h-4 w-4" />
+            <GripVertical className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
 
       {/* foto */}
-      <div className="flex flex-col items-center px-3 py-3 gap-2">
+      <div className="flex flex-col items-center px-2 py-2 gap-1.5">
         {participant.photoUrl ? (
           <img
             src={participant.photoUrl}
             alt={participant.name}
-            className="h-20 w-20 rounded-full object-cover border-2 border-secondary-100"
+            className="h-14 w-14 rounded-full object-cover border-2 border-secondary-100"
           />
         ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary-100 text-secondary-400">
-            <UserCircle2 className="h-12 w-12" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary-100 text-secondary-400">
+            <UserCircle2 className="h-9 w-9" />
           </div>
         )}
-        <p className="text-center text-sm font-semibold text-secondary-900 leading-tight line-clamp-2">
+        <p className="text-center text-xs font-semibold text-secondary-900 leading-tight line-clamp-2 w-full">
           {participant.name}
         </p>
       </div>
 
       {/* ações */}
       {!isFinished && (
-        <div className="flex border-t border-secondary-100">
+        <div className="flex border-t border-secondary-100 mt-auto">
           <input
             ref={fileInputRef}
             type="file"
@@ -242,20 +243,18 @@ function SortableParticipantCard({ participant, index, eventId, onDelete, isFini
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex flex-1 items-center justify-center gap-1 py-2 text-xs text-secondary-500 hover:bg-secondary-50 hover:text-primary-600 transition-colors"
+            className="flex flex-1 items-center justify-center py-1.5 text-secondary-400 hover:bg-secondary-50 hover:text-primary-600 transition-colors rounded-bl-2xl"
             title="Upload de foto"
           >
-            <Upload className="h-3.5 w-3.5" />
-            Foto
+            <Upload className="h-3 w-3" />
           </button>
           <div className="w-px bg-secondary-100" />
           <button
             onClick={onDelete}
-            className="flex flex-1 items-center justify-center gap-1 py-2 text-xs text-secondary-500 hover:bg-danger-50 hover:text-danger-600 transition-colors"
+            className="flex flex-1 items-center justify-center py-1.5 text-secondary-400 hover:bg-danger-50 hover:text-danger-600 transition-colors rounded-br-2xl"
             title="Remover"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            Remover
+            <Trash2 className="h-3 w-3" />
           </button>
         </div>
       )}
