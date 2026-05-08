@@ -11,7 +11,7 @@ vi.mock('papaparse', () => ({
       const reader = new FileReader()
       reader.onload = (e) => {
         const text = e.target?.result as string
-        const rows = text.split('\n').filter(Boolean).map((line) => [line.trim()])
+        const rows = text.split('\n').filter(Boolean).map((line) => line.split(',').map((cell) => cell.trim()))
         options.complete({ data: rows })
       }
       reader.readAsText(file)
@@ -42,6 +42,7 @@ const mockExistingParticipants = [
     id: '1',
     eventId: 'event-1',
     name: 'Ana Silva',
+    gender: 'FEMALE' as const,
     presentationOrder: 1,
     isAbsent: false,
     currentState: 'WAITING' as const,
@@ -75,7 +76,7 @@ describe('ImportParticipantsModal', () => {
     expect(document.querySelector('input[type="file"]')).toBeInTheDocument()
   })
 
-  it('após parse de CSV exibe etapa 2 com nomes', async () => {
+  it('após parse de CSV exibe etapa 2 com nomes e gêneros', async () => {
     render(
       <ImportParticipantsModal
         eventId="event-1"
@@ -84,7 +85,7 @@ describe('ImportParticipantsModal', () => {
       />,
     )
 
-    const csvContent = 'Bruno Costa\nCarlos Mendes\nDiana Lima'
+    const csvContent = 'nome,gender\nBruno Costa,MALE\nCarlos Mendes,MALE\nDiana Lima,FEMALE'
     const file = new File([csvContent], 'test.csv', { type: 'text/csv' })
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(input, { target: { files: [file] } })
@@ -106,7 +107,7 @@ describe('ImportParticipantsModal', () => {
       />,
     )
 
-    const csvContent = 'Ana Silva\nBruno Costa'
+    const csvContent = 'nome,gender\nAna Silva,FEMALE\nBruno Costa,MALE'
     const file = new File([csvContent], 'test.csv', { type: 'text/csv' })
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(input, { target: { files: [file] } })
@@ -116,7 +117,7 @@ describe('ImportParticipantsModal', () => {
     }, { timeout: 3000 })
   })
 
-  it('clique em Confirmar chama hook com nomes corretos', async () => {
+  it('clique em Confirmar chama hook com itens corretos', async () => {
     const mockMutate = vi.fn()
     ;(useImportParticipants as ReturnType<typeof vi.fn>).mockReturnValue({
       mutate: mockMutate,
@@ -131,7 +132,7 @@ describe('ImportParticipantsModal', () => {
       />,
     )
 
-    const csvContent = 'Ana\nBruno'
+    const csvContent = 'nome,gender\nAna,FEMALE\nBruno,MALE'
     const file = new File([csvContent], 'test.csv', { type: 'text/csv' })
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(input, { target: { files: [file] } })
@@ -141,7 +142,12 @@ describe('ImportParticipantsModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /confirmar importação/i }))
 
     expect(mockMutate).toHaveBeenCalledWith(
-      { names: ['Ana', 'Bruno'] },
+      {
+        items: [
+          { name: 'Ana', gender: 'FEMALE' },
+          { name: 'Bruno', gender: 'MALE' },
+        ],
+      },
       expect.any(Object),
     )
   })

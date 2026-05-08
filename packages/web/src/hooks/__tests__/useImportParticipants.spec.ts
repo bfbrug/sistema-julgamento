@@ -24,20 +24,30 @@ describe('useImportParticipants', () => {
     vi.clearAllMocks()
   })
 
-  it('chama POST /events/:eventId/participants/bulk com array de nomes', async () => {
+  it('chama POST /events/:eventId/participants/bulk com array de itens', async () => {
     const mockResult = { created: 2, skipped: 0, participants: [] }
     ;(apiClient as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult)
 
     const { result } = renderHook(() => useImportParticipants('event-1'), { wrapper })
 
-    result.current.mutate({ names: ['Ana', 'Bruno'] })
+    result.current.mutate({
+      items: [
+        { name: 'Ana', gender: 'FEMALE' as const },
+        { name: 'Bruno', gender: 'MALE' as const },
+      ],
+    })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(apiClient).toHaveBeenCalledWith({
       method: 'POST',
       path: '/events/event-1/participants/bulk',
-      body: { names: ['Ana', 'Bruno'] },
+      body: {
+        items: [
+          { name: 'Ana', gender: 'FEMALE' },
+          { name: 'Bruno', gender: 'MALE' },
+        ],
+      },
     })
     expect(result.current.data).toEqual(mockResult)
   })
@@ -47,7 +57,7 @@ describe('useImportParticipants', () => {
 
     const { result } = renderHook(() => useImportParticipants('event-1'), { wrapper })
 
-    result.current.mutate({ names: ['Ana'] })
+    result.current.mutate({ items: [{ name: 'Ana', gender: 'FEMALE' }] })
 
     await waitFor(() => expect(result.current.isError).toBe(true))
 
