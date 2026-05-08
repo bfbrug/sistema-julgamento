@@ -45,7 +45,7 @@ function onRefreshed(accessToken: string) {
 
 async function handleRefresh(): Promise<string | null> {
   const { refreshToken, setTokens, clearSession } = useAuthStore.getState()
-  
+
   if (!refreshToken) {
     clearSession()
     return null
@@ -68,7 +68,7 @@ async function handleRefresh(): Promise<string | null> {
       setTokens(body.data)
       return body.data.accessToken
     }
-    
+
     throw new Error('Refresh failed')
   } catch {
     clearSession()
@@ -86,7 +86,7 @@ export async function apiClient<T, B = unknown>({
 }: ApiClientOptions<B>): Promise<T> {
   const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
   const url = `${baseUrl}${path}`
-  
+
   const getHeaders = () => {
     const { accessToken } = useAuthStore.getState()
     const headers: Record<string, string> = {
@@ -187,13 +187,48 @@ export async function apiClient<T, B = unknown>({
 
 export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
   const baseUrl = process.env['NEXT_PUBLIC_API_URL'] ?? ''
-  const { accessToken } = useAuthStore.getState()
 
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: 'POST',
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-    body: formData,
-  })
+  const fetchWithAuth = async (): Promise<Response> => {
+    const { accessToken } = useAuthStore.getState()
+    return fetch(`${baseUrl}${path}`, {
+      method: 'POST',
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      body: formData,
+    })
+  }
+
+  let res = await fetchWithAuth()
+
+  // Handle token expiration on upload too
+  if (res.status === 401) {
+    const responseBody = (await res.clone().json()) as ApiResponseBody<T>
+    const errorCode = isApiError(responseBody) ? responseBody.code : undefined
+
+    if (errorCode === 'TOKEN_EXPIRED') {
+      if (!isRefreshing) {
+        isRefreshing = true
+        const newAccessToken = await handleRefresh()
+        isRefreshing = false
+        if (newAccessToken) {
+          onRefreshed(newAccessToken)
+        }
+      }
+
+      const retryRequest = new Promise<Response>((resolve) => {
+        subscribeTokenRefresh(() => {
+          resolve(fetchWithAuth())
+        })
+      })
+
+      res = await retryRequest
+    } else if (errorCode === 'INVALID_TOKEN') {
+      useAuthStore.getState().clearSession()
+      if (!window.location.pathname.startsWith('/auth/login')) {
+        window.location.href = `/auth/login?next=${window.location.pathname}`
+      }
+      throw new ApiError('Sessão inválida', 401, 'INVALID_TOKEN')
+    }
+  }
 
   const responseBody = (await res.json()) as ApiResponseBody<T>
 
@@ -207,4 +242,3 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
   if (isApiSuccess<T>(responseBody)) return responseBody.data
   return responseBody as T
 }
-
