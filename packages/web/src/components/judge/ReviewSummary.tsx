@@ -1,5 +1,6 @@
 'use client'
 
+import { useLayoutEffect, useRef } from 'react'
 import { AlertTriangle, Pencil, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -18,6 +19,15 @@ interface ReviewSummaryProps {
 export function ReviewSummary({ scores, onEdit, onFinalize, isSubmitting }: ReviewSummaryProps) {
   const total = scores.reduce((sum, s) => sum + s.value, 0)
   const avg = scores.length > 0 ? total / scores.length : 0
+
+  // Foca automaticamente no botão de confirmar ao exibir a tela de revisão
+  const confirmButtonRef = useRef<HTMLButtonElement>(null)
+  useLayoutEffect(() => {
+    const timer = setTimeout(() => {
+      confirmButtonRef.current?.focus()
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <div className="min-h-full bg-slate-50 flex flex-col items-center">
@@ -68,9 +78,10 @@ export function ReviewSummary({ scores, onEdit, onFinalize, isSubmitting }: Revi
             Alterar
           </button>
           <button
+            ref={confirmButtonRef}
             onClick={onFinalize}
             disabled={isSubmitting}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2"
           >
             {isSubmitting ? (
               <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
