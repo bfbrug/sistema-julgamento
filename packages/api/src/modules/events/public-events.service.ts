@@ -79,6 +79,7 @@ export class PublicEventsService {
     const totalJudges = await this.prisma.judge.count({
       where: {
         eventId: id,
+        user: { deletedAt: null },
         judgeCategories: { some: {} },
       },
     })

@@ -87,7 +87,7 @@ export class CalculationRepository {
 
   async getJudgesActiveInEvent(eventId: string) {
     const judges = await this.prisma.judge.findMany({
-      where: { eventId },
+      where: { eventId, user: { deletedAt: null } },
       include: {
         judgeCategories: {
           select: { categoryId: true },

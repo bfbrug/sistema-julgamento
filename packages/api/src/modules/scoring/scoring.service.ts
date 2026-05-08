@@ -69,10 +69,11 @@ export class ScoringService {
         },
       })
 
-      // Cria sessões para todos os jurados ativos
+      // Cria sessões para todos os jurados ativos (exceto usuários deletados)
       const judges = await tx.judge.findMany({
         where: {
           eventId,
+          user: { deletedAt: null },
           judgeCategories: { some: {} },
         },
         select: { id: true },
@@ -431,6 +432,7 @@ export class ScoringService {
     const activeJudgesCount = await tx.judge.count({
       where: {
         eventId: participant.eventId,
+        user: { deletedAt: null },
         judgeCategories: { some: {} },
       },
     })

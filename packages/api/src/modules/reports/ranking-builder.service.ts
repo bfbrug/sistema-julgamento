@@ -122,7 +122,7 @@ export class RankingBuilderService {
     await this.calculationService.calculate(eventId, managerId)
 
     const judges = await this.prisma.judge.findMany({
-      where: { eventId },
+      where: { eventId, user: { deletedAt: null } },
       select: { id: true, displayName: true },
       orderBy: { id: 'asc' },
     })
@@ -165,7 +165,11 @@ export class RankingBuilderService {
     })
   }
 
-  async computeOverallRanking(eventId: string, managerId: string): Promise<OverallRankingResult> {
+  async computeOverallRanking(
+    eventId: string,
+    managerId: string,
+    limit?: number | null,
+  ): Promise<OverallRankingResult> {
     const event = await this.prisma.judgingEvent.findUniqueOrThrow({
       where: { id: eventId },
       select: { topN: true, genderMode: true },
@@ -187,12 +191,12 @@ export class RankingBuilderService {
         gender: genderMap.get(r.participant.id)!,
       }))
 
-    const topN = event.topN ?? 10
+    const effectiveLimit = limit === undefined ? (event.topN ?? 10) : (limit ?? all.length)
     const sortAndRank = (arr: typeof all): RankEntry[] =>
       arr
         .slice()
         .sort((a, b) => b.totalScore - a.totalScore)
-        .slice(0, topN)
+        .slice(0, effectiveLimit)
         .map(({ gender: _g, ...e }, i) => ({ ...e, position: i + 1 }))
 
     switch (event.genderMode as EventGenderMode) {
@@ -215,20 +219,49 @@ export class RankingBuilderService {
     if (!breakdown || typeof breakdown !== 'object') return {}
     const b = breakdown as Record<string, unknown>
 
-    // R1 breakdown: { categoryAverages: [{ categoryId, categoryName, average }] }
     // R2 breakdown: { categoryAverages: [{ categoryId, categoryName, average }] }
     const categoryAverages = b['categoryAverages']
-    if (!Array.isArray(categoryAverages)) return {}
-
-    const result: Record<string, number> = {}
-    for (const cat of categoryAverages) {
-      if (cat && typeof cat === 'object') {
-        const c = cat as Record<string, unknown>
-        if (typeof c['categoryName'] === 'string' && typeof c['average'] === 'number') {
-          result[c['categoryName']] = Number(c['average'].toFixed(2))
+    if (Array.isArray(categoryAverages)) {
+      const result: Record<string, number> = {}
+      for (const cat of categoryAverages) {
+        if (cat && typeof cat === 'object') {
+          const c = cat as Record<string, unknown>
+          if (typeof c['categoryName'] === 'string' && typeof c['average'] === 'number') {
+            result[c['categoryName']] = Number(c['average'].toFixed(2))
+          }
         }
       }
+      return result
     }
-    return result
+
+    // R1 breakdown: { judgeAverages: [{ judgeId, judgeName, average, categoryScores: [{ categoryId, categoryName, value }] }] }
+    const judgeAverages = b['judgeAverages']
+    if (Array.isArray(judgeAverages)) {
+      const grouped = new Map<string, number[]>()
+      for (const ja of judgeAverages) {
+        if (!ja || typeof ja !== 'object') continue
+        const judge = ja as Record<string, unknown>
+        const categoryScores = judge['categoryScores']
+        if (!Array.isArray(categoryScores)) continue
+        for (const cs of categoryScores) {
+          if (!cs || typeof cs !== 'object') continue
+          const score = cs as Record<string, unknown>
+          const name = score['categoryName']
+          const value = score['value']
+          if (typeof name === 'string' && typeof value === 'number') {
+            if (!grouped.has(name)) grouped.set(name, [])
+            grouped.get(name)!.push(value)
+          }
+        }
+      }
+      const result: Record<string, number> = {}
+      for (const [name, values] of grouped) {
+        const avg = values.reduce((a, b) => a + b, 0) / values.length
+        result[name] = Number(avg.toFixed(2))
+      }
+      return result
+    }
+
+    return {}
   }
 }

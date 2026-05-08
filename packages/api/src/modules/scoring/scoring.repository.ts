@@ -71,9 +71,11 @@ export class ScoringRepository {
 
   async getActiveJudgesCount(eventId: string): Promise<number> {
     // Conta jurados que estão vinculados a pelo menos uma categoria no evento
+    // e cujo usuário não foi deletado (soft-delete)
     const result = await this.prisma.judge.count({
       where: {
         eventId,
+        user: { deletedAt: null },
         judgeCategories: { some: {} },
       },
     })
@@ -186,6 +188,7 @@ export class ScoringRepository {
           },
         },
         judges: {
+          where: { user: { deletedAt: null } },
           include: {
             user: { select: { name: true } },
             sessions: {

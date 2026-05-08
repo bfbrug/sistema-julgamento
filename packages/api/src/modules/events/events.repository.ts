@@ -138,7 +138,12 @@ export class EventsRepository {
   }
 
   async countJudgesForEvent(eventId: string): Promise<number> {
-    return this.prisma.judge.count({ where: { eventId } })
+    return this.prisma.judge.count({
+      where: {
+        eventId,
+        user: { deletedAt: null },
+      },
+    })
   }
 
   async countParticipantsForEvent(eventId: string): Promise<number> {
@@ -159,13 +164,18 @@ export class EventsRepository {
   async findCategoriesWithFewJudges(eventId: string, minJudges: number): Promise<string[]> {
     const categories = await this.prisma.category.findMany({
       where: { eventId },
-      select: {
-        id: true,
-        _count: { select: { judgeCategories: true } },
+      include: {
+        judgeCategories: {
+          where: {
+            judge: {
+              user: { deletedAt: null },
+            },
+          },
+        },
       },
     })
     return categories
-      .filter(c => c._count.judgeCategories < minJudges)
+      .filter(c => c.judgeCategories.length < minJudges)
       .map(c => c.id)
   }
 

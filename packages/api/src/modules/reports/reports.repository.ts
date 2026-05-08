@@ -51,10 +51,12 @@ export class ReportsRepository {
   }
 
   async countPendingJudges(eventId: string): Promise<number> {
-    const total = await this.prisma.judge.count({ where: { eventId } })
+    const total = await this.prisma.judge.count({
+      where: { eventId, user: { deletedAt: null } },
+    })
     const finished = await this.prisma.judgeParticipantSession.groupBy({
       by: ['judgeId'],
-      where: { judge: { eventId }, status: 'FINISHED' },
+      where: { judge: { eventId, user: { deletedAt: null } }, status: 'FINISHED' },
     })
     return total - finished.length
   }
@@ -62,7 +64,7 @@ export class ReportsRepository {
   async getEventStatus(eventId: string, managerId: string) {
     return this.prisma.judgingEvent.findFirst({
       where: { id: eventId, managerId },
-      select: { status: true, topN: true, name: true, eventDate: true, location: true, organizer: true },
+      select: { status: true, topN: true, genderMode: true, name: true, eventDate: true, location: true, organizer: true },
     })
   }
 }
