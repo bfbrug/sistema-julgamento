@@ -94,7 +94,7 @@ describe('ParticipantsService', () => {
       repository.create.mockResolvedValue(created)
       repository.findById.mockResolvedValue(created)
 
-      const res = await service.create('event-1', { name: 'João' }, 'manager-1')
+      const res = await service.create('event-1', { name: 'João', gender: 'MALE' as const }, 'manager-1')
 
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({ presentationOrder: 3 }),
@@ -109,7 +109,7 @@ describe('ParticipantsService', () => {
       repository.create.mockResolvedValue(created)
       repository.findById.mockResolvedValue(created)
 
-      await service.create('event-1', { name: 'João', presentationOrder: 1 }, 'manager-1')
+      await service.create('event-1', { name: 'João', presentationOrder: 1, gender: 'MALE' as const }, 'manager-1')
 
       expect(repository.shiftPresentationOrderUp).toHaveBeenCalledWith('event-1', 1)
     })
@@ -118,7 +118,7 @@ describe('ParticipantsService', () => {
       eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.IN_PROGRESS }))
 
       await expect(
-        service.create('event-1', { name: 'João' }, 'manager-1'),
+        service.create('event-1', { name: 'João', gender: 'MALE' as const }, 'manager-1'),
       ).rejects.toSatisfy((e: any) => e?.response?.code === 'EVENT_IN_PROGRESS_LOCK')
     })
 
@@ -126,7 +126,7 @@ describe('ParticipantsService', () => {
       eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.FINISHED }))
 
       await expect(
-        service.create('event-1', { name: 'João' }, 'manager-1'),
+        service.create('event-1', { name: 'João', gender: 'MALE' as const }, 'manager-1'),
       ).rejects.toSatisfy((e: any) => e?.response?.code === 'EVENT_FINISHED')
     })
 
@@ -134,7 +134,7 @@ describe('ParticipantsService', () => {
       eventsRepository.findById.mockResolvedValue(null)
 
       await expect(
-        service.create('event-1', { name: 'João' }, 'outro-manager'),
+        service.create('event-1', { name: 'João', gender: 'MALE' as const }, 'outro-manager'),
       ).rejects.toThrow(NotFoundException)
     })
 
@@ -145,7 +145,7 @@ describe('ParticipantsService', () => {
       repository.create.mockResolvedValue(created)
       repository.findById.mockResolvedValue(created)
 
-      await service.create('event-1', { name: 'João' }, 'manager-1')
+      await service.create('event-1', { name: 'João', gender: 'MALE' as const }, 'manager-1')
 
       expect(auditService.record).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'PARTICIPANT_CREATED' }),
@@ -641,7 +641,7 @@ describe('ParticipantsService', () => {
       )
       storageService.getPublicUrl.mockResolvedValue(null)
 
-      const result = await svc.bulkCreate('event-1', { names: ['Ana Silva', 'Bruno Costa'], gender: 'MALE' }, 'manager-1')
+      const result = await svc.bulkCreate('event-1', { items: [{ name: 'Ana Silva', gender: 'MALE' }, { name: 'Bruno Costa', gender: 'MALE' }] }, 'manager-1')
 
       expect(result.created).toBe(2)
       expect(result.skipped).toBe(0)
@@ -654,7 +654,7 @@ describe('ParticipantsService', () => {
       repository.findByEventId.mockResolvedValue(existing)
       storageService.getPublicUrl.mockResolvedValue(null)
 
-      const result = await service.bulkCreate('event-1', { names: ['  ANA SILVA  '], gender: 'FEMALE' }, 'manager-1')
+      const result = await service.bulkCreate('event-1', { items: [{ name: '  ANA SILVA  ', gender: 'FEMALE' }] }, 'manager-1')
 
       expect(result.created).toBe(0)
       expect(result.skipped).toBe(1)
@@ -693,7 +693,7 @@ describe('ParticipantsService', () => {
       repository.maxPresentationOrder.mockResolvedValue(1)
       storageService.getPublicUrl.mockResolvedValue(null)
 
-      const result = await svc.bulkCreate('event-1', { names: ['Ana Silva', 'Bruno Costa'], gender: 'MALE' }, 'manager-1')
+      const result = await svc.bulkCreate('event-1', { items: [{ name: 'Ana Silva', gender: 'MALE' }, { name: 'Bruno Costa', gender: 'MALE' }] }, 'manager-1')
 
       expect(result.created).toBe(1)
       expect(result.skipped).toBe(1)
@@ -703,7 +703,7 @@ describe('ParticipantsService', () => {
       eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.FINISHED }))
 
       await expect(
-        service.bulkCreate('event-1', { names: ['João'], gender: 'MALE' }, 'manager-1'),
+        service.bulkCreate('event-1', { items: [{ name: 'João', gender: 'MALE' }] }, 'manager-1'),
       ).rejects.toThrow()
     })
 
@@ -711,7 +711,7 @@ describe('ParticipantsService', () => {
       eventsRepository.findById.mockResolvedValue(makeEvent({ status: EventStatus.IN_PROGRESS }))
 
       await expect(
-        service.bulkCreate('event-1', { names: ['João'], gender: 'MALE' }, 'manager-1'),
+        service.bulkCreate('event-1', { items: [{ name: 'João', gender: 'MALE' }] }, 'manager-1'),
       ).rejects.toThrow()
     })
 
@@ -747,7 +747,7 @@ describe('ParticipantsService', () => {
       repository.maxPresentationOrder.mockResolvedValue(5)
       storageService.getPublicUrl.mockResolvedValue(null)
 
-      const result = await svc.bulkCreate('event-1', { names: ['Ana', 'Bruno'], gender: 'FEMALE' }, 'manager-1')
+      const result = await svc.bulkCreate('event-1', { items: [{ name: 'Ana', gender: 'FEMALE' }, { name: 'Bruno', gender: 'FEMALE' }] }, 'manager-1')
 
       expect(result.participants[0]!.presentationOrder).toBe(6)
       expect(result.participants[1]!.presentationOrder).toBe(7)

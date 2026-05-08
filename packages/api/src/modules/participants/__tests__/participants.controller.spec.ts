@@ -105,10 +105,10 @@ describe('ParticipantsController', () => {
       const bulkResult = { created: 2, skipped: 0, participants: [] }
       service.bulkCreate = vi.fn().mockResolvedValue(bulkResult)
 
-      const res = await controller.bulkCreate('event-1', { names: ['Ana', 'Bruno'], gender: 'MALE' as const }, { sub: 'manager-1' } as never)
+      const res = await controller.bulkCreate('event-1', { items: [{ name: 'Ana', gender: 'MALE' }, { name: 'Bruno', gender: 'MALE' }] }, { sub: 'manager-1' } as never)
       expect(res.created).toBe(2)
       expect(res.skipped).toBe(0)
-      expect(service.bulkCreate).toHaveBeenCalledWith('event-1', { names: ['Ana', 'Bruno'], gender: 'MALE' }, 'manager-1')
+      expect(service.bulkCreate).toHaveBeenCalledWith('event-1', { items: [{ name: 'Ana', gender: 'MALE' }, { name: 'Bruno', gender: 'MALE' }] }, 'manager-1')
     })
   })
 
