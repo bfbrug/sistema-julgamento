@@ -25,6 +25,7 @@ describe('ReportsProcessor', () => {
   const mockRankingBuilder = {
     buildTopNByCategory: vi.fn(),
     buildClassification: vi.fn(),
+    computeOverallRanking: vi.fn(),
     buildAbsents: vi.fn(),
     buildDetailedByJudge: vi.fn(),
   }
@@ -71,11 +72,10 @@ describe('ReportsProcessor', () => {
       location: 'Local',
       organizer: 'Org',
       topN: 10,
+      genderMode: 'MIXED',
     })
 
-    mockRankingBuilder.buildTopNByCategory.mockResolvedValueOnce([
-      { categoryId: 'c1', categoryName: 'Cat', entries: [{ position: 1, participantName: 'A', participantId: 'p1', finalScore: 9, scoresByCategory: {}, isAbsent: false }] },
-    ])
+    mockRankingBuilder.computeOverallRanking.mockResolvedValueOnce({ mode: 'MIXED', entries: [{ participantId: 'p1', name: 'A', totalScore: 9, position: 1 }] })
 
     mockPdfService.render.mockResolvedValueOnce(Buffer.from('pdf'))
     mockStorageService.upload.mockResolvedValueOnce({ path: 'reports/top_n.pdf' })
@@ -96,9 +96,10 @@ describe('ReportsProcessor', () => {
 
     mockRepository.getEventStatus.mockResolvedValueOnce({
       name: 'Event', eventDate: new Date(), location: 'Local', organizer: 'Org',
+      genderMode: 'MIXED',
     })
 
-    mockRankingBuilder.buildClassification.mockResolvedValueOnce([])
+    mockRankingBuilder.computeOverallRanking.mockResolvedValueOnce({ mode: 'MIXED', entries: [] })
     mockRankingBuilder.buildAbsents.mockResolvedValueOnce([])
 
     mockPdfService.render.mockResolvedValueOnce(Buffer.from('pdf'))

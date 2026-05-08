@@ -28,6 +28,7 @@ const mockStorage = {
 }
 const mockLogger = { info: vi.fn(), error: vi.fn(), warn: vi.fn() }
 const mockPrisma = { $transaction: vi.fn(async (cb: any) => cb({ auditLog: { create: vi.fn() } })) }
+const mockRankingBuilder = { buildClassification: vi.fn(), buildTopNByCategory: vi.fn() }
 
 function makeService() {
   return new CertificatesService(
@@ -37,6 +38,7 @@ function makeService() {
     mockStorage as never,
     mockLogger as never,
     mockPrisma as never,
+    mockRankingBuilder as never,
   )
 }
 

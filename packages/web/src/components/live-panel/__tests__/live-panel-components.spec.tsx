@@ -38,7 +38,7 @@ describe('CurrentParticipantHero', () => {
     )
     expect(screen.getByText('Maria Silva')).toBeInTheDocument()
     expect(screen.getByText('Participante 2 de 8')).toBeInTheDocument()
-    expect(screen.getByText('Em avaliação')).toBeInTheDocument()
+    expect(screen.getByText('Em avaliaºo')).toBeInTheDocument()
   })
 })
 
@@ -70,11 +70,11 @@ describe('UpcomingQueue', () => {
 })
 
 describe('EventFinishedView', () => {
-  it('renderiza top-N corretamente, com empates na mesma posição', () => {
+  it('renderiza top-N corretamente, com empates na mesma posiºo', () => {
     const ranking = [
-      { position: 1, participantName: 'Maria', finalScore: 9.5 },
-      { position: 1, participantName: 'João', finalScore: 9.5 },
-      { position: 3, participantName: 'Ana', finalScore: 8.0 },
+      { position: 1, participantName: 'Maria', finalScore: 9.5, tiebreaker: null },
+      { position: 1, participantName: 'João', finalScore: 9.5, tiebreaker: null },
+      { position: 3, participantName: 'Ana', finalScore: 8.0, tiebreaker: null },
     ]
     render(<EventFinishedView eventName="Festival" ranking={ranking} />)
     expect(screen.getByText('Resultado Final')).toBeInTheDocument()

@@ -7,15 +7,15 @@ const emptyResults = { eventGenderMode: 'MIXED' as const, released: {} }
 const splitResults = {
   eventGenderMode: 'UNISEX_SPLIT' as const,
   released: {
-    MALE: [{ position: 4, participantId: 'p1', name: 'João', totalScore: 30 }],
-    FEMALE: [{ position: 4, participantId: 'p2', name: 'Maria', totalScore: 28 }],
+    MALE: [{ position: 4, participantId: 'p1', name: 'João', totalScore: 30, tiebreaker: null }],
+    FEMALE: [{ position: 4, participantId: 'p2', name: 'Maria', totalScore: 28, tiebreaker: null }],
   },
 }
 
 describe('PublicResultsBoard', () => {
-  it('mostra "Aguardando divulgação" quando sem releases', () => {
+  it('mostra "Aguardando divulgaºo" quando sem releases', () => {
     render(<PublicResultsBoard eventName="Evento Teste" results={emptyResults} />)
-    expect(screen.getByText(/Aguardando divulgação/i)).toBeInTheDocument()
+    expect(screen.getByText(/Aguardando divulgaºo/i)).toBeInTheDocument()
   })
 
   it('renderiza 2 colunas em UNISEX_SPLIT com labels', () => {
@@ -26,7 +26,7 @@ describe('PublicResultsBoard', () => {
     expect(screen.getByText('Maria')).toBeInTheDocument()
   })
 
-  it('mostra posição e nome do participante', () => {
+  it('mostra posiºo e nome do participante', () => {
     render(<PublicResultsBoard eventName="Evento Teste" results={splitResults} />)
     const positions = screen.getAllByText('4º')
     expect(positions.length).toBeGreaterThanOrEqual(1)

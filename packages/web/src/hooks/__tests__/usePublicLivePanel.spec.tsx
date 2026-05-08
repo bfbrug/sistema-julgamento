@@ -138,6 +138,34 @@ describe('usePublicLivePanel', () => {
 
     expect(io).toHaveBeenCalled()
   })
+
+  it('refetch live-state quando participante finaliza', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.mocked(publicApiClient)
+      .mockResolvedValueOnce(makeEventInfo())
+      .mockResolvedValueOnce(makeLiveState())
+      .mockResolvedValueOnce(makeEventInfo())
+      .mockResolvedValueOnce({
+        ...makeLiveState(),
+        upcomingParticipants: [
+          { name: 'Ana', presentationOrder: 3 },
+          { name: 'Pedro', presentationOrder: 4 },
+        ],
+      })
+
+    const { result } = renderHook(() => usePublicLivePanel(eventId))
+    await waitFor(() => expect(result.current.eventInfo).not.toBeNull())
+    expect(result.current.upcomingParticipants).toHaveLength(2)
+
+    const handler = getHandler('public_participant_state_changed')
+    handler?.({ state: 'FINISHED' })
+
+    vi.advanceTimersByTime(600)
+    await waitFor(() => expect(result.current.upcomingParticipants).toHaveLength(2))
+    expect(result.current.upcomingParticipants[0]!.name).toBe('Ana')
+
+    vi.useRealTimers()
+  })
 })
 
 function getHandler(event: string) {

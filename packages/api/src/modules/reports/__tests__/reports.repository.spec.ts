@@ -107,7 +107,7 @@ describe('ReportsRepository', () => {
     expect(result).toEqual({ status: 'IN_PROGRESS' })
     expect(mockPrisma.judgingEvent.findFirst).toHaveBeenCalledWith({
       where: { id: 'e1', managerId: 'm1' },
-      select: { status: true, topN: true, name: true, eventDate: true, location: true, organizer: true },
+      select: { status: true, topN: true, name: true, eventDate: true, location: true, organizer: true, genderMode: true },
     })
   })
 })

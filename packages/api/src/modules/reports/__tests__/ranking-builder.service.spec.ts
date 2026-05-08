@@ -221,6 +221,17 @@ describe('RankingBuilderService', () => {
       await service.computeOverallRanking('e1', 'm1')
       expect(mockCalculate).toHaveBeenCalledWith('e1', 'm1')
     })
+
+    it('com limit=null retorna todos os participantes ignorando topN', async () => {
+      setupEvent('MIXED', 2)
+      mockCalculate.mockResolvedValueOnce(makeCalcWithScores())
+      mockPrisma.participant.findMany.mockResolvedValueOnce(makeParticipants())
+
+      const r = await service.computeOverallRanking('e1', 'm1', null)
+      expect(r.mode).toBe('MIXED')
+      if (r.mode !== 'MIXED') return
+      expect(r.entries).toHaveLength(6)
+    })
   })
 
   describe('buildTopNByCategory', () => {
@@ -244,6 +255,45 @@ describe('RankingBuilderService', () => {
       expect(result[0]!.entries).toHaveLength(2)
       expect(result[0]!.entries[0]!.participantName).toBe('João')
       expect(result[0]!.entries[1]!.participantName).toBe('Ana')
+    })
+
+    it('funciona com breakdown R1 (judgeAverages)', async () => {
+      mockPrisma.category.findMany.mockResolvedValueOnce([
+        { id: 'cat1', name: 'Técnica' },
+      ])
+      mockPrisma.judgingEvent.findUniqueOrThrow.mockResolvedValueOnce({ topN: 10 })
+      mockCalculate.mockResolvedValueOnce(
+        baseCalcResponse([
+          {
+            position: 1,
+            participant: { id: 'p1', name: 'Alice', presentationOrder: 1 },
+            finalScore: 8.5,
+            finalScoreRaw: 8.5,
+            breakdown: {
+              judgeAverages: [
+                {
+                  judgeId: 'j1',
+                  judgeName: 'J1',
+                  average: 8.5,
+                  categoryScores: [{ categoryId: 'cat1', categoryName: 'Técnica', value: 8.5 }],
+                },
+                {
+                  judgeId: 'j2',
+                  judgeName: 'J2',
+                  average: 8.5,
+                  categoryScores: [{ categoryId: 'cat1', categoryName: 'Técnica', value: 8.5 }],
+                },
+              ],
+            },
+          },
+        ]),
+      )
+
+      const result = await service.buildTopNByCategory('e1', 'm1')
+      expect(result).toHaveLength(1)
+      expect(result[0]!.entries).toHaveLength(1)
+      expect(result[0]!.entries[0]!.participantName).toBe('Alice')
+      expect(result[0]!.entries[0]!.finalScore).toBe(8.5)
     })
   })
 
