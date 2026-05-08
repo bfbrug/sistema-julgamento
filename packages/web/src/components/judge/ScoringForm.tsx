@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -55,7 +55,6 @@ export function ScoringForm({
   type FormData = z.infer<typeof schema>
 
   const {
-    register,
     handleSubmit,
     setValue,
     watch,
@@ -68,23 +67,40 @@ export function ScoringForm({
 
   const values = watch()
 
+  // Ref para o botão de submit — usado para focar após o último campo
+  const submitButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Refs para os inputs de nota (indexado pela ordem dos campos)
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([])
+
+  // Estado controlado dos valores visuais dos inputs (string com vírgula)
+  const [displayValues, setDisplayValues] = useState<Record<string, string>>({})
+
+  // Helper para formatar número → display
+  const toDisplay = useCallback((num: number) => num.toFixed(1).replace('.', ','), [])
+
+  // Carrega rascunho do sessionStorage
   useEffect(() => {
     const draft = sessionStorage.getItem(draftKey)
     if (draft) {
       try {
         const parsed = JSON.parse(draft) as Record<string, number>
+        const newDisplays: Record<string, string> = {}
         for (const cat of categories) {
           const val = parsed[cat.id]
           if (val !== undefined) {
             setValue(cat.id, val, { shouldValidate: true })
+            newDisplays[cat.id] = toDisplay(val)
           }
         }
+        setDisplayValues((prev) => ({ ...prev, ...newDisplays }))
       } catch {
         // rascunho corrompido
       }
     }
-  }, [draftKey, categories, setValue])
+  }, [draftKey, categories, setValue, toDisplay])
 
+  // Salva rascunho no sessionStorage
   useEffect(() => {
     const hasValues = categories.some((cat) => values[cat.id] !== undefined && values[cat.id] !== null)
     if (hasValues) {
@@ -107,6 +123,7 @@ export function ScoringForm({
     const next = Math.round((current + delta) * 10) / 10
     if (next >= scoreMin && next <= scoreMax) {
       setValue(categoryId, next, { shouldValidate: true })
+      setDisplayValues((prev) => ({ ...prev, [categoryId]: toDisplay(next) }))
     }
   }
 
@@ -117,10 +134,159 @@ export function ScoringForm({
   }).length
   const allFilled = filledCount === sortedCategories.length
 
+  /**
+   * Avança o foco para o próximo input ou para o botão de submit se for o último.
+   */
+  const advanceFocus = useCallback(
+    (currentIdx: number) => {
+      const nextIdx = currentIdx + 1
+      if (nextIdx < sortedCategories.length) {
+        const nextInput = inputRefs.current[nextIdx]
+        if (nextInput) {
+          nextInput.focus()
+          nextInput.select()
+        }
+      } else {
+        submitButtonRef.current?.focus()
+      }
+    },
+    [sortedCategories.length],
+  )
+
+  /**
+   * Normaliza texto digitado: troca ponto por vírgula, remove inválidos.
+   */
+  const normalize = (text: string): string => {
+    let result = ''
+    let hasComma = false
+    for (const ch of text.replace(/\./g, ',')) {
+      if (/\d/.test(ch)) {
+        result += ch
+      } else if (ch === ',' && !hasComma) {
+        result += ch
+        hasComma = true
+      }
+    }
+    return result
+  }
+
+  /**
+   * Processa o valor digitado e retorna { display, numericValue, shouldAdvance }
+   */
+  const processInput = (
+    raw: string,
+    prevDisplay: string,
+  ): { display: string; numericValue: number | undefined; shouldAdvance: boolean } => {
+    let cleaned = normalize(raw)
+    const prevNormalized = normalize(prevDisplay)
+
+    // Caso especial: prev era "X,0" e usuário digitou algo depois
+    // Precisamos decidir se é inteiro maior (10,0) ou decimal (6,2)
+    if (prevNormalized.endsWith(',0')) {
+      const prevIntStr = prevNormalized.slice(0, -2) // remove ",0"
+      const expectedPrefix = `${prevIntStr},0`
+      // Se cleaned começa com o prefixo e tem exatamente 1 dígito a mais
+      if (cleaned.startsWith(expectedPrefix) && cleaned.length === expectedPrefix.length + 1) {
+        const newDigit = cleaned.slice(-1)
+        // Tenta formar inteiro maior: ex "1" + "0" = 10
+        const candidateInt = parseInt(`${prevIntStr}${newDigit}`, 10)
+        if (!isNaN(candidateInt) && candidateInt >= scoreMin && candidateInt <= scoreMax) {
+          return { display: `${candidateInt},0`, numericValue: candidateInt, shouldAdvance: true }
+        }
+        // Não formou inteiro válido → assume decimal: "6,02" vira "6,2"
+        return { display: `${parseInt(prevIntStr, 10)},${newDigit}`, numericValue: parseFloat(`${prevIntStr}.${newDigit}`), shouldAdvance: true }
+      }
+    }
+
+    if (cleaned === '') {
+      return { display: '', numericValue: undefined, shouldAdvance: false }
+    }
+
+    const commaIdx = cleaned.indexOf(',')
+    const intStr = commaIdx >= 0 ? cleaned.slice(0, commaIdx) : cleaned
+    const decStr = commaIdx >= 0 ? cleaned.slice(commaIdx + 1).charAt(0) : ''
+    const intNum = intStr ? parseInt(intStr, 10) : NaN
+
+    // Passou do máximo → reverte (não adianta continuar digitando)
+    // Não reverte se for menor que mínimo: usuário pode estar digitando ex: 10 quando min=5
+    if (!isNaN(intNum) && intNum > scoreMax) {
+      return { display: prevDisplay, numericValue: undefined, shouldAdvance: false }
+    }
+
+    if (decStr === '') {
+      // Só inteiro → auto-completa com ",0"
+      return { display: `${intNum},0`, numericValue: intNum, shouldAdvance: false }
+    }
+
+    // Decimal completo
+    const display = `${intNum},${decStr}`
+    const finalValue = parseFloat(`${intNum}.${decStr}`)
+
+    if (!isNaN(finalValue) && finalValue >= scoreMin && finalValue <= scoreMax) {
+      return { display, numericValue: finalValue, shouldAdvance: true }
+    }
+
+    return { display: prevDisplay, numericValue: undefined, shouldAdvance: false }
+  }
+
+  const handleScoreChange = useCallback(
+    (catId: string, idx: number, rawValue: string) => {
+      const prevDisplay = displayValues[catId] ?? ''
+      const result = processInput(rawValue, prevDisplay)
+
+      setDisplayValues((prev) => ({ ...prev, [catId]: result.display }))
+
+      if (result.numericValue !== undefined) {
+        setValue(catId as keyof FormData, result.numericValue as FormData[keyof FormData], {
+          shouldValidate: true,
+        })
+      } else if (result.display === '') {
+        setValue(catId as keyof FormData, undefined as unknown as FormData[keyof FormData], {
+          shouldValidate: false,
+        })
+      }
+
+      if (result.shouldAdvance) {
+        setTimeout(() => advanceFocus(idx), 0)
+      }
+    },
+    [displayValues, scoreMin, scoreMax, setValue, advanceFocus],
+  )
+
+  const handleScoreBlur = useCallback(
+    (catId: string) => {
+      let display = displayValues[catId] ?? ''
+
+      if (display.endsWith(',')) {
+        display = display + '0'
+      }
+
+      if (display === '') {
+        setDisplayValues((prev) => ({ ...prev, [catId]: '' }))
+        setValue(catId as keyof FormData, undefined as unknown as FormData[keyof FormData], {
+          shouldValidate: true,
+        })
+        return
+      }
+
+      const num = parseFloat(display.replace(',', '.'))
+      if (!isNaN(num) && num >= scoreMin && num <= scoreMax) {
+        const formatted = toDisplay(num)
+        setDisplayValues((prev) => ({ ...prev, [catId]: formatted }))
+        setValue(catId as keyof FormData, num as FormData[keyof FormData], { shouldValidate: true })
+      } else {
+        setDisplayValues((prev) => ({ ...prev, [catId]: '' }))
+        setValue(catId as keyof FormData, undefined as unknown as FormData[keyof FormData], {
+          shouldValidate: true,
+        })
+      }
+    },
+    [displayValues, scoreMin, scoreMax, setValue, toDisplay],
+  )
+
   return (
     <div className="min-h-full bg-slate-50 flex flex-col items-center">
       <div className="w-full max-w-lg flex flex-col flex-1">
-
         {/* Cabeçalho do participante */}
         <div className="bg-white border-b border-slate-200 px-5 py-5 flex items-center gap-4">
           <div className="relative flex-shrink-0">
@@ -144,12 +310,14 @@ export function ScoringForm({
           </div>
 
           {/* Progresso */}
-          <div className={cn(
-            'flex-shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-bold border',
-            allFilled
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              : 'bg-slate-100 border-slate-200 text-slate-500'
-          )}>
+          <div
+            className={cn(
+              'flex-shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-bold border',
+              allFilled
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                : 'bg-slate-100 border-slate-200 text-slate-500',
+            )}
+          >
             {filledCount}/{sortedCategories.length}
           </div>
         </div>
@@ -161,7 +329,7 @@ export function ScoringForm({
               const val = values[cat.id]
               const hasValue = val !== undefined && val !== null && !isNaN(val)
               const isTouched = !!touchedFields[cat.id]
-              const fieldError = (isTouched && hasValue) ? errors[cat.id]?.message : undefined
+              const fieldError = isTouched && hasValue ? errors[cat.id]?.message : undefined
 
               return (
                 <div
@@ -180,11 +348,15 @@ export function ScoringForm({
                   {/* Número + nome */}
                   <div className="flex-1 pl-5 pr-3 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-400 w-4 text-right flex-shrink-0 tabular-nums">{idx + 1}</span>
-                      <span className={cn(
-                        'text-base font-semibold',
-                        hasValue ? 'text-slate-800' : 'text-slate-500'
-                      )}>
+                      <span className="text-xs font-bold text-slate-400 w-4 text-right flex-shrink-0 tabular-nums">
+                        {idx + 1}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-base font-semibold',
+                          hasValue ? 'text-slate-800' : 'text-slate-500',
+                        )}
+                      >
                         {cat.name}
                       </span>
                     </div>
@@ -209,33 +381,32 @@ export function ScoringForm({
                       <input
                         id={cat.id}
                         aria-label={cat.name}
-                        type="number"
-                        step="0.1"
-                        min={scoreMin}
-                        max={scoreMax}
-                        {...register(cat.id, { 
-                          valueAsNumber: true,
-                          onChange: (e) => {
-                            const raw = e.target.value
-                            const match = raw.match(/^-?\d*\.?\d{0,1}$/)
-                            if (!match) {
-                              e.target.value = raw.slice(0, -1)
-                            }
-                          }
-                        })}
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        placeholder={`${scoreMin.toFixed(1).replace('.', ',')}`}
+                        value={displayValues[cat.id] ?? ''}
+                        onChange={(e) => handleScoreChange(cat.id, idx, e.currentTarget.value)}
+                        onBlur={() => handleScoreBlur(cat.id)}
                         onKeyDown={(e) => {
-                          // bloqueia segunda casa decimal
-                          const current = String(e.currentTarget.value)
-                          const decimalIdx = current.indexOf('.')
-                          if (decimalIdx !== -1 && current.length - decimalIdx > 1 && /[0-9]/.test(e.key) && e.currentTarget.selectionStart! > decimalIdx) {
+                          if (e.key === 'Enter') {
                             e.preventDefault()
+                            handleScoreBlur(cat.id)
+                            advanceFocus(idx)
                           }
                         }}
+                        onFocus={(e) => {
+                          const val = e.currentTarget.value
+                          if (val) {
+                            e.currentTarget.select()
+                          }
+                        }}
+                        ref={(el) => {
+                          inputRefs.current[idx] = el
+                        }}
                         className={cn(
-                          'w-20 text-center text-2xl font-bold rounded-lg border py-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-400 tabular-nums appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none bg-white shadow-sm',
-                          hasValue
-                            ? 'text-slate-900 border-slate-300'
-                            : 'text-slate-400 border-slate-200',
+                          'w-20 text-center text-2xl font-bold rounded-lg border py-2.5 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-400 tabular-nums appearance-none bg-white shadow-sm',
+                          hasValue ? 'text-slate-900 border-slate-300' : 'text-slate-400 border-slate-200',
                           fieldError ? 'border-red-400 focus:ring-red-400' : '',
                         )}
                       />
@@ -267,13 +438,14 @@ export function ScoringForm({
               Cancelar
             </button>
             <button
+              ref={submitButtonRef}
               type="submit"
               disabled={!isValid || isSubmitting}
               className={cn(
                 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm',
                 isValid && !isSubmitting
                   ? 'bg-primary-600 hover:bg-primary-700 text-white active:scale-[0.98]'
-                  : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200',
               )}
             >
               {isSubmitting ? (
