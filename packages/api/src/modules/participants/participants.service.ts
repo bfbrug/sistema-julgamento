@@ -406,15 +406,15 @@ export class ParticipantsService {
     const existing = await this.repository.findByEventId(eventId)
     const existingNormalized = new Set(existing.map((p) => p.name.trim().toLowerCase()))
 
-    const toCreate: string[] = []
+    const toCreate: { name: string; gender: string }[] = []
     const skippedNames: string[] = []
 
-    for (const name of dto.names) {
-      const normalized = name.trim().toLowerCase()
+    for (const item of dto.items) {
+      const normalized = item.name.trim().toLowerCase()
       if (existingNormalized.has(normalized)) {
-        skippedNames.push(name)
+        skippedNames.push(item.name)
       } else {
-        toCreate.push(name.trim())
+        toCreate.push({ name: item.name.trim(), gender: item.gender })
         existingNormalized.add(normalized)
       }
     }
@@ -425,11 +425,11 @@ export class ParticipantsService {
 
     const maxOrder = await this.repository.maxPresentationOrder(eventId)
 
-    const records = toCreate.map((name, i) => ({
+    const records = toCreate.map((item, i) => ({
       id: randomUUID(),
       eventId,
-      name,
-      gender: dto.gender,
+      name: item.name,
+      gender: item.gender,
       presentationOrder: maxOrder + 1 + i,
       isAbsent: false,
       currentState: 'WAITING' as const,
