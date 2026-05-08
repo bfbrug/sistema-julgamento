@@ -78,7 +78,7 @@ export function applyTiebreaker(
 
     // Tie detected! Apply cascade
     const resolvedGroup = resolveTies(group, config, categoryNames)
-    
+
     // Assign positions within the resolved group
     let groupPositionOffset = 0
     let lastSubScore: string | null = null
@@ -88,14 +88,14 @@ export function applyTiebreaker(
       // Sub-positioning based on tiebreaker result
       // If still tied, they share position
       const currentSubScore = getSubScoreKey(p)
-      
+
       if (lastSubScore !== null && currentSubScore !== lastSubScore) {
         groupPositionOffset += itemsSinceLastDifferentSubScore
         itemsSinceLastDifferentSubScore = 1
       } else {
         itemsSinceLastDifferentSubScore++
       }
-      
+
       lastSubScore = currentSubScore
 
       rankedParticipants.push({
@@ -117,7 +117,7 @@ function getSubScoreKey(p: RankedParticipant): string {
   if (!tb || tb.resolvedBy === 'UNRESOLVED' || tb.resolvedBy === 'NONE') {
     return 'unresolved'
   }
-  
+
   return tb.details.map(d => `${d.rule}:${d.myValue}`).join('|')
 }
 
@@ -153,26 +153,64 @@ function resolveTies(
     )
   }
 
-  // Step 2: Second Category (only for those still tied)
+  // Step 2: Second Category (only for those still tied after first step)
   if (config.secondCategoryId) {
-    // We need to re-group those who are still tied after the first step
-    // and apply the second tiebreaker to them.
-    // For simplicity, we can apply it to everyone, but it only changes order
-    // for those who have the same firstCategory value.
-    currentRanked = applyCategoryTiebreaker(
-      currentRanked,
-      config.secondCategoryId,
-      'SECOND_CATEGORY',
-      categoryNames,
-    )
+    // Re-group by the value of the first category to find sub-groups still tied
+    const subGroups = groupByFirstTiebreakerValue(currentRanked, config.firstCategoryId)
+
+    currentRanked = []
+    for (const subGroup of subGroups) {
+      if (subGroup.length === 1) {
+        // Already resolved by first category — keep as is
+        currentRanked.push(subGroup[0]!)
+      } else {
+        // Still tied — apply second category tiebreaker
+        const resolved = applyCategoryTiebreaker(
+          subGroup,
+          config.secondCategoryId,
+          'SECOND_CATEGORY',
+          categoryNames,
+        )
+        currentRanked.push(...resolved)
+      }
+    }
   }
 
-  // Final check: if they are still tied, mark as UNRESOLVED
-  // A participant is resolved if they are no longer in a group of >1 with same tiebreaker details
-  // But the requirement says "resolvedBy" indicates which criterion resolved the tie.
-  // We'll refine this in applyCategoryTiebreaker.
-
   return currentRanked
+}
+
+/**
+ * Groups participants by their value in the first tiebreaker category.
+ * This identifies sub-groups that are still tied after the first criterion.
+ */
+function groupByFirstTiebreakerValue(
+  participants: RankedParticipant[],
+  firstCategoryId: string | null,
+): RankedParticipant[][] {
+  if (!firstCategoryId) {
+    return [participants]
+  }
+
+  const groups = new Map<number, RankedParticipant[]>()
+  for (const p of participants) {
+    const value = p.categoryAggregates.get(firstCategoryId) ?? -1
+    if (!groups.has(value)) {
+      groups.set(value, [])
+    }
+    groups.get(value)!.push(p)
+  }
+
+  // Return groups in the order they first appear in the input
+  const seen = new Set<number>()
+  const result: RankedParticipant[][] = []
+  for (const p of participants) {
+    const value = p.categoryAggregates.get(firstCategoryId) ?? -1
+    if (!seen.has(value)) {
+      seen.add(value)
+      result.push(groups.get(value)!)
+    }
+  }
+  return result
 }
 
 function applyCategoryTiebreaker(
@@ -181,27 +219,17 @@ function applyCategoryTiebreaker(
   rule: 'FIRST_CATEGORY' | 'SECOND_CATEGORY',
   categoryNames: Map<string, string>,
 ): RankedParticipant[] {
-  // We should only apply this to sub-groups that are still tied.
-  // But sorting the whole list with multiple criteria (Score, Cat1, Cat2) also works.
-  
   const categoryName = categoryNames.get(categoryId) || 'Categoria desconhecida'
 
-  // Sort participants. Since this is a stable sort (or we include previous criteria), 
-  // we can just sort by the new category value.
-  // BUT we need to preserve the order of previous criteria.
-  
+  // Sort participants by the category value descending
   const result = [...participants].sort((a, b) => {
-    // 1. Compare by previous criteria (already sorted in participants)
-    // Actually, we should only compare by the current category if they were tied before.
-    // Since they come from the same original Score group, we check if they are tied by previous TB rules.
-    
-    const valA = a.categoryAggregates.get(categoryId) ?? -1 // Lose by default if no score
+    const valA = a.categoryAggregates.get(categoryId) ?? -1
     const valB = b.categoryAggregates.get(categoryId) ?? -1
-    
+
     if (valB !== valA) {
       return valB - valA
     }
-    
+
     return 0
   })
 
@@ -215,10 +243,6 @@ function applyCategoryTiebreaker(
         value: other.categoryAggregates.get(categoryId) ?? -1,
       }))
 
-    // Does this rule resolve anything?
-    // It resolves if myValue is different from some competitor who was tied with me.
-    // For simplicity, we add the detail.
-    
     const newDetails = [...(p.tiebreaker?.details || []), {
       rule,
       categoryId,
@@ -228,13 +252,11 @@ function applyCategoryTiebreaker(
     }]
 
     let resolvedBy = p.tiebreaker?.resolvedBy || 'NONE'
-    
-    // If it was already resolved by a previous rule, keep it.
-    // If not, check if this rule resolves it.
+
     if (resolvedBy === 'NONE' || resolvedBy === 'UNRESOLVED') {
       const isBetterThanSome = competitors.some(c => myValue > c.value)
       const isWorseThanSome = competitors.some(c => myValue < c.value)
-      
+
       if (isBetterThanSome || isWorseThanSome) {
         resolvedBy = rule
       } else {
@@ -254,13 +276,13 @@ function applyCategoryTiebreaker(
 
 export function selectTopN(ranked: RankedParticipant[], topN: number): RankedParticipant[] {
   if (ranked.length === 0 || topN <= 0) return []
-  
+
   // Cutoff is the position of the N-th participant
   const actualTopN = Math.min(topN, ranked.length)
   const cutoffItem = ranked[actualTopN - 1]
   if (!cutoffItem) return []
-  
+
   const cutoffPosition = cutoffItem.position
-  
+
   return ranked.filter(p => p.position <= cutoffPosition)
 }
