@@ -4,7 +4,7 @@ import React, { useRef, useState, useCallback, useMemo } from 'react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import { Button } from '@/components/ui/Button'
-import { useImportParticipants, BulkImportResult } from '@/hooks/useParticipants'
+import { useImportParticipants, BulkImportResult, BulkImportItem } from '@/hooks/useParticipants'
 import type { ParticipantResponse } from '@judging/shared'
 import { toast } from 'sonner'
 
@@ -16,8 +16,9 @@ interface Props {
 
 type Step = 'upload' | 'preview'
 
-interface ParsedName {
+interface ParsedParticipant {
   name: string
+  gender: 'MALE' | 'FEMALE'
   isDuplicate: boolean
 }
 
@@ -25,7 +26,14 @@ function normalizeName(name: string): string {
   return name.trim().toLowerCase()
 }
 
-function parseFile(file: File): Promise<string[]> {
+function normalizeGender(value: string): 'MALE' | 'FEMALE' | null {
+  const v = value.trim().toUpperCase()
+  if (v === 'MALE' || v === 'MASCULINO' || v === 'M') return 'MALE'
+  if (v === 'FEMALE' || v === 'FEMININO' || v === 'F') return 'FEMALE'
+  return null
+}
+
+function parseFile(file: File): Promise<BulkImportItem[]> {
   return new Promise((resolve, reject) => {
     const ext = file.name.split('.').pop()?.toLowerCase()
 
@@ -33,12 +41,19 @@ function parseFile(file: File): Promise<string[]> {
       Papa.parse<string[]>(file, {
         skipEmptyLines: true,
         complete: (results) => {
-          const names = results.data
-            .map((row) => (Array.isArray(row) ? row[0] ?? '' : ''))
-            .map((n) => n.trim())
-            .filter(Boolean)
-          const first = names[0]?.toLowerCase()
-          resolve(first === 'nome' || first === 'name' ? names.slice(1) : names)
+          const rows = results.data.filter((row) => Array.isArray(row) && row.length > 0)
+          const hasHeader = ['nome', 'name'].includes(String(rows[0]?.[0] ?? '').trim().toLowerCase())
+          const dataRows = hasHeader ? rows.slice(1) : rows
+
+          const items: BulkImportItem[] = []
+          for (const row of dataRows) {
+            const name = String(row[0] ?? '').trim()
+            const gender = normalizeGender(String(row[1] ?? ''))
+            if (name && gender) {
+              items.push({ name, gender })
+            }
+          }
+          resolve(items)
         },
         error: (err: Error) => reject(err),
       })
@@ -52,11 +67,18 @@ function parseFile(file: File): Promise<string[]> {
           if (!sheetName) { resolve([]); return }
           const sheet = workbook.Sheets[sheetName]!
           const rows = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1 })
-          const names = rows
-            .map((row) => (Array.isArray(row) ? String(row[0] ?? '').trim() : ''))
-            .filter(Boolean)
-          const first = names[0]?.toLowerCase()
-          resolve(first === 'nome' || first === 'name' ? names.slice(1) : names)
+          const hasHeader = ['nome', 'name'].includes(String(rows[0]?.[0] ?? '').trim().toLowerCase())
+          const dataRows = hasHeader ? rows.slice(1) : rows
+
+          const items: BulkImportItem[] = []
+          for (const row of dataRows) {
+            const name = Array.isArray(row) ? String(row[0] ?? '').trim() : ''
+            const gender = Array.isArray(row) ? normalizeGender(String(row[1] ?? '')) : null
+            if (name && gender) {
+              items.push({ name, gender })
+            }
+          }
+          resolve(items)
         } catch (err) {
           reject(err)
         }
@@ -70,7 +92,7 @@ function parseFile(file: File): Promise<string[]> {
 
 export function ImportParticipantsModal({ eventId, existingParticipants, onClose }: Props) {
   const [step, setStep] = useState<Step>('upload')
-  const [parsedNames, setParsedNames] = useState<ParsedName[]>([])
+  const [parsedParticipants, setParsedParticipants] = useState<ParsedParticipant[]>([])
   const [parseError, setParseError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -85,16 +107,20 @@ export function ImportParticipantsModal({ eventId, existingParticipants, onClose
     async (file: File) => {
       setParseError(null)
       try {
-        const names = await parseFile(file)
+        const items = await parseFile(file)
+        if (items.length === 0) {
+          setParseError('Nenhum participante válido encontrado. Verifique se o arquivo possui nome e gênero (MALE/FEMALE) em cada linha.')
+          return
+        }
         const seenInFile = new Set<string>()
-        const result: ParsedName[] = []
-        for (const name of names) {
-          const norm = normalizeName(name)
+        const result: ParsedParticipant[] = []
+        for (const item of items) {
+          const norm = normalizeName(item.name)
           const isDuplicate = existingNormalized.has(norm) || seenInFile.has(norm)
           seenInFile.add(norm)
-          result.push({ name, isDuplicate })
+          result.push({ name: item.name, gender: item.gender, isDuplicate })
         }
-        setParsedNames(result)
+        setParsedParticipants(result)
         setStep('preview')
       } catch (err) {
         setParseError(err instanceof Error ? err.message : 'Erro ao processar arquivo')
@@ -116,9 +142,11 @@ export function ImportParticipantsModal({ eventId, existingParticipants, onClose
   }
 
   const handleConfirm = () => {
-    const namesToCreate = parsedNames.filter((p) => !p.isDuplicate).map((p) => p.name)
+    const itemsToCreate = parsedParticipants
+      .filter((p) => !p.isDuplicate)
+      .map((p) => ({ name: p.name, gender: p.gender }))
     importParticipants(
-      { names: namesToCreate },
+      { items: itemsToCreate },
       {
         onSuccess: (result: BulkImportResult) => {
           toast.success(`${result.created} participantes importados, ${result.skipped} ignorados`)
@@ -131,8 +159,8 @@ export function ImportParticipantsModal({ eventId, existingParticipants, onClose
     )
   }
 
-  const toCreate = parsedNames.filter((p) => !p.isDuplicate).length
-  const toSkip = parsedNames.filter((p) => p.isDuplicate).length
+  const toCreate = parsedParticipants.filter((p) => !p.isDuplicate).length
+  const toSkip = parsedParticipants.filter((p) => p.isDuplicate).length
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -167,7 +195,7 @@ export function ImportParticipantsModal({ eventId, existingParticipants, onClose
               >
                 <p className="text-secondary-600 font-medium">Arraste e solte o arquivo aqui</p>
                 <p className="text-secondary-400 text-sm mt-1">ou clique para selecionar</p>
-                <p className="text-secondary-400 text-xs mt-2">CSV ou XLSX — primeira coluna = nome</p>
+                <p className="text-secondary-400 text-xs mt-2">CSV ou XLSX — colunas: nome, gênero (MALE/FEMALE)</p>
               </div>
               <input
                 ref={fileInputRef}
@@ -191,14 +219,21 @@ export function ImportParticipantsModal({ eventId, existingParticipants, onClose
                 )}
               </p>
               <ul className="max-h-64 overflow-y-auto divide-y divide-secondary-100 border rounded-lg">
-                {parsedNames.map((item, i) => (
+                {parsedParticipants.map((item, i) => (
                   <li
                     key={i}
                     className={`px-3 py-2 text-sm flex items-center justify-between ${
                       item.isDuplicate ? 'text-secondary-400' : 'text-secondary-800'
                     }`}
                   >
-                    <span>{item.name}</span>
+                    <span className="flex items-center gap-2">
+                      {item.name}
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        item.gender === 'MALE' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'
+                      }`}>
+                        {item.gender === 'MALE' ? 'M' : 'F'}
+                      </span>
+                    </span>
                     {item.isDuplicate && (
                       <span className="text-xs bg-secondary-100 text-secondary-500 px-2 py-0.5 rounded">
                         já existe
