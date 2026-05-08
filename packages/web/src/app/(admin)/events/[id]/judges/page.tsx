@@ -54,17 +54,23 @@ export default function EventJudgesPage() {
     })
   }
 
+  const activeJudgeIds = new Set(judges?.map((j) => j.id) ?? [])
+
   const handleSave = () => {
-    const payload = Object.entries(assignments).flatMap(([judgeId, categoryIds]) =>
-      categoryIds.map((categoryId) => ({ judgeId, categoryId }))
-    )
+    const payload = Object.entries(assignments)
+      .filter(([judgeId]) => activeJudgeIds.has(judgeId))
+      .flatMap(([judgeId, categoryIds]) =>
+        categoryIds.map((categoryId) => ({ judgeId, categoryId }))
+      )
     updateAssignments(payload)
   }
 
   if (loadingJudges || !categories || !event) return <div>Carregando...</div>
 
   const judgeCountsPerCategory = categories.map((cat) => {
-    const count = Object.values(assignments).filter((cats) => cats.includes(cat.id)).length
+    const count = Object.entries(assignments)
+      .filter(([judgeId]) => activeJudgeIds.has(judgeId))
+      .filter(([, cats]) => cats.includes(cat.id)).length
     return { categoryId: cat.id, count }
   })
 
