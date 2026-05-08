@@ -82,3 +82,17 @@ export function useTransitionEvent(id: string) {
     },
   })
 }
+
+export function useCancelEvent(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () =>
+      apiClient<EventResponse>({ method: 'POST', path: `/events/${id}/cancel` }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', id] })
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      toast.success('Evento cancelado com sucesso! O julgamento foi pausado.')
+    },
+  })
+}

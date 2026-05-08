@@ -1,12 +1,13 @@
 'use client'
 
 import { useParams, usePathname } from 'next/navigation'
-import { useEvent, useTransitionEvent } from '@/hooks/useEvents'
+import { useEvent, useTransitionEvent, useCancelEvent } from '@/hooks/useEvents'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Play, Settings, List, Users, Trophy, Award, FileSearch, BarChart3, Monitor } from 'lucide-react'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
+import { ArrowLeft, Play, Settings, List, Users, Trophy, Award, FileSearch, BarChart3, Monitor, OctagonX } from 'lucide-react'
 import Link from 'next/link'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { EventStatus } from '@judging/shared'
 import { cn, formatEventDate } from '@/lib/utils'
 import { eventStatusLabels } from '@/lib/event-status'
@@ -16,6 +17,8 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
   const pathname = usePathname()
   const { data: event, isLoading } = useEvent(id)
   const { mutate: transitionEvent } = useTransitionEvent(id)
+  const { mutate: cancelEvent, isPending: isCancelling } = useCancelEvent(id)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
 
   if (isLoading) return <div className="animate-pulse space-y-4">
     <div className="h-8 w-1/4 bg-secondary-200 rounded" />
@@ -70,6 +73,13 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
                     Painel Público
                   </Button>
                 </Link>
+                <Button
+                  variant="danger"
+                  onClick={() => setShowCancelDialog(true)}
+                >
+                  <OctagonX className="mr-2 h-4 w-4" />
+                  Cancelar Julgamento
+                </Button>
               </>
             )}
             {event.status === EventStatus.FINISHED && (
@@ -96,6 +106,22 @@ export default function EventDetailLayout({ children }: { children: ReactNode })
             )}
           </div>
         }
+      />
+
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={() => {
+          cancelEvent(undefined, {
+            onSuccess: () => setShowCancelDialog(false),
+          })
+        }}
+        title="Cancelar Julgamento"
+        message="Tem certeza que deseja cancelar o julgamento em andamento? Todos os participantes serão resetados para AGUARDANDO e as sessões de julgamento serão limpas. Esta ação não pode ser desfeita."
+        confirmLabel="Sim, cancelar julgamento"
+        cancelLabel="Voltar"
+        isDanger
+        isLoading={isCancelling}
       />
 
       <div className="border-b border-secondary-200">
