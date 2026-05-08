@@ -60,7 +60,7 @@ export function CurrentParticipantHero({
             className="relative overflow-hidden"
             style={{
               width: '280px',
-              height: '280px',
+              height: '340px',
               borderRadius: '14px',
               background: '#f5efd8',
             }}
@@ -70,7 +70,7 @@ export function CurrentParticipantHero({
                 src={photoPath.startsWith('http') || photoPath.startsWith('/') ? photoPath : `/uploads/${photoPath}`}
                 alt={`Foto de ${name}`}
                 fill
-                className="object-cover"
+                className="object-cover object-top"
                 sizes="280px"
                 priority
               />

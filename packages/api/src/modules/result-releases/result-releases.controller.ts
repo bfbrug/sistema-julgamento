@@ -26,9 +26,9 @@ export class ResultReleasesController {
   async create(
     @Param('eventId') eventId: string,
     @Body() dto: CreateResultReleaseDto,
-    @Req() req: { user: { id: string } },
+    @Req() req: { user: { sub: string } },
   ) {
-    const release = await this.service.release(eventId, req.user.id, dto)
+    const release = await this.service.release(eventId, req.user.sub, dto)
     this.gateway.emitReleased(eventId, release)
     return release
   }
@@ -37,9 +37,9 @@ export class ResultReleasesController {
   async remove(
     @Param('eventId') eventId: string,
     @Param('releaseId') releaseId: string,
-    @Req() req: { user: { id: string } },
+    @Req() req: { user: { sub: string } },
   ) {
-    const result = await this.service.revert(eventId, req.user.id, releaseId)
+    const result = await this.service.revert(eventId, req.user.sub, releaseId)
     this.gateway.emitUnreleased(eventId, releaseId)
     return result
   }
