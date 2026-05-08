@@ -1,4 +1,5 @@
-import type { CalculationRule, EventStatus } from '../enums'
+import type { CalculationRule, EventStatus, EventGenderMode } from '../enums'
+import type { TiebreakerConfig } from './tiebreaker'
 
 export interface JudgingEvent {
   id: string
@@ -12,9 +13,12 @@ export interface JudgingEvent {
   scoreMax: number
   topN: number
   status: EventStatus
+  genderMode: EventGenderMode
   certificateText: string | null
+  tiebreaker: TiebreakerConfig | null
   createdAt: string
   updatedAt: string
+  deletedAt: string | null
 }
 
 export interface EventSummary {
