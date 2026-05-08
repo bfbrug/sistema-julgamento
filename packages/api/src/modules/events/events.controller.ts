@@ -74,6 +74,15 @@ export class EventsController {
     return this.eventsService.transition(id, dto, user.sub)
   }
 
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  async cancel(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.eventsService.cancel(id, user.sub)
+  }
+
   @Put(':id/tiebreaker')
   async updateTiebreaker(
     @Param('id') id: string,

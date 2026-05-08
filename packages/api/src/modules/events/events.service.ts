@@ -233,6 +233,51 @@ export class EventsService {
     })
   }
 
+  async cancel(id: string, managerId: string): Promise<EventResponseDto> {
+    const event = await this.repository.findById(id, managerId)
+    if (!event) throw new NotFoundException('Evento não encontrado')
+
+    if (event.status !== EventStatus.IN_PROGRESS) {
+      throw new BadRequestException('Apenas eventos em andamento podem ser cancelados')
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // Resetar todos os participantes para WAITING
+      await tx.participant.updateMany({
+        where: { eventId: id },
+        data: { currentState: 'WAITING' },
+      })
+
+      // Limpar sessões de julgamento
+      await tx.judgeParticipantSession.deleteMany({
+        where: { participant: { eventId: id } },
+      })
+
+      // Voltar status para DRAFT
+      const result = await this.repository.updateStatus(id, EventStatus.DRAFT, tx)
+
+      await this.auditService.record({
+        action: 'EVENT_CANCELLED',
+        entityType: 'JudgingEvent',
+        entityId: id,
+        actorId: managerId,
+        payload: { from: event.status, to: EventStatus.DRAFT },
+      }, tx)
+
+      return result
+    })
+
+    this.scoringGateway.emitToEvent(id, 'event_state_changed', {
+      eventId: id,
+      status: EventStatus.DRAFT,
+    })
+    this.publicGateway.emitToEvent(id, 'public_event_state_changed', {
+      status: EventStatus.DRAFT,
+    })
+
+    return toEventResponse(updated)
+  }
+
   async transition(
     id: string,
     dto: TransitionEventDto,
