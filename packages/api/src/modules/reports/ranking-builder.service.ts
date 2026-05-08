@@ -3,12 +3,14 @@ import { Gender, EventGenderMode } from '@prisma/client'
 import { PrismaService } from '../../config/prisma.service'
 import { CalculationService } from '../calculation/calculation.service'
 import { decimalToNumber } from '../calculation/helpers/numeric'
+import type { TiebreakerInfo } from '../calculation/tiebreaker/tiebreaker-rules'
 
 export interface RankEntry {
   participantId: string
   name: string
   totalScore: number
   position: number
+  tiebreaker: TiebreakerInfo | null
 }
 
 export type OverallRankingResult =
@@ -189,6 +191,7 @@ export class RankingBuilderService {
         totalScore: Number(r.finalScore.toFixed(2)),
         position: 0,
         gender: genderMap.get(r.participant.id)!,
+        tiebreaker: r.tiebreaker,
       }))
 
     const effectiveLimit = limit === undefined ? (event.topN ?? 10) : (limit ?? all.length)

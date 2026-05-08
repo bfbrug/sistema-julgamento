@@ -155,6 +155,7 @@ export class PublicEventsService {
         participantId: entry.participantId,
         name: entry.name,
         totalScore: entry.totalScore,
+        tiebreaker: entry.tiebreaker,
       })
     }
     return { eventGenderMode: event.genderMode, released }
@@ -199,6 +200,7 @@ export class PublicEventsService {
         position: r.position,
         participantName: r.participant.name,
         finalScore: r.finalScore,
+        tiebreaker: r.tiebreaker,
       })),
     }
   }
