@@ -55,7 +55,7 @@ export function useLiveResults(eventId: string) {
       apiClient<ResultRelease, ReleaseInput>({
         method: 'POST',
         path: `/events/${eventId}/results/releases`,
-        body: { gender: input.gender ?? undefined, position: input.position } as any,
+        body: { gender: input.gender ?? undefined, position: input.position } as ReleaseInput,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['live-results', eventId] }),
     onError: (error: unknown) => toast.error(error instanceof Error ? error.message : 'Erro ao liberar posição.'),

@@ -1,9 +1,11 @@
-import { Trophy, Star } from 'lucide-react'
+import { Trophy, Star, Scale } from 'lucide-react'
+import type { TiebreakerInfo } from '@judging/shared'
 
 interface FinalRankingItem {
   position: number
   participantName: string
   finalScore: number
+  tiebreaker: TiebreakerInfo | null
 }
 
 interface EventFinishedViewProps {
@@ -17,7 +19,27 @@ const medalStyles: Record<number, { bg: string; text: string; border: string; la
   3: { bg: 'bg-amber-700', text: 'text-white', border: 'border-amber-600', label: '3º' },
 }
 
+function TiebreakerBadge({ tiebreaker }: { tiebreaker: TiebreakerInfo | null }) {
+  if (!tiebreaker || tiebreaker.resolvedBy === 'NONE') return null
+
+  const detail = tiebreaker.details[0]
+  const label = tiebreaker.resolvedBy === 'FIRST_CATEGORY'
+    ? `Desempate: ${detail?.categoryName ?? '1º critério'}`
+    : tiebreaker.resolvedBy === 'SECOND_CATEGORY'
+    ? `Desempate: ${tiebreaker.details[1]?.categoryName ?? detail?.categoryName ?? '2º critério'}`
+    : 'Empate não resolvido'
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+      <Scale className="h-3 w-3" />
+      {label}
+    </span>
+  )
+}
+
 export function EventFinishedView({ eventName, ranking }: EventFinishedViewProps) {
+  const hasAnyTiebreaker = ranking.some((item) => item.tiebreaker && item.tiebreaker.resolvedBy !== 'NONE')
+
   return (
     <div
       className="flex flex-1 flex-col items-center justify-center px-8 py-12"
@@ -63,12 +85,20 @@ export function EventFinishedView({ eventName, ranking }: EventFinishedViewProps
         <div className="h-px w-24" style={{ background: 'linear-gradient(to left, transparent, #c9a227)' }} />
       </div>
 
+      {hasAnyTiebreaker && (
+        <div className="mb-4 flex items-center gap-2 text-xs text-amber-700">
+          <Scale className="h-3 w-3" />
+          <span>Os indicadores de desempate mostram qual critério definiu a colocaºo.</span>
+        </div>
+      )}
+
       {/* Ranking */}
       <div className="w-full max-w-3xl">
         <ul className="flex flex-col gap-3">
           {ranking.map((item, index) => {
             const medal = medalStyles[item.position]
             const isTop3 = item.position <= 3
+            const hasTiebreaker = item.tiebreaker && item.tiebreaker.resolvedBy !== 'NONE'
             return (
               <li
                 key={index}
@@ -94,15 +124,18 @@ export function EventFinishedView({ eventName, ranking }: EventFinishedViewProps
                   >
                     {item.position}º
                   </span>
-                  <span
-                    className="text-2xl font-bold"
-                    style={{
-                      fontFamily: "'DM Sans', 'Inter', sans-serif",
-                      color: '#1a1208',
-                    }}
-                  >
-                    {item.participantName}
-                  </span>
+                  <div className="flex flex-col">
+                    <span
+                      className="text-2xl font-bold"
+                      style={{
+                        fontFamily: "'DM Sans', 'Inter', sans-serif",
+                        color: '#1a1208',
+                      }}
+                    >
+                      {item.participantName}
+                    </span>
+                    {hasTiebreaker && <TiebreakerBadge tiebreaker={item.tiebreaker} />}
+                  </div>
                 </div>
                 <span
                   className="text-3xl font-black tabular-nums"

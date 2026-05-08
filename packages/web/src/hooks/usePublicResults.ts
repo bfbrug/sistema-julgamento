@@ -6,11 +6,14 @@ import { publicApiClient } from '@/lib/public-api'
 
 export type GenderMode = 'MIXED' | 'MALE_ONLY' | 'FEMALE_ONLY' | 'UNISEX_SPLIT'
 
+import type { TiebreakerInfo } from '@judging/shared'
+
 export interface ReleasedEntry {
   position: number
   participantId: string
   name: string
   totalScore: number
+  tiebreaker: TiebreakerInfo | null
 }
 
 export interface PublicResults {

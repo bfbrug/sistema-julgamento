@@ -30,10 +30,13 @@ export interface JudgesProgress {
   total: number
 }
 
+import type { TiebreakerInfo } from '@judging/shared'
+
 export interface FinalRankingItem {
   position: number
   participantName: string
   finalScore: number
+  tiebreaker: TiebreakerInfo | null
 }
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting'
@@ -66,6 +69,7 @@ export function usePublicLivePanel(eventId: string): PublicLivePanelState {
   const [finalResults, setFinalResults] = useState<FinalRankingItem[] | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting')
   const [error, setError] = useState<string | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchInitialState = useCallback(async () => {
     try {
@@ -156,6 +160,11 @@ export function usePublicLivePanel(eventId: string): PublicLivePanelState {
       setCurrentParticipant((prev) => (prev ? { ...prev, currentState: payload.state } : null))
       if (payload.state === 'FINISHED' || payload.state === 'ABSENT') {
         setCompletedCount((prev) => prev + 1)
+        // Refetch upcoming queue when a participant finishes to keep it in sync
+        if (debounceRef.current) clearTimeout(debounceRef.current)
+        debounceRef.current = setTimeout(() => {
+          void fetchInitialState()
+        }, 500)
       }
     })
 
@@ -176,6 +185,7 @@ export function usePublicLivePanel(eventId: string): PublicLivePanelState {
       socket.disconnect()
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
       if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
     }
   }, [eventId, fetchInitialState, fetchFinalResults])
 

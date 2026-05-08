@@ -1,4 +1,4 @@
-import { Trophy, Star } from 'lucide-react'
+import { Trophy, Star, Scale } from 'lucide-react'
 import type { PublicResults, ReleasedEntry } from '@/hooks/usePublicResults'
 
 interface Props {
@@ -12,9 +12,28 @@ const medalStyles: Record<number, { bg: string; text: string }> = {
   3: { bg: 'bg-amber-700', text: 'text-white' },
 }
 
+function TiebreakerBadge({ tiebreaker }: { tiebreaker: ReleasedEntry['tiebreaker'] }) {
+  if (!tiebreaker || tiebreaker.resolvedBy === 'NONE') return null
+
+  const detail = tiebreaker.details[0]
+  const label = tiebreaker.resolvedBy === 'FIRST_CATEGORY'
+    ? `Desempate: ${detail?.categoryName ?? '1º critério'}`
+    : tiebreaker.resolvedBy === 'SECOND_CATEGORY'
+    ? `Desempate: ${tiebreaker.details[1]?.categoryName ?? detail?.categoryName ?? '2º critério'}`
+    : 'Empate não resolvido'
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+      <Scale className="h-3 w-3" />
+      {label}
+    </span>
+  )
+}
+
 function EntryCard({ entry }: { entry: ReleasedEntry }) {
   const medal = medalStyles[entry.position]
   const isTop3 = entry.position <= 3
+  const hasTiebreaker = entry.tiebreaker && entry.tiebreaker.resolvedBy !== 'NONE'
   return (
     <li
       className={`flex items-center justify-between rounded-2xl px-6 py-4 ${isTop3 ? 'shadow-lg' : 'shadow-sm'}`}
@@ -32,12 +51,15 @@ function EntryCard({ entry }: { entry: ReleasedEntry }) {
         >
           {entry.position}º
         </span>
-        <span
-          className="text-2xl font-bold"
-          style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#1a1208' }}
-        >
-          {entry.name}
-        </span>
+        <div className="flex flex-col">
+          <span
+            className="text-2xl font-bold"
+            style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#1a1208' }}
+          >
+            {entry.name}
+          </span>
+          {hasTiebreaker && <TiebreakerBadge tiebreaker={entry.tiebreaker} />}
+        </div>
       </div>
       <span
         className="text-3xl font-black tabular-nums"
@@ -51,12 +73,19 @@ function EntryCard({ entry }: { entry: ReleasedEntry }) {
 
 function RankingColumn({ entries, label }: { entries: ReleasedEntry[] | undefined; label?: string }) {
   const sorted = [...(entries ?? [])].sort((a, b) => a.position - b.position)
+  const hasAnyTiebreaker = sorted.some((e) => e.tiebreaker && e.tiebreaker.resolvedBy !== 'NONE')
   return (
     <div className="flex flex-col gap-3">
       {label && (
         <h4 className="text-center text-xl font-bold uppercase tracking-widest" style={{ color: '#c9a227' }}>
           {label}
         </h4>
+      )}
+      {hasAnyTiebreaker && (
+        <div className="flex items-center justify-center gap-2 text-xs text-amber-700">
+          <Scale className="h-3 w-3" />
+          <span>Os indicadores de desempate mostram qual critério definiu a colocaºo.</span>
+        </div>
       )}
       <ul className="flex flex-col gap-3">
         {sorted.map((e) => (
@@ -83,7 +112,7 @@ export function PublicResultsBoard({ eventName, results }: Props) {
           className="text-4xl font-black"
           style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", color: '#1a1208' }}
         >
-          Aguardando divulgação dos resultados
+          Aguardando divulgaºo dos resultados
         </h2>
         <p className="text-xl font-medium" style={{ color: '#8a7040' }}>
           {eventName}
