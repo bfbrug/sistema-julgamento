@@ -2,14 +2,14 @@
 
 import React from 'react'
 import { useParams } from 'next/navigation'
-import { useParticipants, useCreateParticipant, useDeleteParticipant, useShuffleParticipants, useReorderParticipants, useUploadParticipantPhoto } from '@/hooks/useParticipants'
+import { useParticipants, useCreateParticipant, useDeleteParticipant, useShuffleParticipants, useReorderParticipants, useUploadParticipantPhoto, useUpdateParticipant } from '@/hooks/useParticipants'
 import { useEvent } from '@/hooks/useEvents'
 import { EventStatus } from '@judging/shared'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
-import { Trash2, GripVertical, Plus, Shuffle, Upload, UserCircle2 } from 'lucide-react'
-import { useState, useRef, type FormEvent } from 'react'
+import { Trash2, GripVertical, Plus, Shuffle, Upload, UserCircle2, Pencil, Mars, Venus } from 'lucide-react'
+import { useState, useRef, type FormEvent, useCallback } from 'react'
 import { ImportParticipantsModal } from '@/components/admin/participants/ImportParticipantsModal'
 import {
   DndContext,
@@ -192,7 +192,63 @@ export default function EventParticipantsPage() {
 interface ParticipantItem {
   id: string
   name: string
+  gender: 'MALE' | 'FEMALE'
   photoUrl?: string | null
+}
+
+function GenderBadge({ gender, onChange }: { gender: 'MALE' | 'FEMALE'; onChange?: (g: 'MALE' | 'FEMALE') => void }) {
+  const [open, setOpen] = useState(false)
+  const isMale = gender === 'MALE'
+
+  const handleSelect = useCallback((val: 'MALE' | 'FEMALE') => {
+    onChange?.(val)
+    setOpen(false)
+  }, [onChange])
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => onChange && setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-all ${
+          isMale
+            ? 'bg-sky-50 text-sky-700 ring-1 ring-sky-200 hover:bg-sky-100'
+            : 'bg-rose-50 text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100'
+        } ${onChange ? 'cursor-pointer' : 'cursor-default'}`}
+        title={onChange ? 'Clique para alterar gênero' : undefined}
+      >
+        {isMale ? <Mars className="h-3 w-3" /> : <Venus className="h-3 w-3" />}
+        {isMale ? 'Masc' : 'Fem'}
+        {onChange && <Pencil className="h-2.5 w-2.5 opacity-60" />}
+      </button>
+
+      {open && onChange && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full z-50 mt-1 w-32 rounded-lg border border-secondary-200 bg-white p-1 shadow-lg animate-in fade-in zoom-in-95 duration-150">
+            <button
+              onClick={() => handleSelect('MALE')}
+              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                gender === 'MALE' ? 'bg-sky-50 text-sky-700' : 'text-secondary-700 hover:bg-secondary-50'
+              }`}
+            >
+              <Mars className="h-3.5 w-3.5" />
+              Masculino
+            </button>
+            <button
+              onClick={() => handleSelect('FEMALE')}
+              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                gender === 'FEMALE' ? 'bg-rose-50 text-rose-700' : 'text-secondary-700 hover:bg-secondary-50'
+              }`}
+            >
+              <Venus className="h-3.5 w-3.5" />
+              Feminino
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
 }
 
 function SortableParticipantCard({ participant, index, eventId, onDelete, isFinished }: {
@@ -204,6 +260,7 @@ function SortableParticipantCard({ participant, index, eventId, onDelete, isFini
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: participant.id })
   const { mutate: uploadPhoto, isPending: isUploading } = useUploadParticipantPhoto(eventId)
+  const { mutate: updateParticipant, isPending: isUpdating } = useUpdateParticipant(eventId, participant.id)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const style = {
@@ -221,27 +278,35 @@ function SortableParticipantCard({ participant, index, eventId, onDelete, isFini
     e.target.value = ''
   }
 
+  const handleGenderChange = (gender: 'MALE' | 'FEMALE') => {
+    if (gender === participant.gender) return
+    updateParticipant({ gender })
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className="flex flex-col rounded-2xl border border-secondary-200 bg-white shadow-sm hover:border-primary-300 hover:shadow-lg transition-all duration-200"
     >
-      {/* drag handle + número */}
+      {/* drag handle + número + gênero */}
       <div className="flex items-center justify-between px-2 pt-2">
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-[10px] font-bold text-primary-700">
           {index + 1}
         </span>
-        {!isFinished && (
-          <button
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing rounded p-1 text-secondary-300 hover:bg-secondary-100 hover:text-secondary-600 touch-none transition-colors"
-            title="Arrastar para reordenar"
-          >
-            <GripVertical className="h-3.5 w-3.5" />
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          <GenderBadge gender={participant.gender} onChange={isFinished || isUpdating ? undefined : handleGenderChange} />
+          {!isFinished && (
+            <button
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing rounded p-1 text-secondary-300 hover:bg-secondary-100 hover:text-secondary-600 touch-none transition-colors"
+              title="Arrastar para reordenar"
+            >
+              <GripVertical className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* foto */}
