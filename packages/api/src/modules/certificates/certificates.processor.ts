@@ -4,8 +4,10 @@ import { Inject } from '@nestjs/common'
 import { Job } from 'bullmq'
 import { randomUUID } from 'crypto'
 import * as fs from 'fs'
+import * as os from 'os'
 import * as path from 'path'
 import * as Handlebars from 'handlebars'
+import { PDFDocument } from 'pdf-lib'
 import { CertificatesService, GenerateCertificatesJobPayload } from './certificates.service'
 import { CertificatesRepository } from './certificates.repository'
 import { AuditService } from '../audit/audit.service'
@@ -36,12 +38,12 @@ export class CertificatesProcessor extends WorkerHost {
     return Handlebars.compile(source)
   }
 
-  private async fileToDataUri(filePath: string): Promise<string> {
+  private async fileToUrl(filePath: string): Promise<string> {
     const absPath = path.resolve(env.STORAGE_LOCAL_ROOT, filePath)
-    const buffer = fs.readFileSync(absPath)
-    const ext = path.extname(absPath).toLowerCase()
-    const mime = ext === '.png' ? 'image/png' : 'image/jpeg'
-    return `data:${mime};base64,${buffer.toString('base64')}`
+    // Puppeteer can load local images via file://, avoiding massive base64 duplication
+    // in the HTML for every participant page. Convert Windows backslashes to forward slashes.
+    const normalized = absPath.replace(/\\/g, '/')
+    return `file:///${normalized}`
   }
 
   private formatDateTime(date: Date): string {
@@ -78,13 +80,14 @@ export class CertificatesProcessor extends WorkerHost {
       await this.repository.updateJob(jobId, { progress: 30 })
       await job.updateProgress(30)
 
-      // Prepare images as data URIs so Puppeteer can render them without a server
-      const backgroundUrl = await this.fileToDataUri(batchData.backgroundPath)
+      // Use file:// URLs so Puppeteer loads images from disk instead of embedding
+      // massive base64 strings repeated for every participant page.
+      const backgroundUrl = await this.fileToUrl(batchData.backgroundPath)
       const signaturesWithUrls = await Promise.all(
         signatures.map(async (s) => ({
           personName: s.personName,
           personRole: s.personRole,
-          imageUrl: await this.fileToDataUri(s.imagePath),
+          imageUrl: await this.fileToUrl(s.imagePath),
           displayOrder: s.displayOrder,
         })),
       )
@@ -93,24 +96,57 @@ export class CertificatesProcessor extends WorkerHost {
       const generatedAt = this.formatDateTime(new Date())
 
       const template = this.loadTemplate('certificate')
-      const html = template({
-        backgroundUrl,
-        participants,
-        signatures: signaturesWithUrls,
-        verificationCode,
-        generatedAt,
-      })
 
       // 60% — HTML rendered
       await this.repository.updateJob(jobId, { progress: 60 })
       await job.updateProgress(60)
 
-      // 90% — PDF generated
-      const buffer = await this.pdfService.render(html, {
-        format: 'A4',
-        landscape: true,
-        margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
-      })
+      // Generate PDFs in small chunks to avoid overwhelming Chromium with 77 pages at once
+      const chunkSize = 5
+      const chunks: Array<Array<{ id: string; name: string; processedText: string }>> = []
+      for (let i = 0; i < participants.length; i += chunkSize) {
+        chunks.push(participants.slice(i, i + chunkSize))
+      }
+
+      const pdfBuffers: Buffer[] = []
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i]
+        const html = template({
+          backgroundUrl,
+          participants: chunk,
+          signatures: signaturesWithUrls,
+          verificationCode,
+          generatedAt,
+        })
+
+        const tempFile = path.join(os.tmpdir(), `cert-${job.id}-${i}.html`)
+        fs.writeFileSync(tempFile, html, 'utf-8')
+        try {
+          const chunkBuffer = await this.pdfService.renderFile(tempFile, {
+            format: 'A4',
+            landscape: true,
+            margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
+          })
+          pdfBuffers.push(chunkBuffer)
+        } finally {
+          try { fs.unlinkSync(tempFile) } catch { /* ignore */ }
+        }
+
+        const progress = 60 + Math.round(((i + 1) / chunks.length) * 30)
+        await this.repository.updateJob(jobId, { progress })
+        await job.updateProgress(progress)
+      }
+
+      // Merge all chunk PDFs into a single document
+      const mergedPdf = await PDFDocument.create()
+      for (const pdfBuffer of pdfBuffers) {
+        const pdf = await PDFDocument.load(pdfBuffer)
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+        for (const page of copiedPages) {
+          mergedPdf.addPage(page)
+        }
+      }
+      const buffer = Buffer.from(await mergedPdf.save())
 
       await this.repository.updateJob(jobId, { progress: 90 })
       await job.updateProgress(90)
