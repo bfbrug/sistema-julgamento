@@ -116,12 +116,17 @@ export interface BulkImportResult {
   participants: ParticipantResponse[]
 }
 
+export interface BulkImportItem {
+  name: string
+  gender: 'MALE' | 'FEMALE'
+}
+
 export function useImportParticipants(eventId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: { names: string[] }) =>
-      apiClient<BulkImportResult, { names: string[] }>({
+    mutationFn: (data: { items: BulkImportItem[] }) =>
+      apiClient<BulkImportResult, { items: BulkImportItem[] }>({
         method: 'POST',
         path: `/events/${eventId}/participants/bulk`,
         body: data,
