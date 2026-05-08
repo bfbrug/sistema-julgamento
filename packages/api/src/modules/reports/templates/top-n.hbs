@@ -1,21 +1,92 @@
 {{> header}}
   <h1>{{event.name}}</h1>
   <p class="event-meta">{{event.eventDate}} &bull; {{event.location}} &bull; {{event.organizer}}</p>
-  <h2>Classificação Final — Top {{topN}}</h2>
+  <h2>Classificaºo Final –" Top {{topN}}</h2>
 
-  {{#each categories}}
-    <h3>{{this.categoryName}}</h3>
+  {{#if hasTiebreaker}}
+  <div class="warning-box">
+    <strong>Nota sobre desempate:</strong> A coluna "Desempate" indica qual critério foi aplicado para definir a colocaºo de participantes com notas finais iguais.
+  </div>
+  {{/if}}
+
+  {{#if (eq genderMode 'UNISEX_SPLIT')}}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <h3>Masculino</h3>
+        <table>
+          <thead><tr><th class="position">Pos.</th><th>Participante</th><th class="score">Nota Final</th><th>Desempate</th></tr></thead>
+          <tbody>
+            {{#each ranking.male}}
+            <tr>
+              <td class="position">{{this.position}}º</td>
+              <td>{{this.name}}</td>
+              <td class="score">{{this.totalScore}}</td>
+              <td>{{tiebreakerLabel this.tiebreaker}}</td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3>Feminino</h3>
+        <table>
+          <thead><tr><th class="position">Pos.</th><th>Participante</th><th class="score">Nota Final</th><th>Desempate</th></tr></thead>
+          <tbody>
+            {{#each ranking.female}}
+            <tr>
+              <td class="position">{{this.position}}º</td>
+              <td>{{this.name}}</td>
+              <td class="score">{{this.totalScore}}</td>
+              <td>{{tiebreakerLabel this.tiebreaker}}</td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {{else if (eq genderMode 'MALE_ONLY')}}
+    <h3>Masculino</h3>
     <table>
-      <thead><tr><th class="position">Pos.</th><th>Participante</th><th class="score">Nota</th></tr></thead>
+      <thead><tr><th class="position">Pos.</th><th>Participante</th><th class="score">Nota Final</th><th>Desempate</th></tr></thead>
       <tbody>
-        {{#each this.entries}}
+        {{#each ranking.entries}}
         <tr>
           <td class="position">{{this.position}}º</td>
-          <td>{{this.participantName}}</td>
-          <td class="score">{{this.finalScore}}</td>
+          <td>{{this.name}}</td>
+          <td class="score">{{this.totalScore}}</td>
+          <td>{{tiebreakerLabel this.tiebreaker}}</td>
         </tr>
         {{/each}}
       </tbody>
     </table>
-  {{/each}}
+  {{else if (eq genderMode 'FEMALE_ONLY')}}
+    <h3>Feminino</h3>
+    <table>
+      <thead><tr><th class="position">Pos.</th><th>Participante</th><th class="score">Nota Final</th><th>Desempate</th></tr></thead>
+      <tbody>
+        {{#each ranking.entries}}
+        <tr>
+          <td class="position">{{this.position}}º</td>
+          <td>{{this.name}}</td>
+          <td class="score">{{this.totalScore}}</td>
+          <td>{{tiebreakerLabel this.tiebreaker}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <table>
+      <thead><tr><th class="position">Pos.</th><th>Participante</th><th class="score">Nota Final</th><th>Desempate</th></tr></thead>
+      <tbody>
+        {{#each ranking.entries}}
+        <tr>
+          <td class="position">{{this.position}}º</td>
+          <td>{{this.name}}</td>
+          <td class="score">{{this.totalScore}}</td>
+          <td>{{tiebreakerLabel this.tiebreaker}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{/if}}
 {{> footer}}

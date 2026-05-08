@@ -35,6 +35,20 @@ export class ReportsProcessor extends WorkerHost {
     super()
     this.registerPartials()
     Handlebars.registerHelper('eq', (a: unknown, b: unknown) => a === b)
+    Handlebars.registerHelper('tiebreakerLabel', (tb: unknown) => {
+      if (!tb || typeof tb !== 'object') return '—'
+      const t = tb as { resolvedBy?: string; details?: Array<{ rule?: string; categoryName?: string }> }
+      if (t.resolvedBy === 'FIRST_CATEGORY' && t.details && t.details[0]) {
+        return `1º crit.: ${t.details[0].categoryName}`
+      }
+      if (t.resolvedBy === 'SECOND_CATEGORY' && t.details && t.details[1]) {
+        return `2º crit.: ${t.details[1].categoryName}`
+      }
+      if (t.resolvedBy === 'UNRESOLVED') {
+        return 'Empate não resolvido'
+      }
+      return '—'
+    })
   }
 
   private registerPartials(): void {
@@ -68,6 +82,12 @@ export class ReportsProcessor extends WorkerHost {
     })
   }
 
+  private hasAnyTiebreaker(ranking: { entries?: Array<{ tiebreaker?: unknown }>; male?: Array<{ tiebreaker?: unknown }>; female?: Array<{ tiebreaker?: unknown }> }): boolean {
+    const check = (arr?: Array<{ tiebreaker?: unknown }>) =>
+      arr?.some((e) => e.tiebreaker && (e.tiebreaker as { resolvedBy?: string }).resolvedBy !== 'NONE') ?? false
+    return check(ranking.entries) || check(ranking.male) || check(ranking.female)
+  }
+
   async process(job: Job<GenerateReportJobPayload>): Promise<{ pdfPath: string }> {
     const { jobId, eventId, managerId, type } = job.data
 
@@ -95,16 +115,17 @@ export class ReportsProcessor extends WorkerHost {
 
       if (type === ReportType.TOP_N) {
         const topN = eventInfo.topN
-        const categories = await this.rankingBuilder.buildTopNByCategory(eventId, managerId)
+        const ranking = await this.rankingBuilder.computeOverallRanking(eventId, managerId)
+        const hasTiebreaker = this.hasAnyTiebreaker(ranking)
         const template = this.loadTemplate('top-n')
-        html = template({ event, categories, topN, generatedAt, verificationCode })
+        html = template({ event, ranking, topN, generatedAt, verificationCode, genderMode: eventInfo.genderMode, hasTiebreaker })
 
       } else if (type === ReportType.GENERAL) {
-        const entries = await this.rankingBuilder.buildClassification(eventId, managerId)
+        const ranking = await this.rankingBuilder.computeOverallRanking(eventId, managerId, null)
         const absents = await this.rankingBuilder.buildAbsents(eventId, managerId)
+        const hasTiebreaker = this.hasAnyTiebreaker(ranking)
         const template = this.loadTemplate('general')
-        const tied = entries.some((e, i, arr) => i > 0 && arr[i - 1]!.position === e.position)
-        html = template({ event, entries, absents, generatedAt, verificationCode, tied })
+        html = template({ event, ranking, absents, generatedAt, verificationCode, genderMode: eventInfo.genderMode, hasTiebreaker })
 
       } else {
         const judgeEntries = await this.rankingBuilder.buildDetailedByJudge(eventId, managerId)
