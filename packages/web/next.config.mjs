@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Permite acesso ao dev server de outros dispositivos na rede (hotspot/eventos)
+  allowedDevOrigins: ['192.168.137.1', '172.27.144.1', '10.10.115.166', 'localhost'],
   // Standalone output para build otimizado no Docker (Railway)
   output: 'standalone',
   eslint: {
