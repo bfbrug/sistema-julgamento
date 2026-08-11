@@ -7,6 +7,7 @@ export class ApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly code?: string,
+    public readonly details?: unknown,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -168,7 +169,7 @@ export async function apiClient<T, B = unknown>({
 
   if (!res.ok) {
     if (isApiError(responseBody)) {
-      throw new ApiError(responseBody.error, res.status, responseBody.code)
+      throw new ApiError(responseBody.error, res.status, responseBody.code, responseBody.details)
     }
     throw new ApiError(`HTTP ${res.status}`, res.status)
   }

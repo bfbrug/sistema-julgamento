@@ -16,6 +16,7 @@ export const queryClient = new QueryClient({
       retry: 1,
       onError: (error) => {
         if (error instanceof ApiError) {
+          if (error.details) return
           toast.error(error.message)
         } else {
           toast.error('Ocorreu um erro inesperado. Tente novamente.')
