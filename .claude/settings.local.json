@@ -97,7 +97,18 @@
       "Bash(psql \"postgresql://postgres:postgres@localhost:5434/judging_dev\" -c \"SELECT id, name, \\\\\"currentState\\\\\" FROM \\\\\"Participant\\\\\" WHERE \\\\\"currentState\\\\\" = 'SCORING';\")",
       "Bash(npx prisma *)",
       "Bash(npx nx *)",
-      "mcp__plugin_context-mode_context-mode__ctx_execute_file"
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file",
+      "Bash(docker --version)",
+      "Bash(docker compose *)",
+      "Bash(docker-compose --version)",
+      "Bash(pnpm --version)",
+      "Bash(npm --version)",
+      "Read(//usr/local/bin/**)",
+      "Read(//home/bruno/.nvm/versions/**)",
+      "Read(//home/bruno/.local/share/**)",
+      "Bash(xargs cat -n)",
+      "Bash(pnpm --filter web tsc --noEmit)",
+      "Bash(pnpm --filter api tsc --noEmit)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Bruno\\Desktop\\www\\jurados\\sistema-julgamento\\.worktrees\\p17-modulo-reports\\packages\\web\\src\\app\\(admin)\\events\\[id]",

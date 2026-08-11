@@ -253,7 +253,7 @@ export class EventsService {
     if (!result.allowed) {
       throw new UnprocessableEntityException({
         message: 'Transição de status não permitida',
-        errors: result.errors,
+        details: result.errors,
       })
     }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api'
+import { apiClient, ApiError } from '@/lib/api'
 import type { EventResponse, CreateEventDto, UpdateEventDto, TransitionEventDto } from '@judging/shared'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -79,6 +79,16 @@ export function useTransitionEvent(id: string) {
       queryClient.invalidateQueries({ queryKey: ['events', id] })
       queryClient.invalidateQueries({ queryKey: ['events'] })
       toast.success('Status do evento atualizado com sucesso!')
+    },
+    onError: (error) => {
+      if (error instanceof ApiError) {
+        const details = error.details as { message: string }[] | undefined
+        if (details && details.length > 0) {
+          details.forEach((d) => toast.error(d.message))
+        } else {
+          toast.error(error.message)
+        }
+      }
     },
   })
 }
